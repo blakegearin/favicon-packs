@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "Favicon Packs",
+  "version": "0.0.1",
+  "description": "Apply icon packs as favicons",
+  "homepage_url": "https://github.com/blakegearin/favicon-packs",
+  "icons": {
+    "48": "img/logo.svg",
+    "96": "img/logo.svg"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "<all_urls>",
+    "*://*.unpkg.com/*"
+  ],
+  "options_page": "src/options/index.html",
+  "background": {
+    "scripts": ["src/background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_icon": "img/logo.svg",
+    "default_title": "Favicon Packs"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/content.js"
+      ]
+    }
+  ],
+  "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
+}
