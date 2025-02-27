@@ -11,3 +11,21 @@
 # Favicon Packs
 
 This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to apply icon packs as [favicons](https://en.wikipedia.org/wiki/Favicon).
+
+## Features
+
+- [x] Easily add domains or patterns for more advanced matching
+- [x] Custom colors for light & dark themes
+- [x] Guards against favicon hijacking (e.g. Notion)
+- [x] Convenient copy to clipboard buttons help keep track of values
+- [x] Selectable rows allow for bulk updates
+- [x] Create catch-alls or categories using the priority ordering
+- [x] Upload images as a backup option
+
+## Credits
+
+- Icon packs: [Ionicons](https://ionic.io/ionicons)
+
+- Web components: [Shoelace](https://shoelace.style/)
+
+- Logo: inspired by [shapez](https://shapez.io/)

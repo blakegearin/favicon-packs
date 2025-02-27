@@ -17,7 +17,10 @@
   ],
   "options_page": "src/options/index.html",
   "background": {
-    "scripts": ["src/background.js"],
+    "scripts": [
+      "src/db/store.js",
+      "src/background.js"
+    ],
     "persistent": false
   },
   "browser_action": {
@@ -29,8 +32,9 @@
       "matches": ["<all_urls>"],
       "js": [
         "src/content.js"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ],
-  "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
+  "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'; img-src blob: data: *;"
 }

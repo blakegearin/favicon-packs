@@ -1,4 +1,33 @@
-console.log("Background running");
+console.log("Favicon Packs: background.js loaded");
+
+const iconPacks = [
+  {
+    name: "Ionicons",
+    version: "7.4.0",
+    svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
+    metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
+    styles: [
+      {
+        name: "Outline",
+        value: "-outline",
+        paint: "color",
+        filter: /-outline/,
+      },
+      {
+        name: "Filled",
+        value: "",
+        paint: "fill",
+        filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
+      },
+      {
+        name: "Sharp",
+        value: "-sharp",
+        paint: "fill",
+        filter: /-sharp/,
+      },
+    ],
+  },
+];
 
 const userSettings = [
   {
@@ -30,70 +59,6 @@ const userSettings = [
   },
 ];
 
-const iconPacks = [
-  {
-    name: "Ionicons",
-    version: "7.4.0",
-    svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
-    metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
-    styles: [
-      {
-        name: "Outline",
-        value: "-outline",
-        paint: "color",
-        filter: /-outline/,
-      },
-      {
-        name: "Filled",
-        value: "",
-        paint: "fill",
-        filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
-      },
-      {
-        name: "Sharp",
-        value: "-sharp",
-        paint: "fill",
-        filter: /-sharp/,
-      },
-    ],
-  },
-];
-
-// const icons = [
-//   {
-//     iconPackName: "Ionicons",
-//     name: "airplane",
-//     tags:[ "airplane", "plane" ],
-//     svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><style xmlns=\"http://www.w3.org/1999/xhtml\">.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }</style><use href=\"#airplane\" xlink:href=\"#airplane\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"/><symbol id=\"airplane\" class=\"ionicon\" viewBox=\"0 0 512 512\"><path d=\"M186.62 464H160a16 16 0 01-14.57-22.6l64.46-142.25L113.1 297l-35.3 42.77C71.07 348.23 65.7 352 52 352H34.08a17.66 17.66 0 01-14.7-7.06c-2.38-3.21-4.72-8.65-2.44-16.41l19.82-71c.15-.53.33-1.06.53-1.58a.38.38 0 000-.15 14.82 14.82 0 01-.53-1.59l-19.84-71.45c-2.15-7.61.2-12.93 2.56-16.06a16.83 16.83 0 0113.6-6.7H52c10.23 0 20.16 4.59 26 12l34.57 42.05 97.32-1.44-64.44-142A16 16 0 01160 48h26.91a25 25 0 0119.35 9.8l125.05 152 57.77-1.52c4.23-.23 15.95-.31 18.66-.31C463 208 496 225.94 496 256c0 9.46-3.78 27-29.07 38.16-14.93 6.6-34.85 9.94-59.21 9.94-2.68 0-14.37-.08-18.66-.31l-57.76-1.54-125.36 152a25 25 0 01-19.32 9.75z\"/></symbol></svg>",
-//   }
-// ];
-
-browser.browserAction.onClicked.addListener(function() {
-  browser.tabs.create({ url: browser.runtime.getURL("src/options/index.html") });
-});
-
-function cacheIcon(name, svg) {
-  browser.storage.local
-    .set({ [name]: svg })
-    .then(() => {
-      // console.log("Icon cached:", name);
-    })
-    .catch((error) => {
-      console.error("Error caching icon:", error);
-    });
-}
-
-function getCachedIcon(name) {
-  return browser.storage.local
-    .get(name)
-    .then((result) => {
-      return result[name] || null;
-    })
-    .catch((error) => {
-      console.error("Error retrieving cached icon:", error);
-    });
-}
-
 async function fetchIconsMetadata(iconPackName) {
   const iconPack = iconPacks.find((iconPack) => iconPack.name === iconPackName);
   const metadataUrl = iconPack.metadataUrl;
@@ -124,392 +89,192 @@ async function fetchIconsMetadata(iconPackName) {
   return iconsMetadata || null;
 }
 
-iconPacks.forEach(async (iconPack) => {
-  const iconsMetadata = await fetchIconsMetadata(iconPack.name);
+function getSiteConfigsOrder() {
+  return JSON.parse(localStorage.getItem('siteConfigsOrder')) || [];
+}
 
-  // iconsMetadata.forEach(async (iconMetadata) => {
-  //   cacheIcon(iconMetadata.name, {
-  //     svg: svgString,
-  //     tags: iconMetadata.tags,
-  //   });
-  // });
+async function initialize() {
+  await window.extensionStore.initialize();
 
-  fetch(iconPack.svgUrl)
-    .then((response) => {
-      // console.log(`response`);
-      // console.dir(response, { depth: null });
+  browser.browserAction.onClicked.addListener(function() {
+    browser.tabs.create({ url: browser.runtime.getURL("src/options/index.html") });
+  });
 
-      if (!response.ok) throw new Error("Network response was not ok");
-      return response.text();
-    })
-    .then((htmlString) => {
-      // console.log(`htmlString`);
-      // console.dir(htmlString, { depth: null });
+  for await (const iconPack of iconPacks) {
+    const iconsMetadata = await fetchIconsMetadata(iconPack.name);
+    const response = await fetch(iconPack.svgUrl);
 
-      const parser = new DOMParser();
-      const htmlDoc = parser.parseFromString(htmlString, "text/html");
-      const htmlElement = htmlDoc.documentElement;
+    // console.log(`response`);
+    // console.dir(response, { depth: null });
 
-      // console.log(`htmlElement`);
-      // console.dir(htmlElement, { depth: null });
+    if (!response.ok) throw new Error("Network response was not ok");
 
-      htmlElement.querySelectorAll("a > svg").forEach((svgElement) => {
-        // console.log(`svgElement`);
-        // console.dir(svgElement, { depth: null });
+    const htmlString = await response.text();
 
-        // const svgString = symbol
-        //   .replace( "<symbol", `<svg xmlns="http://www.w3.org/2000/svg"`)
-        //   .replace("</symbol>", "</svg>");
+    // console.log(`htmlString`);
+    // console.dir(htmlString, { depth: null });
 
-        // element.innerHTML = symbol.innerHTML
-        //   .replace(/<symbol/g, `<svg xmlns="http://www.w3.org/2000/svg"`)
-        //   .replace(/<\/symbol>/g, `</svg>`);
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(htmlString, "text/html");
+    const htmlElement = htmlDoc.documentElement;
 
-        // const newSvgElement = document.createElement("svg");
-        // svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        svgElement.setAttribute("viewBox", "0 0 512 512");
+    // console.log(`htmlElement`);
+    // console.dir(htmlElement, { depth: null });
 
-        const symbolId = svgElement.children[0].getAttribute('href');
+    const svgElements = htmlElement.querySelectorAll("a > svg");
 
-        // Fix PR: https://github.com/ionic-team/ionicons/pull/1433
-        const brokenIcons = [
-          "chevron-expand",
-          "chevron-expand-outline",
-          "chevron-expand-sharp",
-          "logo-behance",
-          "logo-bitbucket",
-          "logo-docker",
-          "logo-edge",
-          "logo-facebook",
-          "logo-npm",
-          "logo-paypal",
-          "logo-soundcloud",
-          "logo-venmo",
-        ];
+    for await (const svgElement of svgElements) {
+      svgElement.setAttribute("viewBox", "0 0 512 512");
 
-        if (brokenIcons.includes(symbolId.replace('#', ''))) return;
+      const symbolId = svgElement.children[0].getAttribute('href');
 
-        // console.log(`symbolId`);
-        // console.dir(symbolId, { depth: null });
+      // Fix PR: https://github.com/ionic-team/ionicons/pull/1433
+      const brokenIcons = [
+        "chevron-expand",
+        "chevron-expand-outline",
+        "chevron-expand-sharp",
+        "logo-behance",
+        "logo-bitbucket",
+        "logo-docker",
+        "logo-edge",
+        "logo-facebook",
+        "logo-npm",
+        "logo-paypal",
+        "logo-soundcloud",
+        "logo-venmo",
+      ];
 
-        const symbol = htmlElement.querySelector(symbolId);
+      if (brokenIcons.includes(symbolId.replace('#', ''))) continue;
 
-        // console.log(`symbol`);
-        // console.dir(symbol, { depth: null });
+      const symbol = htmlElement.querySelector(symbolId);
+      const iconName = symbol.id;
+      const iconId = `${iconPack.name}-${iconPack.version}-${iconName}`;
 
-        // const styleElement = document.createElement("style");
-        // styleElement.textContent = `.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }`;
-        // svgElement.insertBefore(styleElement, svgElement.firstChild);
+      const iconTags = iconsMetadata.find(
+        (iconMetadata) => iconMetadata.name === iconName,
+      ).tags;
+      svgElement.setAttribute("tags", iconTags.join(" "));
 
-        // // Serialize the SVG to a string
-        // const serializer = new XMLSerializer();
-        // // const svg = link.querySelector("svg");
-        // const svgString = serializer.serializeToString(svg);
+      const iconStyle = iconPack.styles.find((style) => {
+        return style.filter.test(iconName);
+      }).name;
 
+      const icon = {
+        id: iconId,
+        name: iconName,
+        style: iconStyle,
+        tags: iconTags,
+        symbol: symbol.outerHTML,
+      };
 
+      await window.extensionStore.addIcon(icon);
+    };
+  };
 
+  browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+    if (request.action === "replaceFavicon") {
+      // console.log(`sender`);
+      // console.dir(sender, { depth: null });
 
-        const iconName = symbol.id;
-        const iconId = `${iconPack.name}-${iconPack.version}-${iconName}`;
-        // svgElement.setAttribute("icon-id", iconId);
+      const siteConfigs = await window.extensionStore.getSiteConfigs();
 
-        const iconTags = iconsMetadata.find(
-          (iconMetadata) => iconMetadata.name === iconName,
-        ).tags;
-        svgElement.setAttribute("tags", iconTags.join(" "));
+      const siteConfigsOrder = getSiteConfigsOrder();
+      const sortedSiteConfigs = siteConfigsOrder
+        .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
+        .filter(Boolean);
 
-        const iconStyle = iconPack.styles.find((style) => {
-          return style.filter.test(iconName);
-        }).name;
+      // console.log(`sortedSiteConfigs`);
+      // console.dir(sortedSiteConfigs, { depth: null });
 
+      const siteConfig = sortedSiteConfigs.find((localSiteConfig) => {
+        if (!localSiteConfig.active) return false;
 
+        // console.log(`localSiteConfig.siteMatch`);
+        // console.dir(localSiteConfig.siteMatch);
 
+        // console.log(`!localSiteConfig.iconId && !localSiteConfig.uploadId`);
+        // console.dir(!localSiteConfig.iconId && !localSiteConfig.uploadId, { depth: null });
 
-        // const iconName = symbol.id;
-        // const iconId = `${iconPack.name}-${iconPack.version}-${iconName}`;
-        // symbol.setAttribute("icon-id", iconId);
+        if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false;
+        if (!localSiteConfig.siteMatch) return false;
 
-        // const iconTags = iconsMetadata.find(
-        //   (iconMetadata) => iconMetadata.name === iconName,
-        // ).tags;
-        // symbol.setAttribute("tags", iconTags.join(" "));
+        let siteMatch = localSiteConfig.siteMatch;
 
-        // const iconStyle = iconPack.styles.find((style) => {
-        //   return style.filter.test(iconName);
-        // }).name;
+        // console.log(`siteMatch`);
+        // console.dir(siteMatch, { depth: null });
 
+        if (localSiteConfig.matchType === 'Domain') {
+          const escapedDomain = siteMatch.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          // siteMatch = `^https?:\/\/([a-zA-Z0-9-]+\.)*${escapedDomain}(\/.*)?$`;
+          siteMatch = `.*${escapedDomain}.*`;
+        }
 
-        // svgElement.setAttribute("icon-name", iconName);
-        // svgElement.setAttribute("icon-pack-name", iconPack.name);
-        // svgElement.setAttribute("icon-pack-version", iconPack.version);
+        // console.log(`siteMatch`);
+        // console.dir(siteMatch, { depth: null });
 
+        try {
+          const regexp = new RegExp(siteMatch, 'i');
 
-        // symbol.removeAttribute("class");
-        // symbol.removeAttribute("id");
+          // console.log(`regexp`);
+          // console.dir(regexp, { depth: null });
 
-        // const styleElement = document.createElement('style');
-        // styleElement.textContent = `
-        //   .ionicon { fill: currentColor; stroke: currentColor; }
-        //   .ionicon-fill-none { fill: none; }
-        //   .ionicon-stroke-width { stroke-width: 32px; }
-        // `;
-        // symbol.insertBefore(styleElement, symbol.firstChild);
+          const matches = regexp.test(sender.url);
 
-        svgElement.appendChild(symbol);
+          // console.log(`matches`);
+          // console.dir(matches, { depth: null });
 
-        const serializer = new XMLSerializer();
-        // const svg = link.querySelector("svg");
-        // const symbolString = serializer.serializeToString(symbol);
-        const svgString = serializer.serializeToString(svgElement);
-        // const svgString = symbolString
-        //   .replace("<symbol", `<svg`)
-        //   .replace("</symbol>", "</svg>");
-
-        // console.log(`svgString`);
-        // console.dir(svgString, { depth: null });
-
-        // console.log(`iconName`);
-        // console.dir(iconName, { depth: null });
-
-        // // Encode the SVG string to create a Data URI
-        // const encodedSvg = encodeURIComponent(svgString);
-        // const dataUri = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
-
-        // // Store the Data URI for use
-        // svgDataUrls.push(dataUri);
-        // console.log(`SVG ${index + 1} Data URI:`, dataUri);
-
-        cacheIcon(
-          iconId,
-          {
-            name: iconName,
-            style: iconStyle,
-            tags: iconTags,
-            svg: svgString,
-            symbol: symbol.outerHTML,
-          },
-        );
+          return matches;
+        } catch (error) {
+          console.error("Error creating RegExp:", error);
+        }
       });
-    });
-});
 
-// function buildFaviconUrl({ baseUrl, iconName, iconStyleName } = {}) {
-//   return `${baseUrl}${iconName}${iconStyleName}.svg`;
-// }
+      if (!siteConfig) {
+        browser.tabs.sendMessage(sender.tab.id, {
+          action: "setFavicon",
+          imgUrl: null,
+        });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // console.log(`request.action`);
-  // console.dir(request.action, { depth: null });
+        return;
+      }
 
-  // console.log(`sender`);
-  // console.dir(sender, { depth: null });
+      // console.log(`siteConfig`);
+      // console.dir(siteConfig, { depth: null });
 
-  if (request.action === "replaceFavicon") {
-    const userSetting = userSettings.find((setting) => {
-      return setting.url === sender.origin;
-    });
-    const iconPack = iconPacks.find((pack) => {
-      return pack.name === userSetting.icon.packName;
-    });
-    const iconStyle = iconPack.styles.find((style) => {
-      return style.name === userSetting.icon.styleName;
-    });
+      let imgUrl = null;
 
-    // // const svgUrl = `${iconPack.svgUrl}${userSetting.icon.name}${iconStyle.value}.svg`;
-    // const svgUrl = buildFaviconUrl({
-    //   baseUrl: iconPack.svgUrl,
-    //   iconName: userSetting.icon.name,
-    //   iconStyleName: iconStyle.value,
-    // });
+      if (siteConfig.uploadId) {
+        const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
 
-    // console.log(`svgUrl`);
-    // console.dir(svgUrl);
+        // console.log(`upload`);
+        // console.dir(upload, { depth: null });
 
-    // fetch(svgUrl)
-    //   .then((response) => {
-    //     // console.log(`response`);
-    //     // console.dir(response, { depth: null });
+        imgUrl = upload.dataUri;
+      } else {
+        // console.log(`request.colorScheme`);
+        // console.dir(request.colorScheme);
 
-    //     if (!response.ok) throw new Error("Network response was not ok");
-    //     return response.text();
-    //   })
-    //   .then((svgString) => {
-    //     // console.log(`svgString`);
-    //     // console.dir(svgString, { depth: null });
-
-    //     // const blob = new Blob([svgString], { type: 'image/svg+xml' });
-    //     // const blobUrl = URL.createObjectURL(blob);
-
-    //     // console.log(`blobUrl`);
-    //     // console.dir(blobUrl, { depth: null });
-
-    //     // chrome.tabs.executeScript(sender.tab.id, {
-    //     //   code: `
-    //     //     const link = document.createElement('link');
-    //     //     link.id = 'favicon-packs-favicon';
-    //     //     link.rel = 'icon';
-    //     //     link.type = 'image/svg+xml';
-    //     //     link.href = '${blobUrl}';
-    //     //     document.head.appendChild(link);
-    //     //   `
-    //     // }, (result) => {
-    //     //   // console.log(`result`);
-    //     //   // console.dir(result, { depth: null });
-
-    //     //   if (chrome.runtime.lastError) {
-    //     //     console.error('Error executing script:', chrome.runtime.lastError);
-    //     //   } else {
-    //     //     console.log('Favicon script executed successfully');
-    //     //   }
-    //     // });
-
-    //     // console.log('After executeScript');
-
-    //     // chrome.tabs.sendMessage(sender.tab.id, { action: "setFavicon", svg: svgString });
-
-    //     const parser = new DOMParser();
-    //     const svgDoc = parser.parseFromString(svgString, "image/svg+xml");
-    //     const svgElement = svgDoc.documentElement;
-
-    //     // svgElement.setAttribute("fill", userSetting.icon.color);
-
-    //     switch (iconStyle.paint) {
-    //       case "fill":
-    //         svgElement.setAttribute("fill", userSetting.icon.color);
-    //         break;
-    //       case "color":
-    //         svgElement.style.setProperty("color", userSetting.icon.color);
-    //     }
-
-    //     const serializer = new XMLSerializer();
-    //     const updatedSvgString = serializer.serializeToString(svgElement);
-
-    //     console.log(`updatedSvgString`);
-    //     console.dir(updatedSvgString, { depth: null });
-
-    //     const encodedSvg = encodeURIComponent(updatedSvgString);
-
-    //     chrome.tabs.sendMessage(sender.tab.id, {
-    //       action: "setFavicon",
-    //       svg: encodedSvg,
-    //     });
-
-    //     // const encodedSvg = encodeURIComponent(request.svg);
-    //     // const dataUri = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
-
-    //     // const link = document.createElement('link');
-    //     // link.rel = 'icon';
-    //     // link.type = 'image/svg+xml';
-    //     // link.href = dataUri;
-    //     // link.id = 'favicon-packs-favicon';
-
-    //     // chrome.tabs.sendMessage(sender.tab.id, { action: "setFavicon", link });
-
-    //     console.log("After sendMessage");
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error fetching SVG:", error);
-    //   });
-
-    // const svgString = getCachedIcon();
-
-    getCachedIcon(`${userSetting.icon.packName}-${userSetting.icon.name}${iconStyle.value}`).then(
-      (iconObject) => {
-        // console.log(`getCachedIcon svgString`);
-        // console.dir(svgString, { depth: null });
-
-        if (iconObject) {
-          const svgString = iconObject.svg;
-
-          // console.log(`svgString`);
-          // console.dir(svgString, { depth: null });
-
-          const parser = new DOMParser();
-          const svgDoc = parser.parseFromString(svgString, "image/svg+xml");
-          const svgElement = svgDoc.documentElement;
-
-          // const styleElement = document.createElement('style');
-          // styleElement.textContent = `
-          //   .ionicon { fill: currentColor; stroke: currentColor; }
-          //   .ionicon-fill-none { fill: none; }
-          //   .ionicon-stroke-width { stroke-width: 32px; }
-          // `;
-          // svgElement.insertBefore(styleElement, svgElement.firstChild);
-
-          // console.log(`before svgElement`);
-          // console.dir(svgElement, { depth: null });
-
-          // switch (iconStyle.paint) {
-          //   case "fill":
-          //     svgElement.setAttribute("fill", userSetting.icon.color);
-          //     break;
-          //   case "color":
-          //     svgElement.style.setProperty("color", userSetting.icon.color);
-          // }
-
-          svgElement.style.setProperty("color", userSetting.icon.color);
-
-          // console.log(`after svgElement`);
-          // console.dir(svgElement, { depth: null });
-
-          const serializer = new XMLSerializer();
-          const updatedSvgString = serializer.serializeToString(svgElement);
-
-          // console.log(`updatedSvgString`);
-          // console.dir(updatedSvgString, { depth: null });
-
-          const encodedSvg = encodeURIComponent(updatedSvgString);
-
-          chrome.tabs.sendMessage(sender.tab.id, {
-            action: "setFavicon",
-            svg: encodedSvg,
-          });
-        } else {
-          console.log("Icon not found in cache.");
+        switch (request.colorScheme) {
+          case null:
+            break;
+          case "dark":
+            imgUrl = siteConfig.darkPngUrl;
+            break;
+          default:
+            imgUrl = siteConfig.lightPngUrl;
+            break;
         }
       }
-    );
-  }
-});
 
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//   if (changeInfo.status === 'complete' && tab.url) {
-//     const svgUrl = "https://unpkg.com/ionicons@7.4.0/dist/svg/accessibility-sharp.svg";
+      // console.log(`imgUrl`);
+      // console.dir(imgUrl, { depth: null });
 
-//     fetch(svgUrl)
-//       .then(response => {
-//         if (!response.ok) {
-//           throw new Error('Network response was not ok');
-//         }
-//         return response.text();
-//       })
-//       .then(svgString => {
-//         const blob = new Blob([svgString], { type: 'image/svg+xml' });
-//         const blobUrl = URL.createObjectURL(blob);
+      browser.tabs.sendMessage(sender.tab.id, {
+        action: "setFavicon",
+        imgUrl,
+      });
+    }
+  });
+}
 
-//         // Now we can use tabId here because it's in the same scope
-//         chrome.tabs.executeScript(tabId, {
-//           code: `
-//             const link = document.createElement('link');
-//             link.rel = 'icon';
-//             link.type = 'image/svg+xml';
-//             link.href = '${blobUrl}';
-//             link.id = 'favicon-packs-favicon'; // Add the ID here
-//             document.head.appendChild(link);
-//           `
-//         }, (result) => {
-//           console.log(``);
-//           console.dir(, { depth: null });
-
-//           if (chrome.runtime.lastError) {
-//             console.error('Error executing script:', chrome.runtime.lastError);
-//           } else {
-//             console.log('Favicon script executed successfully');
-//           }
-//         });
-//       })
-//       .catch(error => {
-//         console.error('Error fetching SVG:', error);
-//       });
-//   }
-// });
+void initialize();
