@@ -486,11 +486,13 @@ async function populateTableRow(siteConfig, insertion) {
   // Pattern Type column
   const patternTypeTag = newRow.querySelector('.type-cell sl-tag');
   patternTypeTag.innerText = siteConfig.patternType;
-  patternTypeTag.setAttribute('variant', siteConfig.patternType === 'Pattern Match' ? 'warning' : 'primary');
+
+  const variantValue = siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary';
+  patternTypeTag.setAttribute('variant', variantValue);
 
   const toggleTypeButton = newRow.querySelector('.toggle-type');
   toggleTypeButton.addEventListener('click', () => {
-    const patternType = siteConfig.patternType === 'Simple Match' ? 'Pattern Match' : 'Simple Match';
+    const patternType = siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match';
     updateSiteConfig({ id, patternType });
   });
 

@@ -189,31 +189,31 @@ async function initialize() {
       const siteConfig = sortedSiteConfigs.find((localSiteConfig) => {
         if (!localSiteConfig.active) return false;
 
-        // console.log(`localSiteConfig.siteMatch`);
-        // console.dir(localSiteConfig.siteMatch);
+        // console.log(`localSiteConfig.websitePattern`);
+        // console.dir(localSiteConfig.websitePattern);
 
         // console.log(`!localSiteConfig.iconId && !localSiteConfig.uploadId`);
         // console.dir(!localSiteConfig.iconId && !localSiteConfig.uploadId, { depth: null });
 
+        if (!localSiteConfig.websitePattern) return false;
         if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false;
-        if (!localSiteConfig.siteMatch) return false;
 
-        let siteMatch = localSiteConfig.siteMatch;
+        let websitePattern = localSiteConfig.websitePattern;
 
-        // console.log(`siteMatch`);
-        // console.dir(siteMatch, { depth: null });
+        // console.log(`websitePattern`);
+        // console.dir(websitePattern, { depth: null });
 
-        if (localSiteConfig.matchType === 'Domain') {
-          const escapedDomain = siteMatch.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-          // siteMatch = `^https?:\/\/([a-zA-Z0-9-]+\.)*${escapedDomain}(\/.*)?$`;
-          siteMatch = `.*${escapedDomain}.*`;
+        if (localSiteConfig.patternType === 'Simple Match') {
+          const escapedDomain = websitePattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          // websitePattern = `^https?:\/\/([a-zA-Z0-9-]+\.)*${escapedDomain}(\/.*)?$`;
+          websitePattern = `.*${escapedDomain}.*`;
         }
 
-        // console.log(`siteMatch`);
-        // console.dir(siteMatch, { depth: null });
+        // console.log(`websitePattern`);
+        // console.dir(websitePattern, { depth: null });
 
         try {
-          const regexp = new RegExp(siteMatch, 'i');
+          const regexp = new RegExp(websitePattern, 'i');
 
           // console.log(`regexp`);
           // console.dir(regexp, { depth: null });
