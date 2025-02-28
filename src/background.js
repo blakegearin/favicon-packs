@@ -1,68 +1,13 @@
 console.log("Favicon Packs: background.js loaded");
 
-const iconPacks = [
-  {
-    name: "Ionicons",
-    version: "7.4.0",
-    svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
-    metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
-    styles: [
-      {
-        name: "Outline",
-        value: "-outline",
-        paint: "color",
-        filter: /-outline/,
-      },
-      {
-        name: "Filled",
-        value: "",
-        paint: "fill",
-        filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
-      },
-      {
-        name: "Sharp",
-        value: "-sharp",
-        paint: "fill",
-        filter: /-sharp/,
-      },
-    ],
+Object.defineProperty(String.prototype, 'capitalize', {
+  value: function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
   },
-];
+  enumerable: false
+});
 
-const userSettings = [
-  {
-    url: "https://www.mozilla.org",
-    icon: {
-      packName: "Ionicons",
-      styleName: "Outline",
-      name: "thunderstorm",
-      color: "white",
-    },
-  },
-  {
-    url: "https://www.wikipedia.org",
-    icon: {
-      packName: "Ionicons",
-      styleName: "Outline",
-      name: "aperture",
-      color: "blue",
-    },
-  },
-  {
-    url: "https://duckduckgo.com",
-    icon: {
-      packName: "Ionicons",
-      styleName: "Filled",
-      name: "people-circle",
-      color: "purple",
-    },
-  },
-];
-
-async function fetchIconsMetadata(iconPackName) {
-  const iconPack = iconPacks.find((iconPack) => iconPack.name === iconPackName);
-  const metadataUrl = iconPack.metadataUrl;
-
+async function fetchIconsMetadata(metadataUrl) {
   let metadata;
 
   try {
@@ -96,12 +41,14 @@ function getSiteConfigsOrder() {
 async function initialize() {
   await window.extensionStore.initialize();
 
-  browser.browserAction.onClicked.addListener(function() {
+  browser.browserAction.onClicked.addListener(() => {
     browser.tabs.create({ url: browser.runtime.getURL("src/options/index.html") });
   });
 
+  const iconPacks = window.extensionStore.getIconPacks();
   for await (const iconPack of iconPacks) {
-    const iconsMetadata = await fetchIconsMetadata(iconPack.name);
+    const iconsMetadata = iconPack.metadataUrl ? await fetchIconsMetadata(iconPack.metadataUrl) : null;
+
     const response = await fetch(iconPack.svgUrl);
 
     // console.log(`response`);
@@ -109,66 +56,117 @@ async function initialize() {
 
     if (!response.ok) throw new Error("Network response was not ok");
 
-    const htmlString = await response.text();
+    const responseString = await response.text();
+    // console.log(`responseString`);
+    // console.dir(responseString, { depth: null });
 
-    // console.log(`htmlString`);
-    // console.dir(htmlString, { depth: null });
+    const fileType = response.headers.get("content-type").split(";")[0];
+
+    // console.log(`fileType`);
+    // console.dir(fileType, { depth: null });
 
     const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(htmlString, "text/html");
-    const htmlElement = htmlDoc.documentElement;
 
-    // console.log(`htmlElement`);
-    // console.dir(htmlElement, { depth: null });
+    const buildIconId = (iconPack, iconName) => `${iconPack.name}-${iconPack.version}-${iconName}`;
 
-    const svgElements = htmlElement.querySelectorAll("a > svg");
+    if (fileType === "text/html") {
+      const htmlDoc = parser.parseFromString(responseString, fileType);
+      const htmlElement = htmlDoc.documentElement;
 
-    for await (const svgElement of svgElements) {
-      svgElement.setAttribute("viewBox", "0 0 512 512");
+      // console.log(`htmlElement`);
+      // console.dir(htmlElement, { depth: null });
 
-      const symbolId = svgElement.children[0].getAttribute('href');
+      const svgElements = htmlElement.querySelectorAll("a > svg");
 
-      // Fix PR: https://github.com/ionic-team/ionicons/pull/1433
-      const brokenIcons = [
-        "chevron-expand",
-        "chevron-expand-outline",
-        "chevron-expand-sharp",
-        "logo-behance",
-        "logo-bitbucket",
-        "logo-docker",
-        "logo-edge",
-        "logo-facebook",
-        "logo-npm",
-        "logo-paypal",
-        "logo-soundcloud",
-        "logo-venmo",
-      ];
+      for await (const svgElement of svgElements) {
+        svgElement.setAttribute("viewBox", "0 0 512 512");
 
-      if (brokenIcons.includes(symbolId.replace('#', ''))) continue;
+        const symbolId = svgElement.children[0].getAttribute('href');
 
-      const symbol = htmlElement.querySelector(symbolId);
-      const iconName = symbol.id;
-      const iconId = `${iconPack.name}-${iconPack.version}-${iconName}`;
+        // Fix PR: https://github.com/ionic-team/ionicons/pull/1433
+        const brokenIcons = [
+          "chevron-expand",
+          "chevron-expand-outline",
+          "chevron-expand-sharp",
+          "logo-behance",
+          "logo-bitbucket",
+          "logo-docker",
+          "logo-edge",
+          "logo-facebook",
+          "logo-npm",
+          "logo-paypal",
+          "logo-soundcloud",
+          "logo-venmo",
+        ];
 
-      const iconTags = iconsMetadata.find(
-        (iconMetadata) => iconMetadata.name === iconName,
-      ).tags;
-      svgElement.setAttribute("tags", iconTags.join(" "));
+        if (brokenIcons.includes(symbolId.replace('#', ''))) continue;
 
-      const iconStyle = iconPack.styles.find((style) => {
-        return style.filter.test(iconName);
-      }).name;
+        const symbol = htmlElement.querySelector(symbolId);
+        const iconName = symbol.id;
+        const iconId = buildIconId(iconPack, iconName);
 
-      const icon = {
-        id: iconId,
-        name: iconName,
-        style: iconStyle,
-        tags: iconTags,
-        symbol: symbol.outerHTML,
+        symbol.id = iconId;
+
+        const iconTags = iconsMetadata.find(
+          (iconMetadata) => iconMetadata.name === iconName,
+        ).tags;
+        svgElement.setAttribute("tags", iconTags.join(" "));
+
+        const iconStyle = iconPack.styles.find((style) => {
+          return style.filter.test(iconName);
+        }).name;
+
+        const icon = {
+          id: iconId,
+          iconPackName: iconPack.name,
+          name: iconName,
+          style: iconStyle,
+          tags: iconTags,
+          symbol: symbol.outerHTML,
+        };
+
+        await window.extensionStore.addIcon(icon);
       };
+    } else if (fileType === "application/json") {
+      const iconsObject = JSON.parse(responseString);
 
-      await window.extensionStore.addIcon(icon);
-    };
+      // console.log(`iconsObject`);
+      // console.dir(iconsObject, { depth: null });
+
+      for (const [originalIconName, iconMetadata] of Object.entries(iconsObject)) {
+        // console.log(`iconMetadata`);
+        // console.dir(iconMetadata, { depth: null });
+
+        const iconTags = iconMetadata?.search?.terms || [];
+        iconTags.push(originalIconName);
+
+        const iconStyles = iconMetadata?.svgs?.classic;
+
+        // console.log(`iconStyles`);
+        // console.dir(iconStyles, { depth: null });
+
+        for (const [iconStyle, iconStyleMetadata] of Object.entries(iconStyles)) {
+          const iconName = `${originalIconName}-${iconStyle}`;
+          const iconId = buildIconId(iconPack, iconName);
+
+          // Convert svg to symbol; crude but simple & effective
+          let symbolString = iconStyleMetadata.raw
+            .replace('<svg', `<symbol id="${iconId}" class="font-awesome"`)
+            .replace('svg>', 'symbol>');
+
+          const icon = {
+            id: iconId,
+            iconPackName: iconPack.name,
+            name: iconName,
+            style: iconStyle.capitalize(),
+            tags: iconTags,
+            symbol: symbolString,
+          };
+
+          await window.extensionStore.addIcon(icon);
+        }
+      }
+    }
   };
 
   browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
@@ -191,9 +189,6 @@ async function initialize() {
 
         // console.log(`localSiteConfig.websitePattern`);
         // console.dir(localSiteConfig.websitePattern);
-
-        // console.log(`!localSiteConfig.iconId && !localSiteConfig.uploadId`);
-        // console.dir(!localSiteConfig.iconId && !localSiteConfig.uploadId, { depth: null });
 
         if (!localSiteConfig.websitePattern) return false;
         if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false;

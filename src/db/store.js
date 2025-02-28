@@ -71,6 +71,56 @@ class ExtensionStore {
     });
   }
 
+  getIconPacks() {
+    return [
+      {
+        name: "Ionicons",
+        version: "7.4.0",
+        svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
+        metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
+        styles: [
+          {
+            name: "Outline",
+            value: "-outline",
+            filter: /-outline/,
+          },
+          {
+            name: "Filled",
+            value: "",
+            filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
+          },
+          {
+            name: "Sharp",
+            value: "-sharp",
+            filter: /-sharp/,
+          },
+        ],
+      },
+      {
+        name: "Font_Awesome",
+        version: "6.7.2",
+        svgUrl: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/metadata/icon-families.json",
+        styles: [
+          {
+            name: "Regular",
+            value: "-regular",
+            filter: /-regular/,
+          },
+          {
+            name: "Solid",
+            value: "-solid",
+            filter: /-solid/,
+          },
+          {
+            name: "Brands",
+            value: "-brand",
+            filter: /-brand/,
+          },
+        ],
+      },
+    ];
+  }
+
   // Methods for siteConfigs
   async addSiteConfig(siteConfig) {
     const configWithId = {

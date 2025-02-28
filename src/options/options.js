@@ -44,6 +44,7 @@ function svgToPngBase64(svgString) {
 
     img.onerror = function(error) {
       URL.revokeObjectURL(url);
+      console.error(error);
       reject(new Error('Failed to load SVG image'));
     };
 
@@ -61,9 +62,11 @@ function buildUploadImg(upload) {
 }
 
 function buildSvgSprite(icon, size = 40) {
+  // console.log("buildSvgSprite");
+
   const svgNS = "http://www.w3.org/2000/svg";
 
-  // Icon symbols don't work with createElement
+  /// svg tags don't work with createElement
   const iconSvg = document.createElementNS(svgNS, "svg");
   iconSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   iconSvg.setAttribute("viewBox", "0 0 512 512");
@@ -72,10 +75,10 @@ function buildSvgSprite(icon, size = 40) {
   iconSvg.setAttribute("width", size.toString());
   iconSvg.setAttribute("height", size.toString());
 
-  // Icon symbols don't work with createElement
+  // use tags don't work with createElement
   const iconUse = document.createElementNS(svgNS, 'use');
-  iconUse.setAttribute("href", `#${icon.name}`);
-  iconUse.setAttribute("xlink:href", `#${icon.name}`);
+  iconUse.setAttribute("href", `#${icon.id}`);
+  iconUse.setAttribute("xlink:href", `#${icon.id}`);
 
   iconSvg.appendChild(iconUse);
 
@@ -83,15 +86,26 @@ function buildSvgSprite(icon, size = 40) {
 }
 
 function createFaviconSprite(icon, siteConfig, theme = null) {
+  // console.log("createFaviconSprite");
+
+  // console.log(`theme`);
+  // console.dir(theme, { depth: null });
+
   const svgSprite = buildSvgSprite(icon, 1000);
   svgSprite.innerHTML += icon.symbol;
 
   const styleElement = document.createElement('style');
-  styleElement.textContent = `.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }`;
-  svgSprite.insertBefore(styleElement, svgSprite.firstChild);
 
-  // console.log(`theme`);
-  // console.dir(theme, { depth: null });
+  switch (icon.iconPackName) {
+    case 'Ionicons':
+      styleElement.textContent = `.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }`;
+      break;
+    case 'Font_Awesome':
+      styleElement.textContent = `.font-awesome { fill: currentColor; stroke: currentColor; }`;
+      break;
+  }
+
+  svgSprite.insertBefore(styleElement, svgSprite.firstChild);
 
   if (theme === "dark") {
     svgSprite.style.setProperty("color", siteConfig.darkThemeColor);
@@ -101,6 +115,9 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
 
   const serializer = new XMLSerializer();
   const updatedSvgString = serializer.serializeToString(svgSprite);
+
+  // console.log(`updatedSvgString`);
+  // console.dir(updatedSvgString, { depth: null });
 
   return updatedSvgString;
 }
@@ -113,13 +130,14 @@ async function populateDrawerIcons() {
   // console.log(`icons`);
   // console.dir(icons, { depth: null });
 
-  for (const icon of icons) {
+  const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name));
+  for (const icon of sortedIcons) {
     const tooltip = document.createElement('sl-tooltip');
-    tooltip.setAttribute('content', icon.name);
+    tooltip.setAttribute('content', `${icon.iconPackName.replace('_', ' ')} ${icon.name}`);
 
     if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '));
 
-    tooltip.classList.add(`icon-style-${icon.style}`);
+    tooltip.classList.add(`icon-style-${icon.iconPackName}-${icon.style}`);
 
     const iconDiv = document.createElement('div');
     iconDiv.classList.add('icon-list-item');
@@ -150,8 +168,17 @@ async function populateDrawerIcons() {
   const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list');
   iconList.replaceChildren(iconListFragment);
 
+  // console.log(`iconSymbols`);
+  // console.dir(iconSymbols, { depth: null });
+
   for (let [selector, symbols] of Object.entries(iconSymbols)) {
     const iconPackSvg = document.querySelector(selector);
+
+    if (!iconPackSvg) {
+      console.error(`Icon pack SVG not found: ${selector}`);
+      continue;
+    }
+
     iconPackSvg.innerHTML = symbols.join('');
   };
 }
@@ -297,21 +324,39 @@ function getPriority(id) {
 }
 
 function filterByStyle(styleName) {
-  console.log('filterByStyle')
-  console.log(styleName)
+  // console.log('filterByStyle')
 
-  document.documentElement.style.setProperty(
-    '--icon-style-outline',
-    ['Outline', 'All'].includes(styleName) ? 'block' : 'none'
-  );
-  document.documentElement.style.setProperty(
-    '--icon-style-filled',
-    ['Filled', 'All'].includes(styleName) ? 'block' : 'none'
-  );
-  document.documentElement.style.setProperty(
-    '--icon-style-sharp',
-    ['Sharp', 'All'].includes(styleName) ? 'block' : 'none'
-  );
+  // console.log(`styleName`);
+  // console.dir(styleName, { depth: null });
+
+  const iconStyles = [
+    'Ionicons-Outline',
+    'Ionicons-Filled',
+    'Ionicons-Sharp',
+    'Font_Awesome-Regular',
+    'Font_Awesome-Solid',
+    'Font_Awesome-Brands',
+  ];
+
+  for (const iconStyle of iconStyles) {
+    document.documentElement.style.setProperty(
+      `--icon-style-${iconStyle}`,
+      ['All', iconStyle].includes(styleName) ? 'block' : 'none'
+    );
+  }
+
+  // document.documentElement.style.setProperty(
+  //   '--icon-style-outline',
+  //   ['Outline', 'All'].includes(styleName) ? 'block' : 'none'
+  // );
+  // document.documentElement.style.setProperty(
+  //   '--icon-style-filled',
+  //   ['Filled', 'All'].includes(styleName) ? 'block' : 'none'
+  // );
+  // document.documentElement.style.setProperty(
+  //   '--icon-style-sharp',
+  //   ['Sharp', 'All'].includes(styleName) ? 'block' : 'none'
+  // );
 }
 
 function filterDrawerIcons(filter) {
@@ -553,6 +598,8 @@ async function populateTableRow(siteConfig, insertion) {
 
   if (siteConfig.iconId) {
     icon = await window.extensionStore.getIconById(siteConfig.iconId);
+    if (!icon) console.error(`Icon not found: ${siteConfig.iconId}`);
+
     const svgSprite = buildSvgSprite(icon);
 
     newRow.querySelectorAll('.icon-value').forEach((iconValueElement) => {
@@ -655,6 +702,7 @@ async function populateTableRow(siteConfig, insertion) {
       ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = '';
 
       if (siteConfig.iconId) {
+        console.log('667');
         ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon));
       }
     }
@@ -802,6 +850,37 @@ document.addEventListener("DOMContentLoaded", async function() {
   // Icon selector drawer
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector');
 
+  const iconTypesSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-types');
+
+  const iconPacks = window.extensionStore.getIconPacks();
+  for(const iconPack of iconPacks) {
+    // Create an svg element for each icon pack to store the icon symbols
+
+    // svg tags don't work with createElement
+    const svgNS = "http://www.w3.org/2000/svg";
+    const iconPackSvg = document.createElementNS(svgNS, "svg");
+
+    iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
+    iconPackSvg.setAttribute("icon-pack-version", iconPack.version);
+    iconPackSvg.style.display = "none";
+
+    document.body.appendChild(iconPackSvg);
+
+    // Add icon pack styles to the select element
+    for (const style of iconPack.styles) {
+      const selectOption = document.createElement('sl-option');
+
+      selectOption.setAttribute('value', style.value);
+      selectOption.textContent = `${iconPack.name.replace('_', ' ')} ${style.name}`;
+      selectOption.addEventListener('click', () => filterByStyle(`${iconPack.name}-${style.name}`));
+
+      iconTypesSelect.appendChild(selectOption);
+    };
+
+    const selectAllOption = iconTypesSelect.querySelector('sl-option[value="all"]');
+    selectAllOption.addEventListener('click', () => filterByStyle('All'));
+  };
+
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group');
   iconDrawerTabGroup.addEventListener('sl-tab-show', (event) => {
     openTabPanels(event.detail.name);
@@ -901,47 +980,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     document.querySelector('#pattern-types').show();
   });
 
-  const iconPacks = [
-    {
-      name: "Ionicons",
-      svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
-      metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
-      styles: [
-        {
-          name: "Outline",
-          value: "-outline",
-          filter: /-outline/,
-        },
-        {
-          name: "Filled",
-          value: "",
-          filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
-        },
-        {
-          name: "Sharp",
-          value: "-sharp",
-          filter: /-sharp/,
-        },
-      ],
-    },
-  ];
-
-  const iconTypesSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-types');
-  iconPacks.forEach((iconPack) => {
-    iconPack.styles.forEach((style) => {
-      const selectOption = document.createElement('sl-option');
-
-      selectOption.setAttribute('value', style.value);
-      selectOption.textContent = style.name;
-      selectOption.addEventListener('click', () => filterByStyle(style.name));
-
-      iconTypesSelect.appendChild(selectOption);
-    });
-
-    const selectAllOption = iconTypesSelect.querySelector('sl-option[value="all"]');
-    selectAllOption.addEventListener('click', () => filterByStyle('All'));
-  });
-
   const siteConfigs = await window.extensionStore.getSiteConfigs();
 
   await populateTable(siteConfigs);
@@ -965,9 +1003,9 @@ document.addEventListener("DOMContentLoaded", async function() {
     const checkboxes = document.querySelectorAll('tr:not(#template-row) sl-checkbox.select-all-target');
     const totalCheckboxes = checkboxes.length;
 
-    checkboxes.forEach(checkbox => {
+    for (const checkbox of checkboxes) {
       if (checkbox.hasAttribute('checked')) checkedCount++;
-    });
+    }
 
     if (checkedCount === 0) {
       selectAllButton.removeAttribute('checked');
@@ -1110,10 +1148,10 @@ document.addEventListener("DOMContentLoaded", async function() {
   document.querySelector('#deactivate-action-button').addEventListener('click', async () => {
     const { rowsChecked } = getRowsChecked();
 
-    rowsChecked.forEach(row => {
+    for (const row of rowsChecked) {
       row.querySelector('.active-cell sl-switch[checked]')?.click();
       row.querySelector('sl-checkbox').removeAttribute('checked');
-    });
+    };
   });
 
   document.querySelector('#duplicate-action-button').addEventListener('click', async () => {

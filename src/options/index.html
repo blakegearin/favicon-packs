@@ -24,8 +24,6 @@
 </head>
 
 <body>
-  <svg icon-pack-name="Ionicons" icon-pack-version="7.4.0" style="display: none;"></svg>
-
   <div>
     <div id="loading-overlay">
       <sl-spinner class="sl-spinner" />
@@ -563,17 +561,18 @@
       <strong>This cannot be undone.</strong><br />
     </sl-alert>
 
-  <div
-    class="dialog-footer"
-    slot="footer"
-  >
-    <sl-button id="delete-cancel-button" outline>
-      Cancel
-    </sl-button>
+    <div
+      class="dialog-footer"
+      slot="footer"
+    >
+      <sl-button id="delete-cancel-button" outline>
+        Cancel
+      </sl-button>
 
-    <sl-button id="delete-all-button" variant="danger">
-      Delete
-    </sl-button>
+      <sl-button id="delete-all-button" variant="danger">
+        Delete
+      </sl-button>
+    </div>
   </sl-dialog>
 
   <script src="../db/store.js"></script>

@@ -380,24 +380,42 @@ sl-radio
 /* Icon style */
 :root
 {
-  --icon-style-outline: block;
-  --icon-style-filled: block;
-  --icon-style-sharp: block;
+  --icon-style-Ionicons-Outline: block;
+  --icon-style-Ionicons-Filled: block;
+  --icon-style-Ionicons-Sharp: block;
+  --icon-style-Font_Awesome-Regular: block;
+  --icon-style-Font_Awesome-Solid: block;
+  --icon-style-Font_Awesome-Brands: block;
 }
 
-.icon-style-Outline
+.icon-style-Ionicons-Outline
 {
-  display: var(--icon-style-outline);
+  display: var(--icon-style-Ionicons-Outline);
 }
 
-.icon-style-Filled
+.icon-style-Ionicons-Filled
 {
-  display: var(--icon-style-filled);
+  display: var(--icon-style-Ionicons-Filled);
 }
 
-.icon-style-Sharp
+.icon-style-Ionicons-Sharp
 {
-  display: var(--icon-style-sharp);
+  display: var(--icon-style-Ionicons-Sharp);
+}
+
+.icon-style-Font_Awesome-Regular
+{
+  display: var(--icon-style-Font_Awesome-Regular);
+}
+
+.icon-style-Font_Awesome-Solid
+{
+  display: var(--icon-style-Font_Awesome-Solid);
+}
+
+.icon-style-Font_Awesome-Brands
+{
+  display: var(--icon-style-Font_Awesome-Brands);
 }
 
 .drawer-footer,
@@ -408,7 +426,9 @@ sl-radio
 }
 
 /* Ionicons */
-.ionicon {
+.ionicon,
+.font-awesome
+{
   fill: currentColor;
   stroke: currentColor;
 }
