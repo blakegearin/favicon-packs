@@ -47,9 +47,12 @@ async function initialize() {
 
   const iconPacks = window.extensionStore.getIconPacks();
   for await (const iconPack of iconPacks) {
-    const iconsMetadata = iconPack.metadataUrl ? await fetchIconsMetadata(iconPack.metadataUrl) : null;
+    const iconsMetadata =
+      iconPack.metadataUrl ?
+      await fetchIconsMetadata(iconPack.metadataUrl.replace("{VERSION}", iconPack.version)) :
+      null;
 
-    const response = await fetch(iconPack.svgUrl);
+    const response = await fetch(iconPack.svgUrl.replace("{VERSION}", iconPack.version));
 
     // console.log(`response`);
     // console.dir(response, { depth: null });
@@ -249,15 +252,40 @@ async function initialize() {
         // console.log(`request.colorScheme`);
         // console.dir(request.colorScheme);
 
+        const settingsMetadata = window.extensionStore.getSettingsMetadata();
+
+        // console.log(`settingsMetadata`);
+        // console.dir(settingsMetadata, { depth: null });
+
+        const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue();
+
+        // console.log(`darkThemeEnabled`);
+        // console.dir(darkThemeEnabled, { depth: null });
+
+        const lightThemeEnabled = settingsMetadata.lightThemeEnabled.getValue();
+
+        // console.log(`lightThemeEnabled`);
+        // console.dir(lightThemeEnabled, { depth: null });
+
         switch (request.colorScheme) {
           case null:
             break;
           case "dark":
-            imgUrl = siteConfig.darkPngUrl;
+            if (darkThemeEnabled) imgUrl = siteConfig.darkPngUrl;
             break;
           default:
-            imgUrl = siteConfig.lightPngUrl;
+            if (lightThemeEnabled) imgUrl = siteConfig.lightPngUrl;
             break;
+        }
+
+        console.log(`imgUrl`);
+        console.dir(imgUrl, { depth: null });
+
+        console.log(`!imgUrl && !darkThemeEnabled && !lightThemeEnabled`);
+        console.dir(!imgUrl && !darkThemeEnabled && !lightThemeEnabled, { depth: null });
+
+        if (!imgUrl && !darkThemeEnabled && !lightThemeEnabled) {
+          imgUrl = siteConfig.anyPngUrl;
         }
       }
 

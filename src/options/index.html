@@ -31,12 +31,25 @@
   </div>
 
   <div id="icon-toolbar">
-    <a href="https://github.com/blakegearin/favicon-packs" title="View on GitHub" target="_blank">
-      <sl-icon name="github"></sl-icon>
+    <sl-icon-button id="open-settings-button" name="gear-fill" style="font-size: 1.25rem;"></sl-icon-button>
+
+    <a
+      href="https://github.com/blakegearin/favicon-packs"
+      title="View on GitHub"
+      target="_blank"
+      style="padding: 0;"
+    >
+      <sl-icon-button name="github" ></sl-icon-button>
     </a>
 
     <sl-dropdown id="theme-selector" placement="bottom-end" distance="3">
-      <sl-button slot="trigger" size="small" variant="text" caret title="Press \ to toggle">
+      <sl-button
+        slot="trigger"
+        size="small"
+        variant="text"
+        title="Press \ to toggle"
+        caret
+      >
         <sl-icon class="only-light" name="sun-fill" aria-display-none="true" library="default"></sl-icon>
         <sl-icon class="only-dark" name="moon-fill" aria-display-none="true" library="default"></sl-icon>
       </sl-button>
@@ -112,14 +125,14 @@
             Priority
           </th>
 
-          <th class="center">
+          <th class="center width-content">
             <div id="pattern-type-header">
               Pattern Type
               <sl-icon-button name="info-circle"></sl-icon-button>
             </div>
           </th>
 
-          <th class="min-width">
+          <th class="width-auto">
             Website Pattern
           </th>
 
@@ -127,12 +140,16 @@
             Icon
           </th>
 
-          <th class="center">
+          <th class="center width-content light-theme-display">
             Light Theme
           </th>
 
-          <th class="center">
+          <th class="center width-content dark-theme-display">
             Dark Theme
+          </th>
+
+          <th class="center width-content any-theme-display">
+            Any Theme
           </th>
 
           <th class="center">
@@ -176,14 +193,21 @@
             <sl-skeleton class="square" effect="sheen"></sl-skeleton>
           </td>
 
-          <td class="center">
+          <td class="center light-theme-display">
             <div class="center-cell color-cell">
               <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
               <sl-copy-button disabled></sl-copy-button>
             </div>
           </td>
 
-          <td class="center">
+          <td class="center dark-theme-display">
+            <div class="center-cell color-cell">
+              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
+              <sl-copy-button disabled></sl-copy-button>
+            </div>
+          </td>
+
+          <td class="center any-theme-display">
             <div class="center-cell color-cell">
               <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
               <sl-copy-button disabled></sl-copy-button>
@@ -267,7 +291,7 @@
             </div>
           </td>
 
-          <td class="center">
+          <td class="center light-theme-display">
             <div class="center-cell color-cell">
               <sl-color-picker
                 class="light-theme-color-picker light-theme-color-value"
@@ -284,7 +308,7 @@
             </div>
           </td>
 
-          <td class="center">
+          <td class="center dark-theme-display">
             <div class="center-cell color-cell">
               <sl-color-picker
                 class="dark-theme-color-picker dark-theme-color-value"
@@ -301,13 +325,32 @@
             </div>
           </td>
 
+          <td class="center any-theme-display">
+            <div class="center-cell color-cell">
+              <sl-color-picker
+                class="any-theme-color-picker any-theme-color-value"
+                label="Select a color"
+                swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+              ></sl-color-picker>
+
+              <sl-copy-button
+                class="any-theme-color-value"
+                copy-label="Click to copy"
+                error-label="Whoops, your browser doesn't support this!"
+                success-label="Copied"
+              ></sl-copy-button>
+            </div>
+          </td>
+
           <td class="center favicon-cell">
             <div class="center-cell">
-              <div class="favicon-value light-theme-color-style">
-              </div>
+              <div class="favicon-value icon light-theme-display light-theme-color-style"></div>
 
-              <div class="favicon-value dark-theme-color-style">
-              </div>
+              <div class="favicon-value icon dark-theme-display dark-theme-color-style"></div>
+
+              <div class="favicon-value icon any-theme-display any-theme-color-style"></div>
+
+              <div class="favicon-value image-display"></div>
             </div>
           </td>
 
@@ -574,6 +617,120 @@
       </sl-button>
     </div>
   </sl-dialog>
+
+  <sl-drawer id="settings-dialog" label="Settings" placement="bottom" style="--size: 60vh;">
+    <sl-tab-group>
+      <sl-tab slot="nav" panel="general">
+        General
+      </sl-tab>
+
+      <sl-tab slot="nav" panel="icon-packs">
+        Icon Packs
+      </sl-tab>
+
+      <sl-tab-panel name="general">
+        <table id="tableSettings">
+          <tbody>
+            <tr>
+              <td class="center width-content">
+                <div class="center-cell">
+                  <sl-switch
+                    id="light-theme-switch"
+                    size="large"
+                  ></sl-switch>
+                </div>
+              </td>
+
+              <td class="width-auto">
+                <div>
+                  Light Theme
+                </div>
+              </td>
+
+              <td class="center width-content">
+                <sl-color-picker
+                  id="default-light-theme-color"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+              </td>
+
+              <td class="width-auto">
+                <div>
+                  Default Color for Light Theme
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="center width-content">
+                <div class="center-cell">
+                  <sl-switch
+                    id="dark-theme-switch"
+                    size="large"
+                  ></sl-switch>
+                </div>
+              </td>
+
+              <td class="width-auto">
+                <div>
+                  Dark Theme
+                </div>
+              </td>
+
+              <td class="center width-content">
+                <sl-color-picker
+                  id="default-dark-theme-color"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+              </td>
+
+              <td class="width-auto">
+                <div>
+                  Default Color for Dark Theme
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="center width-content">
+                <div class="center-cell">
+                  <sl-switch
+                    id="any-theme-switch"
+                    size="large"
+                    disabled
+                  ></sl-switch>
+                </div>
+              </td>
+
+              <td class="width-auto">
+                Any Theme (Fallback)
+              </td>
+
+              <td class="center width-content">
+                <sl-color-picker
+                  id="default-any-theme-color"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+              </td>
+
+              <td class="width-auto">
+                <div>
+                  Default Color for Any Theme
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </sl-tab-panel>
+
+      <sl-tab-panel name="icon-packs">
+        This is the custom tab panel.
+      </sl-tab-panel>
+    </sl-tab-group>
+  </sl-drawer>
 
   <script src="../db/store.js"></script>
   <script src="options.js"></script>

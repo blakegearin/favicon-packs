@@ -150,8 +150,8 @@ console.log("Favicon Packs: content.js loaded");
   // Listen for favicon updates from background script
   browser.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
     if (request.action === "setFavicon") {
-      console.log(`request.imgUrl`);
-      console.dir(request.imgUrl, { depth: null });
+      // console.log(`request.imgUrl`);
+      // console.dir(request.imgUrl, { depth: null });
 
       // Return early if imgUrl is null
       if (!request.imgUrl) {

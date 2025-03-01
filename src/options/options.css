@@ -1,6 +1,9 @@
 :root
 {
   --sl-input-spacing-medium: 0.5rem;
+  --light-theme-display: table-cell;
+  --dark-theme-display: table-cell;
+  --any-theme-display: none;
 }
 
 :root,
@@ -54,14 +57,36 @@ table {
   background: var(--table-background)
 }
 
-table#siteConfigs th:not(.min-width)
+table#siteConfigs th:not(.width-auto)
 {
   width: 1%;
 }
 
-table#siteConfigs th.min-width
+table#tableSettings
 {
-  width: auto;
+  background: transparent;
+  table-layout: auto;
+  left: 25%;
+  position: fixed;
+}
+
+#tableSettings tr,
+#tableSettings td,
+#tableSettings th
+{
+  border: 0;
+  height: 50px;
+}
+
+table#tableSettings td:not(.width-auto)
+{
+  width: 1%;
+}
+
+table th.width-content,
+table td.width-content
+{
+  min-width: max-content;
 }
 
 tr, td, th
@@ -377,6 +402,21 @@ sl-radio
   justify-content: space-between;
 }
 
+.light-theme-display
+{
+  display: var(--light-theme-display);
+}
+
+.dark-theme-display
+{
+  display: var(--dark-theme-display);
+}
+
+.any-theme-display
+{
+  display: var(--any-theme-display);
+}
+
 /* Icon style */
 :root
 {
@@ -425,6 +465,11 @@ sl-radio
   justify-content: space-between;
 }
 
+#settings-dialog
+{
+  --width: 50vw;
+}
+
 /* Ionicons */
 .ionicon,
 .font-awesome
@@ -451,6 +496,8 @@ sl-radio
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
   padding: 0.125rem 0.25rem;
+  align-items: center;
+  gap: 2px;
 }
 
 #icon-toolbar button,
@@ -467,7 +514,7 @@ sl-radio
   font-size: 1.25rem;
   color: black;
   text-decoration: none;
-  padding: 0.5rem;
+  padding: 0;
   margin: 0;
   cursor: pointer;
 }
@@ -490,6 +537,12 @@ sl-radio
 #theme-selector sl-button::part(base)
 {
   color: black;
+}
+
+#theme-selector sl-button:hover::part(label),
+#theme-selector sl-button:hover::part(caret)
+{
+  color: var(--sl-color-primary-600);
 }
 
 #theme-selector sl-button::part(label)
@@ -522,7 +575,7 @@ sl-icon-button
 #icon-toolbar a:not(:last-child),
 #icon-toolbar button:not(:last-child)
 {
-  margin-right: 0.25rem;
+  margin-right: 0.1rem;
 }
 
 @media screen and (max-width: 900px) {
@@ -595,7 +648,7 @@ sl-icon-button.delete-upload::part(base):hover
   color: var(--sl-color-danger-600) !important;
 }
 
-sl-tab-group > *
+sl-tab
 {
   width: 50%;
   text-align: center;

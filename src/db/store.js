@@ -75,9 +75,8 @@ class ExtensionStore {
     return [
       {
         name: "Ionicons",
-        version: "7.4.0",
-        svgUrl: "https://unpkg.com/ionicons@7.4.0/dist/cheatsheet.html",
-        metadataUrl: "https://unpkg.com/ionicons@7.4.0/dist/ionicons.json",
+        svgUrl: "https://unpkg.com/ionicons@{VERSION}/dist/cheatsheet.html",
+        metadataUrl: "https://unpkg.com/ionicons@{VERSION}/dist/ionicons.json",
         styles: [
           {
             name: "Outline",
@@ -95,11 +94,11 @@ class ExtensionStore {
             filter: /-sharp/,
           },
         ],
+        version: "7.3.1",
       },
       {
         name: "Font_Awesome",
-        version: "6.7.2",
-        svgUrl: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/metadata/icon-families.json",
+        svgUrl: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{VERSION}/metadata/icon-families.json",
         styles: [
           {
             name: "Regular",
@@ -117,8 +116,221 @@ class ExtensionStore {
             filter: /-brand/,
           },
         ],
+        version: "6.7.2",
       },
     ];
+  }
+
+  checkAnyThemeEnabled() {
+    const lightThemeHidden = document.documentElement.style.getPropertyValue('--light-theme-display') === 'none';
+    const darkThemeHidden = document.documentElement.style.getPropertyValue('--dark-theme-display') === 'none';
+
+    const anyThemeEnabled = lightThemeHidden && darkThemeHidden;
+
+    document.documentElement.style.setProperty(
+      '--any-theme-display',
+      anyThemeEnabled ? 'table-cell' : 'none',
+    );
+
+    const anyThemeToggleId = "#any-theme-switch";
+    const toggleElement = document.querySelector(anyThemeToggleId);
+    if (toggleElement) toggleElement.checked = anyThemeEnabled;
+
+    // this.getSetting('anyThemeEnabled').apply(anyTheme);
+  }
+
+  getSettingsMetadata() {
+    return {
+      lightThemeEnabled: {
+        getValue: () => {
+          const storageKey = "lightThemeEnabled";
+          const existingValue = localStorage.getItem(storageKey);
+          return existingValue?.toString() === 'true';
+        },
+        initialize: () => {
+          const storageKey = "lightThemeEnabled";
+          const inputId = "#light-theme-switch";
+          const cssVariable = "--light-theme-display";
+          const defaultValue = true;
+
+          const apply = (value) => {
+            const isEnabled = value.toString() === 'true';
+            // console.log(`Setting ${storageKey} to ${isEnabled}`);
+
+            localStorage.setItem(storageKey, isEnabled);
+
+            const inputElement = document.querySelector(inputId);
+            if (inputElement) inputElement.checked = isEnabled;
+
+            document.documentElement.style.setProperty(
+              cssVariable,
+              isEnabled ? "table-cell" : "none"
+            );
+
+            this.checkAnyThemeEnabled();
+          }
+
+          const existingValue = localStorage.getItem(storageKey);
+          apply(existingValue || defaultValue);
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.addEventListener("sl-change", (event) => {
+            const isEnabled = event.target.checked;
+            apply(isEnabled);
+          });
+        }
+      },
+      darkThemeEnabled: {
+        getValue: () => {
+          const storageKey = "darkThemeEnabled";
+          const existingValue = localStorage.getItem(storageKey);
+          return existingValue?.toString() === 'true';
+        },
+        initialize: () => {
+          const storageKey = "darkThemeEnabled";
+          const inputId = "#dark-theme-switch";
+          const cssVariable = "--dark-theme-display";
+          const defaultValue = true;
+
+          const apply = (value) => {
+            const isEnabled = value.toString() === 'true';
+            // console.log(`Setting ${storageKey} to ${isEnabled}`);
+
+            localStorage.setItem(storageKey, isEnabled);
+
+            const inputElement = document.querySelector(inputId);
+            if (inputElement) inputElement.checked = isEnabled;
+
+            document.documentElement.style.setProperty(
+              cssVariable,
+              isEnabled ? "table-cell" : "none"
+            );
+
+            this.checkAnyThemeEnabled();
+          }
+
+          const existingValue = localStorage.getItem(storageKey);
+          apply(existingValue || defaultValue);
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.addEventListener("sl-change", (event) => {
+            const isEnabled = event.target.checked;
+            apply(isEnabled);
+          });
+        }
+      },
+      lightThemeDefaultColor: {
+        getValue: () => {
+          const storageKey = "lightThemeDefaultColor";
+          return localStorage.getItem(storageKey);
+        },
+        initialize: () => {
+          const storageKey = "lightThemeDefaultColor";
+          const inputId = "#default-light-theme-color";
+          const defaultValue = '#333333';
+
+          const apply = (value) => {
+            // console.log(`Setting ${storageKey} to ${value}`);
+
+            localStorage.setItem(storageKey, value);
+
+            const inputElement = document.querySelector(inputId);
+            if (inputElement) inputElement.value = value;
+          }
+
+          const existingValue = localStorage.getItem(storageKey);
+          apply(existingValue || defaultValue);
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.addEventListener('sl-blur', (event) => {
+            event.target.updateComplete.then(() => {
+              const color = event.target.input.value;
+              apply(color);
+            });
+          });
+        }
+      },
+      darkThemeDefaultColor: {
+        getValue: () => {
+          const storageKey = "darkThemeDefaultColor";
+          return localStorage.getItem(storageKey);
+        },
+        initialize: () => {
+          const storageKey = "darkThemeDefaultColor";
+          const inputId = "#default-dark-theme-color";
+          const defaultValue = '#cccccc';
+
+          const apply = (value) => {
+            // console.log(`Setting ${storageKey} to ${value}`);
+
+            localStorage.setItem(storageKey, value);
+
+            const inputElement = document.querySelector(inputId);
+            if (inputElement) inputElement.value = value;
+          }
+
+          const existingValue = localStorage.getItem(storageKey);
+          apply(existingValue || defaultValue);
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.addEventListener('sl-blur', (event) => {
+            event.target.updateComplete.then(() => {
+              const color = event.target.input.value;
+              apply(color);
+            });
+          });
+        }
+      },
+      anyThemeDefaultColor: {
+        getValue: () => {
+          const storageKey = "anyThemeDefaultColor";
+          return localStorage.getItem(storageKey);
+        },
+        initialize: () => {
+          const storageKey = "anyThemeDefaultColor";
+          const inputId = "#default-any-theme-color";
+          const defaultValue = '#808080';
+
+          const apply = (value) => {
+            // console.log(`Setting ${storageKey} to ${value}`);
+
+            localStorage.setItem(storageKey, value);
+
+            const inputElement = document.querySelector(inputId);
+            if (inputElement) inputElement.value = value;
+          }
+
+          const existingValue = localStorage.getItem(storageKey);
+          apply(existingValue || defaultValue);
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.addEventListener('sl-blur', (event) => {
+            event.target.updateComplete.then(() => {
+              const color = event.target.input.value;
+              apply(color);
+            });
+          });
+        }
+      },
+    };
+  }
+
+  getSetting(storageKey) {
+    return this.getSettingsMetadata()[storageKey];
+  }
+
+  getSettingValue(storageKey) {
+    return this.getSetting(storageKey).getValue();
   }
 
   // Methods for siteConfigs
@@ -291,6 +503,3 @@ class ExtensionStore {
 }
 
 window.extensionStore = new ExtensionStore();
-// globalThis.extensionStore = new ExtensionStore();
-// const extensionStore = new ExtensionStore();
-// Object.assign(self, { extensionStore });

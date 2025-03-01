@@ -109,6 +109,8 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
 
   if (theme === "dark") {
     svgSprite.style.setProperty("color", siteConfig.darkThemeColor);
+  } else if (theme === "any") {
+    svgSprite.style.setProperty("color", siteConfig.anyThemeColor);
   } else if (theme !== null) {
     svgSprite.style.setProperty("color", siteConfig.lightThemeColor);
   }
@@ -388,7 +390,17 @@ function filterDrawerIcons(filter) {
 
 }
 
-async function updateSiteConfig({ id, patternType, websitePattern, iconId, uploadId, lightThemeColor, darkThemeColor, lightPngUrl, darkPngUrl, active }) {
+async function updateSiteConfig({
+  id,
+  patternType,
+  websitePattern,
+  iconId,
+  uploadId,
+  lightThemeColor,
+  darkThemeColor,
+  anyThemeColor,
+  active,
+}) {
   // console.log('updateSiteConfig');
 
   const existingSiteConfig = await window.extensionStore.getSiteConfigById(id);
@@ -402,13 +414,18 @@ async function updateSiteConfig({ id, patternType, websitePattern, iconId, uploa
     uploadId: uploadId || existingSiteConfig.uploadId,
     lightThemeColor: lightThemeColor || existingSiteConfig.lightThemeColor,
     darkThemeColor: darkThemeColor || existingSiteConfig.darkThemeColor,
+    anyThemeColor: anyThemeColor || existingSiteConfig.anyThemeColor,
     lightPngUrl: existingSiteConfig.lightPngUrl,
     darkPngUrl: existingSiteConfig.darkPngUrl,
+    anyPngUrl: existingSiteConfig.anyPngUrl,
     active: activeDefined ? active : existingSiteConfig.active,
   };
 
-  if (iconId || lightThemeColor || darkThemeColor) {
-    const icon = newSiteConfig.iconId ? await window.extensionStore.getIconById(newSiteConfig.iconId) : null;
+  if (iconId || lightThemeColor || darkThemeColor || anyThemeColor) {
+    if (!newSiteConfig.iconId) return;
+
+    const icon = await window.extensionStore.getIconById(newSiteConfig.iconId);
+    if (!icon) console.error(`Icon not found: ${iconId}`);
 
     if (iconId || lightThemeColor) {
       const faviconSpriteLight = createFaviconSprite(icon, newSiteConfig, 'light');
@@ -421,6 +438,18 @@ async function updateSiteConfig({ id, patternType, websitePattern, iconId, uploa
       const darkPngUrl = await svgToPngBase64(faviconSpriteDark);
       newSiteConfig.darkPngUrl = darkPngUrl;
     }
+
+    if (iconId || anyThemeColor) {
+      const faviconSprite = createFaviconSprite(icon, newSiteConfig, 'any');
+      const anyPngUrl = await svgToPngBase64(faviconSprite);
+      newSiteConfig.anyPngUrl = anyPngUrl;
+    }
+
+    delete newSiteConfig.uploadId;
+  } else if (uploadId) {
+    delete newSiteConfig.iconId;
+    delete newSiteConfig.lightPngUrl;
+    delete newSiteConfig.darkPngUrl;
   }
 
   // console.log(`newSiteConfig`);
@@ -603,7 +632,7 @@ async function populateTableRow(siteConfig, insertion) {
     const svgSprite = buildSvgSprite(icon);
 
     newRow.querySelectorAll('.icon-value').forEach((iconValueElement) => {
-      iconValueElement.replaceChildren(svgSprite);
+      iconValueElement.replaceChildren(svgSprite.cloneNode(true));
     });
 
     newRow.querySelector('.icon-cell .add').classList.add('display-none');
@@ -613,15 +642,37 @@ async function populateTableRow(siteConfig, insertion) {
       const imageElementLight = document.createElement("img");
       imageElementLight.src = siteConfig.lightPngUrl;
 
-      newRow.querySelector(".favicon-value.light-theme-color-style").replaceChildren(imageElementLight);
+      const lightThemeFavicon = newRow.querySelector(".favicon-value.light-theme-color-style");
+      lightThemeFavicon.replaceChildren(imageElementLight);
+      lightThemeFavicon.classList.remove('display-none');
     }
 
     if (siteConfig.darkPngUrl) {
       const imageElementDark = document.createElement("img");
       imageElementDark.src = siteConfig.darkPngUrl;
 
-      newRow.querySelector(".favicon-value.dark-theme-color-style").replaceChildren(imageElementDark);
+      const darkThemeFavicon = newRow.querySelector(".favicon-value.dark-theme-color-style");
+      darkThemeFavicon.replaceChildren(imageElementDark);
+      darkThemeFavicon.classList.remove('display-none');
     }
+
+    if (siteConfig.anyPngUrl) {
+      const imageElementNo = document.createElement("img");
+      imageElementNo.src = siteConfig.anyPngUrl;
+
+      const anyThemeFavicon = newRow.querySelector(".favicon-value.any-theme-color-style");
+      anyThemeFavicon.replaceChildren(imageElementNo);
+      anyThemeFavicon.classList.remove('display-none');
+    }
+
+    const settingsMetadata = window.extensionStore.getSettingsMetadata();
+    const anyThemeDisplayElement = newRow.querySelector(".favicon-value.any-theme-display");
+
+    if (!settingsMetadata.lightThemeEnabled.getValue() && !settingsMetadata.darkThemeEnabled.getValue()) {
+      anyThemeDisplayElement.classList.remove('display-none');
+    }
+
+    newRow.querySelector(".favicon-value.image-display").classList.add('display-none');
   } else if (siteConfig.uploadId) {
     // console.log(`siteConfig.uploadId`);
     // console.dir(siteConfig.uploadId, { depth: null });
@@ -640,12 +691,13 @@ async function populateTableRow(siteConfig, insertion) {
     newRow.querySelector('.icon-cell .add').classList.add('display-none');
     newRow.querySelector('.icon-cell .edit').classList.remove('display-none');
 
-    newRow.querySelector(".favicon-value.light-theme-color-style").replaceChildren(
-      imageElement.cloneNode(true)
-    );
-    newRow.querySelector(".favicon-value.dark-theme-color-style").replaceChildren(
-      imageElement.cloneNode(true)
-    );
+    newRow.querySelectorAll(".favicon-value.icon").forEach((iconElement) => {
+      iconElement.classList.add('display-none');
+    });
+
+    const imageDisplayElement = newRow.querySelector(".favicon-value.image-display");
+    imageDisplayElement.replaceChildren(imageElement.cloneNode(true));
+    imageDisplayElement.classList.remove('display-none');
   } else {
     newRow.querySelector('.icon-cell .add').classList.remove('display-none');
     newRow.querySelector('.icon-cell .edit').classList.add('display-none');
@@ -702,7 +754,6 @@ async function populateTableRow(siteConfig, insertion) {
       ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = '';
 
       if (siteConfig.iconId) {
-        console.log('667');
         ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon));
       }
     }
@@ -719,7 +770,7 @@ async function populateTableRow(siteConfig, insertion) {
     lightThemeColorPicker.parentNode.classList.add('display-none');
   } else {
     lightThemeColorPicker.parentNode.classList.remove('display-none');
-    lightThemeColorPicker .addEventListener('sl-blur', (event) => {
+    lightThemeColorPicker.addEventListener('sl-blur', (event) => {
       event.target.updateComplete.then(() => {
         const lightThemeColor = event.target.input.value;
         updateSiteConfig({ id, lightThemeColor });
@@ -748,10 +799,29 @@ async function populateTableRow(siteConfig, insertion) {
     });
   }
 
+  // Any Theme column
+  const anyThemeColorPicker = newRow.querySelector('.any-theme-color-picker');
+
+  if (siteConfig.uploadId || !siteConfig.iconId) {
+    anyThemeColorPicker.parentNode.classList.add('display-none');
+  } else {
+    anyThemeColorPicker.parentNode.classList.remove('display-none');
+    anyThemeColorPicker.addEventListener('sl-blur', (event) => {
+      event.target.updateComplete.then(() => {
+        const anyThemeColor = event.target.input.value;
+        updateSiteConfig({ id, anyThemeColor });
+      });
+    });
+    newRow.querySelectorAll('.any-theme-color-value').forEach((anyThemeColorValueElement) => {
+      anyThemeColorValueElement.value = siteConfig.anyThemeColor;
+    });
+  }
+
   // Favicon column
   if (siteConfig.iconId) {
     newRow.querySelector('.light-theme-color-style').style.setProperty('color', siteConfig.lightThemeColor);
     newRow.querySelector('.dark-theme-color-style').style.setProperty('color', siteConfig.darkThemeColor);
+    newRow.querySelector('.any-theme-color-style').style.setProperty('color', siteConfig.anyThemeColor);
   }
 
   // Active column
@@ -847,6 +917,11 @@ function showDeleteConfirmationDialog(deleteFunction, confirmationText) {
 document.addEventListener("DOMContentLoaded", async function() {
   await window.extensionStore.initialize();
 
+  const settingsMetadata = window.extensionStore.getSettingsMetadata();
+  for (let setting of Object.values(settingsMetadata)) {
+    setting.initialize();
+  }
+
   // Icon selector drawer
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector');
 
@@ -904,18 +979,14 @@ document.addEventListener("DOMContentLoaded", async function() {
     const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon');
     const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id');
 
-    let iconId;
-    let uploadId;
-
     if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="icon-packs"][active]')) {
-      iconId = selectedCell.querySelector('[icon-id]').getAttribute('icon-id');
-      uploadId = null;
+      const iconId = selectedCell.querySelector('[icon-id]').getAttribute('icon-id');
+      updateSiteConfig({ id, iconId });
     } else if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="upload"][active]')) {
       iconId = null;
-      uploadId = selectedCell.querySelector('[upload-id]').getAttribute('upload-id');
+      const uploadId = selectedCell.querySelector('[upload-id]').getAttribute('upload-id');
+      updateSiteConfig({ id, uploadId });
     }
-
-    updateSiteConfig({ id, iconId, uploadId });
 
     ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML = selectedCell.innerHTML;
     selectedCell.innerHTML = '';
@@ -1063,21 +1134,18 @@ document.addEventListener("DOMContentLoaded", async function() {
   // Action buttons
   const createDropdown = document.querySelector('#create-dropdown');
   createDropdown.addEventListener('sl-select', async (event) => {
-    // const siteConfig = {
-    //   // id: Date.now(),
-    //   patternType: 'Simple Match',
-    //   lightThemeColor: '#000000',
-    //   darkThemeColor: '#ffffff',
-    //   active: true,
-    // };
 
-    // siteConfigs.push(siteConfig);
-    // await window.extensionStore.addSiteConfig(siteConfig);
+    const settingsMetadata = window.extensionStore.getSettingsMetadata();
+    const defaultLightThemeColor = settingsMetadata.lightThemeDefaultColor.getValue();
+    const defaultDarkThemeColor = settingsMetadata.darkThemeDefaultColor.getValue();
+    const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue();
+
     const siteConfig = await window.extensionStore.addSiteConfig({
       patternType: 'Simple Match',
       active: true,
-      lightThemeColor: '#000000',
-      darkThemeColor: '#ffffff',
+      lightThemeColor: defaultLightThemeColor,
+      darkThemeColor: defaultDarkThemeColor,
+      anyThemeColor: defaultNoThemeColor,
     });
 
     const priority = event.detail.item.value;
@@ -1178,6 +1246,11 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     selectAllButton.removeAttribute('checked');
     selectAllButton.removeAttribute('indeterminate');
+  });
+
+  const settingsDialog = document.querySelector('#settings-dialog');
+  document.querySelector('#open-settings-button').addEventListener('click', async () => {
+    settingsDialog.show();
   });
 
   // Lastly, remove loading indicators
