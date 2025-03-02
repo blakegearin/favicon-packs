@@ -7,6 +7,14 @@ const STORES = {
   uploads: "uploads",
 };
 
+// Add helper method to the String prototype
+Object.defineProperty(String.prototype, 'capitalize', {
+  value: function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+  },
+  enumerable: false
+});
+
 class ExtensionStore {
   constructor() {
     this.db = null;
@@ -50,20 +58,21 @@ class ExtensionStore {
 
         if (!existingStoreNames.includes(STORES.icons)) {
           const iconsStore = database.createObjectStore(STORES.icons, { keyPath: "id" });
-          iconsStore.createIndex("name", "name", { unique: false });
-          iconsStore.createIndex("style", "style", { unique: false });
+
+          iconsStore.createIndex(
+            "iconPackNameAndVersion",
+            ["iconPackName", "iconPackVersion"],
+            { unique: false },
+          );
         }
 
         if (!existingStoreNames.includes(STORES.siteConfigs)) {
           const siteConfigsStore = database.createObjectStore(STORES.siteConfigs, { keyPath: "id" });
-          siteConfigsStore.createIndex("matchType", "matchType", { unique: false });
           siteConfigsStore.createIndex("active", "active", { unique: false });
         }
 
         if (!existingStoreNames.includes(STORES.uploads)) {
           const iconsStore = database.createObjectStore(STORES.uploads, { keyPath: "id" });
-          iconsStore.createIndex("name", "name", { unique: false });
-          iconsStore.createIndex("style", "style", { unique: false });
         }
 
         resolve();
@@ -71,10 +80,210 @@ class ExtensionStore {
     });
   }
 
+  async fetchIconsMetadata(metadataUrl) {
+    let metadata;
+
+    try {
+      const response = await fetch(metadataUrl);
+
+      // console.log(`response`);
+      // console.dir(response, { depth: null });
+
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      metadata = await response.text();
+    } catch (error) {
+      console.error("Fetch error: ", error);
+    }
+
+    // console.log(`metadata`);
+    // console.dir(metadata, { depth: null });
+
+    const iconsMetadata = JSON.parse(metadata).icons;
+
+    // console.log(`iconsMetadata`);
+    // console.dir(iconsMetadata, { depth: null });
+
+    return iconsMetadata || null;
+  }
+
+  async downloadIconPackVersion(iconPack, versionMetadata) {
+    const iconsMetadata =
+      iconPack.metadataUrl ?
+      await this.fetchIconsMetadata(iconPack.metadataUrl.replace("{VERSION}", versionMetadata.name)) :
+      null;
+
+    const response = await fetch(iconPack.svgUrl.replace("{VERSION}", versionMetadata.name));
+
+    // console.log(`response`);
+    // console.dir(response, { depth: null });
+
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const responseString = await response.text();
+    // console.log(`responseString`);
+    // console.dir(responseString, { depth: null });
+
+    const fileType = response.headers.get("content-type").split(";")[0];
+
+    // console.log(`fileType`);
+    // console.dir(fileType, { depth: null });
+
+    const parser = new DOMParser();
+
+    const buildIconId = (iconPack, iconName) => `${iconPack.name}-${versionMetadata.name}-${iconName}`;
+
+    let iconCount = 0;
+
+    if (fileType === "text/html") {
+      const htmlDoc = parser.parseFromString(responseString, fileType);
+      const htmlElement = htmlDoc.documentElement;
+
+      // console.log(`htmlElement`);
+      // console.dir(htmlElement, { depth: null });
+
+      const svgElements = htmlElement.querySelectorAll("a > svg");
+
+      for await (const svgElement of svgElements) {
+        svgElement.setAttribute("viewBox", "0 0 512 512");
+
+        const symbolId = svgElement.children[0].getAttribute('href');
+
+        const blockList = versionMetadata.blockList || [];
+        if (blockList.includes(symbolId.replace('#', ''))) continue;
+
+        const symbol = htmlElement.querySelector(symbolId);
+        const iconName = symbol.id;
+        const iconId = buildIconId(iconPack, iconName);
+
+        symbol.id = iconId;
+
+        const iconTags = iconsMetadata.find(
+          (iconMetadata) => iconMetadata.name === iconName,
+        ).tags;
+        svgElement.setAttribute("tags", iconTags.join(" "));
+
+        const iconStyle = iconPack.styles.find((style) => {
+          return style.filter.test(iconName);
+        }).name;
+
+        const icon = {
+          id: iconId,
+          iconPackName: iconPack.name,
+          iconPackVersion: versionMetadata.name,
+          name: iconName,
+          style: iconStyle,
+          tags: iconTags,
+          symbol: symbol.outerHTML,
+        };
+
+        await window.extensionStore.addIcon(icon);
+        iconCount++;
+      };
+    } else if (fileType === "application/json") {
+      const iconsObject = JSON.parse(responseString);
+
+      // console.log(`iconsObject`);
+      // console.dir(iconsObject, { depth: null });
+
+      for (const [originalIconName, iconMetadata] of Object.entries(iconsObject)) {
+        // console.log(`iconMetadata`);
+        // console.dir(iconMetadata);
+
+        const iconTags = iconMetadata?.search?.terms || [];
+        iconTags.push(originalIconName);
+
+        const iconStyles = iconMetadata?.svgs?.classic;
+
+        // console.log(`iconStyles`);
+        // console.dir(iconStyles, { depth: null });
+
+        for (const [iconStyle, iconStyleMetadata] of Object.entries(iconStyles)) {
+          const iconName = `${originalIconName}-${iconStyle}`;
+          const iconId = buildIconId(iconPack, iconName);
+
+          // Convert svg to symbol; crude but simple & effective
+          let symbolString = iconStyleMetadata.raw
+            .replace('<svg', `<symbol id="${iconId}" class="font-awesome"`)
+            .replace('svg>', 'symbol>');
+
+          const icon = {
+            id: iconId,
+            iconPackName: iconPack.name,
+            iconPackVersion: versionMetadata.name,
+            name: iconName,
+            style: iconStyle.capitalize(),
+            tags: iconTags,
+            symbol: symbolString,
+          };
+
+          await window.extensionStore.addIcon(icon);
+          iconCount++;
+        }
+      }
+    }
+
+    return iconCount;
+  }
+
+  async deleteIconsByIconPackVersion(iconPackName, iconPackVersion) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORES.icons], "readwrite");
+      const store = transaction.objectStore(STORES.icons);
+      let deletedCount = 0;
+
+      // Use a cursor to iterate through all records and delete matching ones
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          const record = cursor.value;
+          if (record.iconPackName === iconPackName && record.iconPackVersion === iconPackVersion) {
+            // Delete this record
+            cursor.delete();
+            deletedCount++;
+          }
+          cursor.continue();
+        } else {
+          resolve(deletedCount);
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+
+      transaction.oncomplete = () => {
+        console.log(`Deleted ${deletedCount} icons from ${iconPackName} ${iconPackVersion}`);
+        resolve(deletedCount);
+      };
+
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getIconCountByIconPackVersion(iconPackName, iconPackVersion) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORES.icons], "readonly");
+      const store = transaction.objectStore(STORES.icons);
+
+      const index = store.index("iconPackNameAndVersion");
+      const keyRange = IDBKeyRange.only([iconPackName, iconPackVersion]);
+
+      const countRequest = index.count(keyRange);
+
+      countRequest.onsuccess = () => {
+        resolve(countRequest.result);
+      };
+
+      countRequest.onerror = () => reject(countRequest.error);
+    });
+  }
+
   getIconPacks() {
     return [
       {
         name: "Ionicons",
+        changelogUrl: "https://github.com/ionic-team/ionicons/blob/main/CHANGELOG.md",
         svgUrl: "https://unpkg.com/ionicons@{VERSION}/dist/cheatsheet.html",
         metadataUrl: "https://unpkg.com/ionicons@{VERSION}/dist/ionicons.json",
         styles: [
@@ -94,10 +303,47 @@ class ExtensionStore {
             filter: /-sharp/,
           },
         ],
-        version: "7.3.1",
+        versions: [
+          // Fix PR: https://github.com/ionic-team/ionicons/pull/1433
+          {
+            name: "7.4.0",
+            blockList: [
+              "chevron-expand",
+              "chevron-expand-outline",
+              "chevron-expand-sharp",
+              "logo-behance",
+              "logo-bitbucket",
+              "logo-docker",
+              "logo-edge",
+              "logo-facebook",
+              "logo-npm",
+              "logo-paypal",
+              "logo-soundcloud",
+              "logo-venmo",
+            ],
+          },
+          {
+            name: "7.3.1",
+            blockList: [
+              "chevron-expand",
+              "chevron-expand-outline",
+              "chevron-expand-sharp",
+              "logo-behance",
+              "logo-bitbucket",
+              "logo-docker",
+              "logo-edge",
+              "logo-facebook",
+              "logo-npm",
+              "logo-paypal",
+              "logo-soundcloud",
+              "logo-venmo",
+            ],
+          },
+        ],
       },
       {
         name: "Font_Awesome",
+        changelogUrl: "https://fontawesome.com/changelog",
         svgUrl: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{VERSION}/metadata/icon-families.json",
         styles: [
           {
@@ -116,7 +362,10 @@ class ExtensionStore {
             filter: /-brand/,
           },
         ],
-        version: "6.7.2",
+        versions: [
+          { name: "6.7.2" },
+          { name: "6.6.0" },
+        ],
       },
     ];
   }

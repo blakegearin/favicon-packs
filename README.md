@@ -14,7 +14,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 ## Features
 
-- [x] Choose from 3,404 icons (Ionicons, Font Awesome)
+- [x] Choose from 3,400+ icons (Ionicons, Font Awesome)
 - [x] Easily add domains or patterns for more advanced matching
 - [x] Custom colors for light & dark themes
 - [x] Guards against favicon hijacking (e.g. Notion)

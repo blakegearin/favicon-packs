@@ -10,6 +10,7 @@
 :host,
 .sl-theme-light
 {
+  --high-contrast: black;
   --main-background: aliceblue;
   --main-color: black;
   --table-background: white;
@@ -20,6 +21,7 @@
 :host,
 .sl-theme-dark
 {
+  --high-contrast: white;
   --main-background: #14191d;
   --main-color: #cccccc;
   --table-background: black;
@@ -57,17 +59,22 @@ table {
   background: var(--table-background)
 }
 
-table#siteConfigs th:not(.width-auto)
+table#siteConfigs th:not(.width-auto),
+#icon-packs-tables table th:not(.width-auto)
 {
   width: 1%;
+}
+
+#icon-packs-tables table
+{
+  table-layout: auto;
 }
 
 table#tableSettings
 {
   background: transparent;
-  table-layout: auto;
-  left: 25%;
-  position: fixed;
+  display: flex;
+  flex-flow: column;
 }
 
 #tableSettings tr,
@@ -134,17 +141,6 @@ tr, td, th
 
 td.center {
   line-height: 1;
-  height: 100%;
-}
-
-td.center sl-icon {
-  display: block;
-  margin: auto;
-}
-
-td.center {
-  line-height: 1;
-  height: 100%;
 }
 
 td.center sl-icon
@@ -162,6 +158,37 @@ td.center-priority sl-skeleton
 {
   display: inline-block;
   vertical-align: middle;
+}
+
+sl-tab-panel[name="icon-packs"] .subheader th
+{
+  font-style: italic;
+  font-weight: 500;
+}
+
+.subheader .version
+{
+  --sl-spacing-x-small: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.subheader .version a
+{
+  color: var(--main-color);
+}
+
+
+sl-tab-panel[name="icon-packs"] code
+{
+  font-size: 16px;
+}
+
+sl-tab-panel[name="icon-packs"] sl-badge
+{
+  font-size: 22px;
 }
 
 .site-cell,
@@ -417,6 +444,21 @@ sl-radio
   display: var(--any-theme-display);
 }
 
+#icon-packs-tables
+{
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.status-div
+{
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Icon style */
 :root
 {
@@ -561,15 +603,12 @@ sl-icon-button
   font-size: 1.25rem;
 }
 
-.sl-theme-dark #theme-selector sl-button::part(base)
-{
-  color: white;
-}
-
+.sl-theme-dark #theme-selector sl-button::part(base),
+#open-settings-button,
 .sl-theme-dark #icon-toolbar button,
 .sl-theme-dark #icon-toolbar a
 {
-  color: white;
+  color: var(--high-contrast);
 }
 
 #icon-toolbar a:not(:last-child),

@@ -157,8 +157,10 @@ async function populateDrawerIcons() {
     tooltip.appendChild(iconDiv);
     iconListFragment.appendChild(tooltip);
 
-    const [iconPackName, iconPackVersion] = icon.id.split('-');
-    const iconPackSvgSelector = `svg[icon-pack-name="${iconPackName}"][icon-pack-version="${iconPackVersion}"]`;
+    const iconPackSvgSelector = `svg[icon-pack-name="${icon.iconPackName}"][icon-pack-version="${icon.iconPackVersion}"]`;
+
+    // console.log(`iconPackSvgSelector`);
+    // console.dir(iconPackSvgSelector, { depth: null });
 
     if (iconSymbols[iconPackSvgSelector]) {
       iconSymbols[iconPackSvgSelector].push(icon.symbol);
@@ -914,6 +916,195 @@ function showDeleteConfirmationDialog(deleteFunction, confirmationText) {
   deleteConfirmationDialog.show();
 }
 
+async function createVersionRow(iconPack, versionMetadata) {
+  const versionRow = document.createElement('tr');
+
+  const versionCell = document.createElement('td');
+  versionCell.classList.add('center');
+
+  const code = document.createElement('code');
+  code.textContent = versionMetadata.name;
+  versionCell.appendChild(code);
+
+  versionRow.appendChild(versionCell);
+
+  const statusCell = document.createElement('td');
+  statusCell.classList.add('center');
+
+  // Check if the version is downloaded
+  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
+  const isDownloaded = iconCount > 0;
+
+  const downloadedTag = document.createElement('sl-tag');
+  downloadedTag.setAttribute('variant', 'success');
+  downloadedTag.textContent = 'Downloaded';
+  statusCell.appendChild(downloadedTag);
+
+  const notDownloadedTag = document.createElement('sl-tag');
+  notDownloadedTag.setAttribute('variant', 'neutral');
+  notDownloadedTag.textContent = 'Not Downloaded';
+  statusCell.appendChild(notDownloadedTag);
+
+  versionRow.appendChild(statusCell);
+
+  const countCell = document.createElement('td');
+  countCell.classList.add('center');
+
+  const downloadedCountBadge = document.createElement('sl-badge');
+  downloadedCountBadge.setAttribute('variant', isDownloaded ? 'success' : 'neutral');
+  downloadedCountBadge.setAttribute('pill', '');
+
+  localStorage.setItem('iconPack', iconPack.name);
+
+  downloadedCountBadge.textContent = iconCount;
+  countCell.appendChild(downloadedCountBadge);
+
+  versionRow.appendChild(countCell);
+
+  const actionCell = document.createElement('td');
+  actionCell.classList.add('center');
+
+  const removeButton = document.createElement('sl-button');
+  removeButton.setAttribute('variant', 'danger');
+  removeButton.setAttribute('outline', '');
+  removeButton.textContent = 'Remove';
+
+  const downloadButton = document.createElement('sl-button');
+  downloadButton.setAttribute('variant', 'primary');
+  downloadButton.setAttribute('outline', '');
+  downloadButton.textContent = 'Download';
+
+  if (isDownloaded) {
+    downloadButton.classList.add('display-none');
+    notDownloadedTag.classList.add('display-none');
+  } else {
+    removeButton.classList.add('display-none');
+    downloadedTag.classList.add('display-none');
+  }
+
+  downloadButton.addEventListener('click', async () => {
+    toggleLoadingSpinner();
+
+    const iconCount = await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata);
+    downloadedCountBadge.textContent = iconCount;
+
+    downloadedCountBadge.setAttribute('variant', 'success');
+    downloadedTag.classList.remove('display-none');
+
+    notDownloadedTag.classList.add('display-none');
+
+    downloadButton.classList.add('display-none');
+    removeButton.classList.remove('display-none');
+
+    toggleLoadingSpinner();
+  });
+
+  removeButton.addEventListener('click', async () => {
+    toggleLoadingSpinner();
+
+    await window.extensionStore.deleteIconsByIconPackVersion(iconPack.name, versionMetadata.name);
+    downloadedCountBadge.textContent = 0;
+
+    downloadedCountBadge.setAttribute('variant', 'neutral');
+    downloadedTag.classList.add('display-none');
+
+    notDownloadedTag.classList.remove('display-none');
+
+    downloadButton.classList.remove('display-none');
+    removeButton.classList.add('display-none');
+
+    toggleLoadingSpinner();
+  });
+
+  actionCell.appendChild(downloadButton);
+  actionCell.appendChild(removeButton);
+
+  versionRow.appendChild(actionCell);
+  return versionRow;
+}
+
+async function createIconPackTable(iconPack) {
+  const iconPackTable = document.createElement('table');
+  iconPackTable.classList.add('icon-pack-table');
+
+  const tableHeader = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+
+  const headerCell = document.createElement('th');
+  headerCell.setAttribute('colspan', '4');
+  headerCell.classList.add('center');
+  headerCell.textContent = iconPack.name.replace('_', ' ');
+
+  headerRow.appendChild(headerCell);
+  tableHeader.appendChild(headerRow);
+
+  const subheaderRow = document.createElement('tr');
+  subheaderRow.classList.add('subheader');
+
+  const versionSubheader = document.createElement('th');
+  versionSubheader.classList.add('center', 'width-auto');
+
+  const versionDiv = document.createElement('div');
+  versionDiv.classList.add('version');
+
+  const versionSpan = document.createElement('span');
+  versionSpan.textContent = 'Version';
+  versionDiv.appendChild(versionSpan);
+
+  const changelogLink = document.createElement('a');
+  changelogLink.href = iconPack.changelogUrl;
+  changelogLink.target = '_blank';
+  changelogLink.rel = 'noopener noreferrer';
+
+  const changelogIconButton = document.createElement('sl-icon-button');
+  changelogIconButton.setAttribute('name', 'file-earmark-diff');
+
+  changelogLink.appendChild(changelogIconButton);
+  versionDiv.appendChild(changelogLink);
+
+  versionSubheader.appendChild(versionDiv);
+  subheaderRow.appendChild(versionSubheader);
+
+  const statusSubheader = document.createElement('th');
+  statusSubheader.classList.add('center', 'width-auto');
+  statusSubheader.textContent = 'Status';
+  subheaderRow.appendChild(statusSubheader);
+
+  const countSubheader = document.createElement('th');
+  countSubheader.classList.add('center', 'width-content');
+  countSubheader.textContent = 'Icon Count';
+  subheaderRow.appendChild(countSubheader);
+
+  const actionSubheader = document.createElement('th');
+  actionSubheader.classList.add('center', 'width-auto');
+  actionSubheader.textContent = 'Action';
+  subheaderRow.appendChild(actionSubheader);
+
+  tableHeader.appendChild(subheaderRow);
+  iconPackTable.appendChild(tableHeader);
+
+  const tableBody = document.createElement('tbody');
+
+  for await (const versionMetadata of iconPack.versions) {
+    // console.log(`version`);
+    // console.dir(version, { depth: null });
+
+    const versionRow = await createVersionRow(iconPack, versionMetadata);
+    tableBody.appendChild(versionRow);
+  }
+
+  iconPackTable.appendChild(tableBody);
+  return iconPackTable;
+}
+
+function toggleLoadingSpinner() {
+  // Add small delay to avoid race conditions
+  setTimeout(() => {
+    document.querySelector('.skeleton-row').classList.toggle('display-none');
+    document.querySelector('div > #loading-overlay').classList.toggle('display-none');
+  }, 100);
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
   await window.extensionStore.initialize();
 
@@ -928,32 +1119,38 @@ document.addEventListener("DOMContentLoaded", async function() {
   const iconTypesSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-types');
 
   const iconPacks = window.extensionStore.getIconPacks();
-  for(const iconPack of iconPacks) {
-    // Create an svg element for each icon pack to store the icon symbols
 
-    // svg tags don't work with createElement
-    const svgNS = "http://www.w3.org/2000/svg";
-    const iconPackSvg = document.createElementNS(svgNS, "svg");
+  for (const iconPack of iconPacks) {
+    for await (const versionMetadata of iconPack.versions) {
+      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
+      if (iconCount === 0) continue;
 
-    iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
-    iconPackSvg.setAttribute("icon-pack-version", iconPack.version);
-    iconPackSvg.style.display = "none";
+      // Create an svg element for each icon pack to store the icon symbols
 
-    document.body.appendChild(iconPackSvg);
+      // svg tags don't work with createElement
+      const svgNS = "http://www.w3.org/2000/svg";
+      const iconPackSvg = document.createElementNS(svgNS, "svg");
 
-    // Add icon pack styles to the select element
-    for (const style of iconPack.styles) {
-      const selectOption = document.createElement('sl-option');
+      iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
+      iconPackSvg.setAttribute("icon-pack-version", versionMetadata.name);
+      iconPackSvg.style.display = "none";
 
-      selectOption.setAttribute('value', style.value);
-      selectOption.textContent = `${iconPack.name.replace('_', ' ')} ${style.name}`;
-      selectOption.addEventListener('click', () => filterByStyle(`${iconPack.name}-${style.name}`));
+      document.body.appendChild(iconPackSvg);
 
-      iconTypesSelect.appendChild(selectOption);
-    };
+      // Add icon pack styles to the select element
+      for (const style of iconPack.styles) {
+        const selectOption = document.createElement('sl-option');
 
-    const selectAllOption = iconTypesSelect.querySelector('sl-option[value="all"]');
-    selectAllOption.addEventListener('click', () => filterByStyle('All'));
+        selectOption.setAttribute('value', style.value);
+        selectOption.textContent = `${iconPack.name.replace('_', ' ')} ${style.name}`;
+        selectOption.addEventListener('click', () => filterByStyle(`${iconPack.name}-${style.name}`));
+
+        iconTypesSelect.appendChild(selectOption);
+      };
+
+      const selectAllOption = iconTypesSelect.querySelector('sl-option[value="all"]');
+      selectAllOption.addEventListener('click', () => filterByStyle('All'));
+    }
   };
 
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group');
@@ -1253,9 +1450,18 @@ document.addEventListener("DOMContentLoaded", async function() {
     settingsDialog.show();
   });
 
+  const iconPacksDiv = document.querySelector('#icon-packs-tables');
+
+  // console.log(`iconPacksDiv`);
+  // console.dir(iconPacksDiv, { depth: null });
+
+  for await (const iconPack of iconPacks) {
+    const iconPackTable = await createIconPackTable(iconPack);
+    iconPacksDiv.appendChild(iconPackTable);
+  }
+
   // Lastly, remove loading indicators
-  document.querySelector('.skeleton-row').classList.add('display-none');
-  document.querySelector('div > #loading-overlay').classList.add('display-none');
+  toggleLoadingSpinner();
 });
 
 //
