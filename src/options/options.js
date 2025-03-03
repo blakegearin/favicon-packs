@@ -2,6 +2,8 @@ console.log("Favicon Packs: options.js loaded");
 
 let ICON_SELECTOR_DRAWER;
 
+const svgNS = "http://www.w3.org/2000/svg";
+
 function svgToPngBase64(svgString) {
   return new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
@@ -63,9 +65,7 @@ function buildUploadImg(upload) {
 function buildSvgSprite(icon, size = 40) {
   // console.log("buildSvgSprite");
 
-  const svgNS = "http://www.w3.org/2000/svg";
-
-  /// svg tags don't work with createElement
+  // svg tags don't work with createElement
   const iconSvg = document.createElementNS(svgNS, "svg");
   iconSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   iconSvg.setAttribute("viewBox", "0 0 512 512");
@@ -1117,9 +1117,6 @@ async function createIconPackTable(iconPack) {
   const tableBody = document.createElement('tbody');
 
   for await (const versionMetadata of iconPack.versions) {
-    // console.log(`version`);
-    // console.dir(version, { depth: null });
-
     const versionRow = await createVersionRow(iconPack, versionMetadata);
     tableBody.appendChild(versionRow);
   }
@@ -1136,7 +1133,6 @@ async function createIconPackTable(iconPack) {
 function toggleLoadingSpinner() {
   // Add small delay to avoid race conditions
   setTimeout(() => {
-    document.querySelector('.skeleton-row').classList.toggle('display-none');
     document.querySelector('div > #loading-overlay').classList.toggle('display-none');
   }, 100);
 }
@@ -1158,7 +1154,6 @@ async function populateIconPackVariantSelector() {
     for await (const versionMetadata of iconPack.versions) {
       if (!document.querySelector(`svg[icon-pack-name="${iconPack.name}"][icon-pack-version="${versionMetadata.name}"]`)) {
         // svg tags don't work with createElement
-        const svgNS = "http://www.w3.org/2000/svg";
         const iconPackSvg = document.createElementNS(svgNS, "svg");
 
         iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
@@ -1526,6 +1521,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   // Lastly, remove loading indicators
+  document.querySelector('.skeleton-row').classList.toggle('display-none');
   toggleLoadingSpinner();
 });
 

@@ -703,6 +703,18 @@ class ExtensionStore {
     return this._getAllRecords(STORES.siteConfigs);
   }
 
+  async getActiveSiteConfigs() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORES.siteConfigs], "readonly");
+      const store = transaction.objectStore(STORES.siteConfigs);
+      const index = store.index("active");
+      const request = index.getAll(IDBKeyRange.only(true));
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async updateSiteConfig(siteConfig) {
     return this._updateRecord(STORES.siteConfigs, siteConfig);
   }

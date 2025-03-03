@@ -22,29 +22,28 @@ async function initialize() {
   };
 
   browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    if (request.action === "replaceFavicon") {
-      // console.log(`sender`);
-      // console.dir(sender, { depth: null });
+    // console.log(`request`);
+    // console.dir(request, { depth: null });
+    // console.log(`sender`);
+    // console.dir(sender, { depth: null });
 
-      const siteConfigs = await window.extensionStore.getSiteConfigs();
+    if (request.action === "replaceFavicon") {
+
+
+      const activeSiteConfigs = await this.getActiveSiteConfigs();
+      const validSiteConfigs = activeSiteConfigs.filter(siteConfig =>
+        siteConfig.websitePattern && (siteConfig.iconId || siteConfig.uploadId)
+      );
 
       const siteConfigsOrder = getSiteConfigsOrder();
       const sortedSiteConfigs = siteConfigsOrder
-        .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
+        .map(id => validSiteConfigs.find(siteConfig => siteConfig.id === id))
         .filter(Boolean);
 
       // console.log(`sortedSiteConfigs`);
       // console.dir(sortedSiteConfigs, { depth: null });
 
       const siteConfig = sortedSiteConfigs.find((localSiteConfig) => {
-        if (!localSiteConfig.active) return false;
-
-        // console.log(`localSiteConfig.websitePattern`);
-        // console.dir(localSiteConfig.websitePattern);
-
-        if (!localSiteConfig.websitePattern) return false;
-        if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false;
-
         let websitePattern = localSiteConfig.websitePattern;
 
         // console.log(`websitePattern`);
@@ -52,7 +51,6 @@ async function initialize() {
 
         if (localSiteConfig.patternType === 'Simple Match') {
           const escapedDomain = websitePattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-          // websitePattern = `^https?:\/\/([a-zA-Z0-9-]+\.)*${escapedDomain}(\/.*)?$`;
           websitePattern = `.*${escapedDomain}.*`;
         }
 
@@ -61,12 +59,10 @@ async function initialize() {
 
         try {
           const regexp = new RegExp(websitePattern, 'i');
-
           // console.log(`regexp`);
           // console.dir(regexp, { depth: null });
 
           const matches = regexp.test(sender.url);
-
           // console.log(`matches`);
           // console.dir(matches, { depth: null });
 
@@ -75,6 +71,9 @@ async function initialize() {
           console.error("Error creating RegExp:", error);
         }
       });
+
+      // console.log(`siteConfig`);
+      // console.dir(siteConfig, { depth: null });
 
       if (!siteConfig) {
         browser.tabs.sendMessage(sender.tab.id, {
@@ -85,14 +84,10 @@ async function initialize() {
         return;
       }
 
-      // console.log(`siteConfig`);
-      // console.dir(siteConfig, { depth: null });
-
       let imgUrl = null;
 
       if (siteConfig.uploadId) {
         const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
-
         // console.log(`upload`);
         // console.dir(upload, { depth: null });
 
@@ -102,17 +97,14 @@ async function initialize() {
         // console.dir(request.colorScheme);
 
         const settingsMetadata = window.extensionStore.getSettingsMetadata();
-
         // console.log(`settingsMetadata`);
         // console.dir(settingsMetadata, { depth: null });
 
         const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue();
-
         // console.log(`darkThemeEnabled`);
         // console.dir(darkThemeEnabled, { depth: null });
 
         const lightThemeEnabled = settingsMetadata.lightThemeEnabled.getValue();
-
         // console.log(`lightThemeEnabled`);
         // console.dir(lightThemeEnabled, { depth: null });
 
