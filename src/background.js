@@ -14,6 +14,8 @@ async function initialize() {
 
   const iconPacks = window.extensionStore.getIconPacks();
   for await (const iconPack of iconPacks) {
+    if (iconPack.name !== "Ionicons") continue;
+
     // Download only the latest version of the icon pack
     const versionMetadata = iconPack.versions[0];
     await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata);

@@ -55,7 +55,6 @@ function svgToPngBase64(svgString) {
 function buildUploadImg(upload) {
   const iconImage = document.createElement("img");
   iconImage.src = upload.dataUri;
-  // iconImage.src = "dataUriValue";
   iconImage.setAttribute('upload-id', upload.id);
 
   return iconImage;
@@ -101,10 +100,10 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
       styleElement.textContent = `.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }`;
       break;
     case 'Font_Awesome':
-      styleElement.textContent = `.font-awesome { fill: currentColor; stroke: currentColor; }`;
+      styleElement.textContent = `.Font_Awesome { fill: currentColor; stroke: currentColor; }`;
       break;
     case 'Lucide':
-      styleElement.textContent = `.lucide { stroke: currentColor; }`;
+      styleElement.textContent = `.Lucide { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }`;
       break;
   }
 
@@ -1014,10 +1013,7 @@ async function createVersionRow(iconPack, versionMetadata) {
 
     for (const style of iconPack.styles) {
       const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
-      document.documentElement.style.setProperty(
-        `--icon-pack-variant-${iconPackVariant}`,
-        'block',
-      );
+      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'block');
     }
 
     await populateIconPackVariantSelector();
@@ -1042,14 +1038,7 @@ async function createVersionRow(iconPack, versionMetadata) {
 
     for (const style of iconPack.styles) {
       const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
-
-      console.log(`iconPackVariant`);
-      console.dir(iconPackVariant, { depth: null });
-
-      document.documentElement.style.setProperty(
-        `--icon-pack-variant-${iconPackVariant}`,
-        'none',
-      );
+      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'none');
     }
 
     await populateIconPackVariantSelector();
