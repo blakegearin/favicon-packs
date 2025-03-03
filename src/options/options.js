@@ -1153,7 +1153,7 @@ function toggleLoadingSpinner() {
 }
 
 async function populateIconPackVariantSelector() {
-  console.log('populateIconPackVariantSelector');
+  // console.log('populateIconPackVariantSelector');
 
   const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
   iconPacksSelect.replaceChildren();

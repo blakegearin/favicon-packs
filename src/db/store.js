@@ -101,34 +101,46 @@ class ExtensionStore {
 
     const parsedResponse = JSON.parse(responseText);
 
+    // console.log(`parsedResponse`);
+    // console.dir(parsedResponse, { depth: null });
+
     let iconsMetadata = parsedResponse;
+
+    // console.log(`iconsMetadata`);
+    // console.dir(iconsMetadata, { depth: null });
 
     if (parsedResponse?.icons) {
       const iconObjects = {};
 
-      for (const icon of parsedResponse.icons) {
-        const { name, tags } = icon;
-        iconObjects[name] = tags;
+      if (Array.isArray(parsedResponse.icons)) {
+        // Ionicons
+        for (const icon of parsedResponse.icons) {
+          const { name, tags } = icon;
+          iconObjects[name] = tags;
+        }
+      } else {
+        // Tabler
+        for (const iconMetadata of Object.values(parsedResponse)) {
+          const { name, tags, category } = iconMetadata;
+
+          const tagsArray = tags || [];
+          tagsArray.push(category.toLowerCase());
+
+          iconObjects[name] = tagsArray;
+        };
       }
 
       iconsMetadata = iconObjects;
     }
+
     // console.log(`iconsMetadata`);
     // console.dir(iconsMetadata, { depth: null });
 
     return iconsMetadata || null;
   }
 
-  async downloadIconPackVersion(iconPack, versionMetadata) {
-    const iconsMetadata =
-      iconPack.metadataUrl ?
-      await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll("{VERSION}", versionMetadata.name)) :
-      null;
-
-    // console.log(`iconsMetadata`);
-    // console.dir(iconsMetadata, { depth: null });
-
-    const response = await fetch(iconPack.svgUrl.replaceAll("{VERSION}", versionMetadata.name));
+  async downloadSvgIconsFromUrl(iconPack, versionMetadata, url, iconsMetadata) {
+    const response = await fetch(url.replaceAll("{VERSION}", versionMetadata.name));
 
     // console.log(`response`);
     // console.dir(response, { depth: null });
@@ -153,7 +165,7 @@ class ExtensionStore {
 
     if (fileType === "text/plain" || fileType === "image/svg+xml") {
       const saveIconFromSymbol = async (symbol, iconPack) => {
-        const iconName = symbol.id;
+        const iconName = symbol.id.replace('tabler-', '');
         const iconId = buildIconId(iconPack, iconName);
 
         symbol.id = iconId;
@@ -256,6 +268,28 @@ class ExtensionStore {
     return iconCount;
   }
 
+  async downloadIconPackVersion(iconPack, versionMetadata) {
+    const iconsMetadata =
+      iconPack.metadataUrl ?
+      await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll("{VERSION}", versionMetadata.name)) :
+      null;
+
+    // console.log(`iconsMetadata`);
+    // console.dir(iconsMetadata, { depth: null });
+
+    let iconCount = 0;
+
+    if (Array.isArray(iconPack.svgUrl)) {
+      for (const url of iconPack.svgUrl) {
+        iconCount += await this.downloadSvgIconsFromUrl(iconPack, versionMetadata, url, iconsMetadata);
+      }
+    } else {
+      iconCount = await this.downloadSvgIconsFromUrl(iconPack, versionMetadata, iconPack.svgUrl, iconsMetadata);
+    }
+
+    return iconCount;
+  }
+
   async deleteIconsByIconPackVersion(iconPackName, iconPackVersion) {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.icons], "readwrite");
@@ -316,21 +350,18 @@ class ExtensionStore {
         homepageUrl: 'https://ionic.io/ionicons',
         changelogUrl: "https://github.com/ionic-team/ionicons/blob/main/CHANGELOG.md",
         svgUrl: "https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/cheatsheet.html",
-        metadataUrl: "https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons.json",
+        metadataUrl: "https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/ionicons.json",
         styles: [
           {
             name: "Outline",
-            value: "-outline",
             filter: /-outline/,
           },
           {
             name: "Filled",
-            value: "",
             filter: /^(?!.*-outline)(?!.*-sharp).*$/, // Not containing -outline or -sharp
           },
           {
             name: "Sharp",
-            value: "-sharp",
             filter: /-sharp/,
           },
         ],
@@ -380,17 +411,14 @@ class ExtensionStore {
         styles: [
           {
             name: "Regular",
-            value: "-regular",
             filter: /-regular/,
           },
           {
             name: "Solid",
-            value: "-solid",
             filter: /-solid/,
           },
           {
             name: "Brands",
-            value: "-brand",
             filter: /-brand/,
           },
         ],
@@ -408,7 +436,6 @@ class ExtensionStore {
         styles: [
           {
             name: "Regular",
-            value: "",
             filter: /.*/,
           },
         ],
@@ -418,6 +445,29 @@ class ExtensionStore {
             // Issue: https://github.com/lucide-icons/lucide/issues/2768
             symbolViewBox: "0 0 24 24",
           },
+        ],
+      },
+      {
+        name: "Tabler",
+        homepageUrl: "https://tabler.io/icons",
+        changelogUrl: "https://tabler.io/changelog",
+        svgUrl: [
+          "https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite.svg",
+          "https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite-filled.svg"
+        ],
+        metadataUrl: "https://cdn.jsdelivr.net/npm/@tabler/icons@{VERSION}/icons.json",
+        styles: [
+          {
+            name: "Outline",
+            filter: /^(?!filled-)/, // Not starting with filled-
+          },
+          {
+            name: "Filled",
+            filter: /^filled-/,
+          },
+        ],
+        versions: [
+          { name: "3.30.0" },
         ],
       },
     ];

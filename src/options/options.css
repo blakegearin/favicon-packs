@@ -461,8 +461,8 @@ sl-radio
 
 #icon-packs-tables
 {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
 }
 
@@ -498,7 +498,7 @@ sl-radio
 
 #settings-dialog
 {
-  --width: 50vw;
+  --size: 70vh;
 }
 
 .ionicon-fill-none {

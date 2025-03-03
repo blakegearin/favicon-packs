@@ -14,7 +14,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 ## Features
 
-- [x] Choose from 4,900+ icons (Ionicons, Font Awesome, Lucide)
+- [x] Choose from over 10,000 icons (Ionicons, Font Awesome, Lucide, Tabler)
 - [x] Easily add domains or patterns for more advanced matching
 - [x] Custom colors for light & dark themes
 - [x] Guards against favicon hijacking (e.g. Notion)
@@ -56,6 +56,8 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
   - [Font Awesome](https://fontawesome.com)
 
   - [Lucide](https://lucide.dev)
+
+  - [Tabler](https://tabler.io/icons)
 
 - Web components: [Shoelace](https://shoelace.style)
 
