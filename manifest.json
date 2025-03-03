@@ -12,8 +12,7 @@
     "activeTab",
     "tabs",
     "storage",
-    "<all_urls>",
-    "*://*.unpkg.com/*"
+    "<all_urls>"
   ],
   "options_page": "src/options/index.html",
   "background": {

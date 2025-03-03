@@ -103,6 +103,9 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
     case 'Font_Awesome':
       styleElement.textContent = `.font-awesome { fill: currentColor; stroke: currentColor; }`;
       break;
+    case 'Lucide':
+      styleElement.textContent = `.lucide { stroke: currentColor; }`;
+      break;
   }
 
   svgSprite.insertBefore(styleElement, svgSprite.firstChild);
@@ -124,6 +127,10 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
   return updatedSvgString;
 }
 
+function buildIconPackVariant(iconStyle, iconPackName, iconPackVersion) {
+  return `icon-pack-variant-${iconStyle}-${iconPackName}-${iconPackVersion.replaceAll('.', '_')}`;
+}
+
 async function populateDrawerIcons() {
   const icons = await window.extensionStore.getIcons();
   const iconListFragment = document.createDocumentFragment();
@@ -135,11 +142,14 @@ async function populateDrawerIcons() {
   const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name));
   for (const icon of sortedIcons) {
     const tooltip = document.createElement('sl-tooltip');
-    tooltip.setAttribute('content', `${icon.iconPackName.replace('_', ' ')} ${icon.name}`);
+    const tooltipContent = `${icon.name} ${icon.iconPackName.replaceAll('_', ' ')} ${icon.iconPackVersion}`;
+    tooltip.setAttribute('content', tooltipContent);
 
     if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '));
 
-    tooltip.classList.add(`icon-style-${icon.iconPackName}-${icon.style}`);
+    tooltip.classList.add(
+      buildIconPackVariant(icon.style, icon.iconPackName, icon.iconPackVersion)
+    );
 
     const iconDiv = document.createElement('div');
     iconDiv.classList.add('icon-list-item');
@@ -152,6 +162,8 @@ async function populateDrawerIcons() {
       ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden');
       ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(svgSprite.cloneNode(true));
     }
+
+    updateCurrentIconCount(sortedIcons.length);
 
     iconDiv.appendChild(svgSprite);
     tooltip.appendChild(iconDiv);
@@ -327,45 +339,47 @@ function getPriority(id) {
   return siteConfigsOrder.indexOf(id);
 }
 
-function filterByStyle(styleName) {
-  // console.log('filterByStyle')
+async function filterByIconPackVariant(filterIconPackVariant) {
+  // console.log('filterByIconPackVariant')
 
-  // console.log(`styleName`);
-  // console.dir(styleName, { depth: null });
+  const iconPackVariants = [];
 
-  const iconStyles = [
-    'Ionicons-Outline',
-    'Ionicons-Filled',
-    'Ionicons-Sharp',
-    'Font_Awesome-Regular',
-    'Font_Awesome-Solid',
-    'Font_Awesome-Brands',
-  ];
+  const iconPacks = await window.extensionStore.getIconPacks();
+  iconPacks.forEach(iconPack => {
+    iconPack.versions.forEach(version => {
+      iconPack.styles.forEach(style => {
+        const variant = buildIconPackVariant(style.name, iconPack.name, version.name);
+        iconPackVariants.push(variant);
+      });
+    });
+  });
 
-  for (const iconStyle of iconStyles) {
+  for (const iconPackVariant of iconPackVariants) {
     document.documentElement.style.setProperty(
-      `--icon-style-${iconStyle}`,
-      ['All', iconStyle].includes(styleName) ? 'block' : 'none'
+      `--icon-pack-variant-${iconPackVariant}`,
+      ['All packs', iconPackVariant].includes(filterIconPackVariant) ? 'block' : 'none'
     );
   }
 
-  // document.documentElement.style.setProperty(
-  //   '--icon-style-outline',
-  //   ['Outline', 'All'].includes(styleName) ? 'block' : 'none'
-  // );
-  // document.documentElement.style.setProperty(
-  //   '--icon-style-filled',
-  //   ['Filled', 'All'].includes(styleName) ? 'block' : 'none'
-  // );
-  // document.documentElement.style.setProperty(
-  //   '--icon-style-sharp',
-  //   ['Sharp', 'All'].includes(styleName) ? 'block' : 'none'
-  // );
+  let iconPackVariantSelector = `.icon-list sl-tooltip`;
+
+  if (filterIconPackVariant !== 'All packs') {
+    iconPackVariantSelector += `.${filterIconPackVariant}`;
+  }
+
+  const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(iconPackVariantSelector).length;
+  updateCurrentIconCount(currentIconCount);
+}
+
+function updateCurrentIconCount(iconCount) {
+  document.querySelector('#current-icon-count').textContent = iconCount.toLocaleString();
 }
 
 function filterDrawerIcons(filter) {
   // console.log(`filter`);
   // console.dir(filter, { depth: null });
+
+  let currentIconCount = 0;
 
   ICON_SELECTOR_DRAWER.querySelectorAll('sl-tooltip').forEach((icon) => {
     let passes = false;
@@ -377,19 +391,21 @@ function filterDrawerIcons(filter) {
       if (filter instanceof RegExp) {
         if (filter.test(name)) passes = true;
       } else {
-        if (name.includes(filter) && tags.includes(filter)) passes = true;
+        if (name.includes(filter) || tags.includes(filter)) passes = true;
       }
     } else {
       passes = true;
     }
 
     if (passes) {
+      currentIconCount++;
       icon.classList.remove('display-none');
     } else {
       icon.classList.add('display-none');
     }
   });
 
+  updateCurrentIconCount(currentIconCount);
 }
 
 async function updateSiteConfig({
@@ -996,6 +1012,17 @@ async function createVersionRow(iconPack, versionMetadata) {
     downloadButton.classList.add('display-none');
     removeButton.classList.remove('display-none');
 
+    for (const style of iconPack.styles) {
+      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
+      document.documentElement.style.setProperty(
+        `--icon-pack-variant-${iconPackVariant}`,
+        'block',
+      );
+    }
+
+    await populateIconPackVariantSelector();
+    await populateDrawerIcons();
+
     toggleLoadingSpinner();
   });
 
@@ -1013,6 +1040,21 @@ async function createVersionRow(iconPack, versionMetadata) {
     downloadButton.classList.remove('display-none');
     removeButton.classList.add('display-none');
 
+    for (const style of iconPack.styles) {
+      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
+
+      console.log(`iconPackVariant`);
+      console.dir(iconPackVariant, { depth: null });
+
+      document.documentElement.style.setProperty(
+        `--icon-pack-variant-${iconPackVariant}`,
+        'none',
+      );
+    }
+
+    await populateIconPackVariantSelector();
+    await populateDrawerIcons();
+
     toggleLoadingSpinner();
   });
 
@@ -1024,25 +1066,25 @@ async function createVersionRow(iconPack, versionMetadata) {
 }
 
 async function createIconPackTable(iconPack) {
-  const iconPackTable = document.createElement('table');
-  iconPackTable.classList.add('icon-pack-table');
+  const iconPackDiv = document.createElement('div');
+  iconPackDiv.classList.add('center');
 
-  const tableHeader = document.createElement('thead');
+  const iconPackLink = document.createElement('a');
+  iconPackLink.href = iconPack.homepageUrl;
+  iconPackLink.target = '_blank';
+  iconPackLink.rel = 'noopener noreferrer';
+
+  const iconPackTitle = document.createElement('h3');
+  iconPackTitle.textContent = iconPack.name.replaceAll('_', ' ');
+
+  iconPackLink.appendChild(iconPackTitle);
+  iconPackDiv.appendChild(iconPackLink);
+
   const headerRow = document.createElement('tr');
+  headerRow.classList.add('icon-pack-header');
 
-  const headerCell = document.createElement('th');
-  headerCell.setAttribute('colspan', '4');
-  headerCell.classList.add('center');
-  headerCell.textContent = iconPack.name.replace('_', ' ');
-
-  headerRow.appendChild(headerCell);
-  tableHeader.appendChild(headerRow);
-
-  const subheaderRow = document.createElement('tr');
-  subheaderRow.classList.add('subheader');
-
-  const versionSubheader = document.createElement('th');
-  versionSubheader.classList.add('center', 'width-auto');
+  const versionHeader = document.createElement('th');
+  versionHeader.classList.add('center', 'width-auto');
 
   const versionDiv = document.createElement('div');
   versionDiv.classList.add('version');
@@ -1062,26 +1104,26 @@ async function createIconPackTable(iconPack) {
   changelogLink.appendChild(changelogIconButton);
   versionDiv.appendChild(changelogLink);
 
-  versionSubheader.appendChild(versionDiv);
-  subheaderRow.appendChild(versionSubheader);
+  versionHeader.appendChild(versionDiv);
+  headerRow.appendChild(versionHeader);
 
-  const statusSubheader = document.createElement('th');
-  statusSubheader.classList.add('center', 'width-auto');
-  statusSubheader.textContent = 'Status';
-  subheaderRow.appendChild(statusSubheader);
+  const statusHeader = document.createElement('th');
+  statusHeader.classList.add('center', 'width-auto');
+  statusHeader.textContent = 'Status';
+  headerRow.appendChild(statusHeader);
 
-  const countSubheader = document.createElement('th');
-  countSubheader.classList.add('center', 'width-content');
-  countSubheader.textContent = 'Icon Count';
-  subheaderRow.appendChild(countSubheader);
+  const countHeader = document.createElement('th');
+  countHeader.classList.add('center', 'width-content');
+  countHeader.textContent = 'Icon Count';
+  headerRow.appendChild(countHeader);
 
   const actionSubheader = document.createElement('th');
   actionSubheader.classList.add('center', 'width-auto');
   actionSubheader.textContent = 'Action';
-  subheaderRow.appendChild(actionSubheader);
+  headerRow.appendChild(actionSubheader);
 
-  tableHeader.appendChild(subheaderRow);
-  iconPackTable.appendChild(tableHeader);
+  const tableHeader = document.createElement('thead');
+  tableHeader.appendChild(headerRow);
 
   const tableBody = document.createElement('tbody');
 
@@ -1093,8 +1135,13 @@ async function createIconPackTable(iconPack) {
     tableBody.appendChild(versionRow);
   }
 
+  const iconPackTable = document.createElement('table');
+  iconPackTable.classList.add('icon-pack-table');
+  iconPackTable.appendChild(tableHeader);
   iconPackTable.appendChild(tableBody);
-  return iconPackTable;
+
+  iconPackDiv.appendChild(iconPackTable);
+  return iconPackDiv;
 }
 
 function toggleLoadingSpinner() {
@@ -1103,6 +1150,62 @@ function toggleLoadingSpinner() {
     document.querySelector('.skeleton-row').classList.toggle('display-none');
     document.querySelector('div > #loading-overlay').classList.toggle('display-none');
   }, 100);
+}
+
+async function populateIconPackVariantSelector() {
+  console.log('populateIconPackVariantSelector');
+
+  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
+  iconPacksSelect.replaceChildren();
+
+  const selectAllOption = document.createElement('sl-option');
+  selectAllOption.setAttribute('value', 'all');
+  selectAllOption.textContent = 'All packs';
+  selectAllOption.addEventListener('click', async () => await filterByIconPackVariant('All packs'));
+  iconPacksSelect.appendChild(selectAllOption);
+
+  const iconPacks = window.extensionStore.getIconPacks();
+  for (const iconPack of iconPacks) {
+    for await (const versionMetadata of iconPack.versions) {
+      if (!document.querySelector(`svg[icon-pack-name="${iconPack.name}"][icon-pack-version="${versionMetadata.name}"]`)) {
+        // svg tags don't work with createElement
+        const svgNS = "http://www.w3.org/2000/svg";
+        const iconPackSvg = document.createElementNS(svgNS, "svg");
+
+        iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
+        iconPackSvg.setAttribute("icon-pack-version", versionMetadata.name);
+        iconPackSvg.style.display = "none";
+
+        document.body.appendChild(iconPackSvg);
+      }
+
+      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
+      if (iconCount === 0) continue;
+
+      // Add icon pack styles to the select element
+      for (const style of iconPack.styles) {
+        const selectOption = document.createElement('sl-option');
+        const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
+
+        const cssVariableName = `--icon-pack-variant-${iconPackVariant}`;
+        document.documentElement.style.setProperty(cssVariableName, 'block');
+
+        let styleElement = document.getElementById('icon-pack-variant-styles');
+        if (!styleElement) {
+          styleElement = document.createElement('style');
+          styleElement.id = 'icon-pack-variant-styles';
+          document.head.appendChild(styleElement);
+        }
+
+        styleElement.textContent += `.${iconPackVariant} { display: var(${cssVariableName}); }`;
+
+        selectOption.setAttribute('value', iconPackVariant);
+        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${style.name} (<code>${versionMetadata.name}</code>)`;
+
+        iconPacksSelect.appendChild(selectOption);
+      };
+    }
+  };
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
@@ -1116,42 +1219,14 @@ document.addEventListener("DOMContentLoaded", async function() {
   // Icon selector drawer
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector');
 
-  const iconTypesSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-types');
+  await populateIconPackVariantSelector();
 
-  const iconPacks = window.extensionStore.getIconPacks();
-
-  for (const iconPack of iconPacks) {
-    for await (const versionMetadata of iconPack.versions) {
-      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
-      if (iconCount === 0) continue;
-
-      // Create an svg element for each icon pack to store the icon symbols
-
-      // svg tags don't work with createElement
-      const svgNS = "http://www.w3.org/2000/svg";
-      const iconPackSvg = document.createElementNS(svgNS, "svg");
-
-      iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
-      iconPackSvg.setAttribute("icon-pack-version", versionMetadata.name);
-      iconPackSvg.style.display = "none";
-
-      document.body.appendChild(iconPackSvg);
-
-      // Add icon pack styles to the select element
-      for (const style of iconPack.styles) {
-        const selectOption = document.createElement('sl-option');
-
-        selectOption.setAttribute('value', style.value);
-        selectOption.textContent = `${iconPack.name.replace('_', ' ')} ${style.name}`;
-        selectOption.addEventListener('click', () => filterByStyle(`${iconPack.name}-${style.name}`));
-
-        iconTypesSelect.appendChild(selectOption);
-      };
-
-      const selectAllOption = iconTypesSelect.querySelector('sl-option[value="all"]');
-      selectAllOption.addEventListener('click', () => filterByStyle('All'));
-    }
-  };
+  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
+  iconPacksSelect.addEventListener('sl-change', (event) => {
+    event.target.updateComplete.then(async () => {
+      await filterByIconPackVariant(event.target.value);
+    });
+  });
 
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group');
   iconDrawerTabGroup.addEventListener('sl-tab-show', (event) => {
@@ -1194,7 +1269,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     ICON_SELECTOR_DRAWER.hide();
   });
 
-  ICON_SELECTOR_DRAWER.querySelector('sl-input').addEventListener('sl-input', (event) => {
+  ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
       const searchQuery = event.target.input.value;
       filterDrawerIcons(searchQuery);
@@ -1455,6 +1530,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   // console.log(`iconPacksDiv`);
   // console.dir(iconPacksDiv, { depth: null });
 
+  const iconPacks = window.extensionStore.getIconPacks();
   for await (const iconPack of iconPacks) {
     const iconPackTable = await createIconPackTable(iconPack);
     iconPacksDiv.appendChild(iconPackTable);

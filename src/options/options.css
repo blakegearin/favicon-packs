@@ -16,6 +16,7 @@
   --table-background: white;
   --table-border: #4b4b4b;
   --loading-overlay-background: rgba(0, 0, 0, 0.7);
+  --scrollbar-foreground: #7B7B7B;
 }
 
 :host,
@@ -27,6 +28,7 @@
   --table-background: black;
   --table-border: #4b4b4b;
   --loading-overlay-background: rgba(0, 0, 0, 0.5);
+  --scrollbar-foreground: #9C9C9E;
 }
 
 html, body
@@ -36,6 +38,14 @@ html, body
   color: var(--main-color);
   font-family: Arial, sans-serif;
   margin: 0;
+  scrollbar-width: 2px;
+  --scrollbar-background: transparent;
+	scrollbar-color: var(--scrollbar-foreground) var(--scrollbar-background);
+}
+
+sl-select
+{
+  caret-color: transparent;
 }
 
 #options-title
@@ -68,6 +78,11 @@ table#siteConfigs th:not(.width-auto),
 #icon-packs-tables table
 {
   table-layout: auto;
+}
+
+#icon-packs-tables div
+{
+  width: 100%;
 }
 
 table#tableSettings
@@ -160,13 +175,13 @@ td.center-priority sl-skeleton
   vertical-align: middle;
 }
 
-sl-tab-panel[name="icon-packs"] .subheader th
+sl-tab-panel[name="icon-packs"] .icon-pack-header th
 {
   font-style: italic;
   font-weight: 500;
 }
 
-.subheader .version
+.icon-pack-header .version
 {
   --sl-spacing-x-small: 0px;
   display: flex;
@@ -175,11 +190,11 @@ sl-tab-panel[name="icon-packs"] .subheader th
   gap: 7px;
 }
 
-.subheader .version a
+.icon-pack-header .version a
 {
   color: var(--main-color);
+  line-height: 0;
 }
-
 
 sl-tab-panel[name="icon-packs"] code
 {
@@ -460,46 +475,20 @@ sl-radio
 }
 
 /* Icon style */
-:root
+.ionicon,
+.Font_Awesome
 {
-  --icon-style-Ionicons-Outline: block;
-  --icon-style-Ionicons-Filled: block;
-  --icon-style-Ionicons-Sharp: block;
-  --icon-style-Font_Awesome-Regular: block;
-  --icon-style-Font_Awesome-Solid: block;
-  --icon-style-Font_Awesome-Brands: block;
+  fill: currentColor;
+  stroke: currentColor;
 }
-
-.icon-style-Ionicons-Outline
+.Lucide
 {
-  display: var(--icon-style-Ionicons-Outline);
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-
-.icon-style-Ionicons-Filled
-{
-  display: var(--icon-style-Ionicons-Filled);
-}
-
-.icon-style-Ionicons-Sharp
-{
-  display: var(--icon-style-Ionicons-Sharp);
-}
-
-.icon-style-Font_Awesome-Regular
-{
-  display: var(--icon-style-Font_Awesome-Regular);
-}
-
-.icon-style-Font_Awesome-Solid
-{
-  display: var(--icon-style-Font_Awesome-Solid);
-}
-
-.icon-style-Font_Awesome-Brands
-{
-  display: var(--icon-style-Font_Awesome-Brands);
-}
-
 .drawer-footer,
 .dialog-footer
 {
@@ -512,13 +501,6 @@ sl-radio
   --width: 50vw;
 }
 
-/* Ionicons */
-.ionicon,
-.font-awesome
-{
-  fill: currentColor;
-  stroke: currentColor;
-}
 .ionicon-fill-none {
   fill: none;
 }
@@ -694,6 +676,11 @@ sl-tab
 }
 
 /* Icon Search */
+#search-input
+{
+  max-width: 250px;
+}
+
 .icon-upload > div:first-child
 {
   margin-bottom: 1.5rem;
@@ -735,6 +722,13 @@ sl-tab
   width: 10rem;
   flex: 0 0 auto;
   margin-left: 1rem;
+}
+
+#icon-search-row
+{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .icon-loader {

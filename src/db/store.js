@@ -81,7 +81,7 @@ class ExtensionStore {
   }
 
   async fetchIconsMetadata(metadataUrl) {
-    let metadata;
+    let responseText;
 
     try {
       const response = await fetch(metadataUrl);
@@ -91,7 +91,7 @@ class ExtensionStore {
 
       if (!response.ok) throw new Error("Network response was not ok");
 
-      metadata = await response.text();
+      responseText = await response.text();
     } catch (error) {
       console.error("Fetch error: ", error);
     }
@@ -99,8 +99,20 @@ class ExtensionStore {
     // console.log(`metadata`);
     // console.dir(metadata, { depth: null });
 
-    const iconsMetadata = JSON.parse(metadata).icons;
+    const parsedResponse = JSON.parse(responseText);
 
+    let iconsMetadata = parsedResponse;
+
+    if (parsedResponse?.icons) {
+      const iconObjects = {};
+
+      for (const icon of parsedResponse.icons) {
+        const { name, tags } = icon;
+        iconObjects[name] = tags;
+      }
+
+      iconsMetadata = iconObjects;
+    }
     // console.log(`iconsMetadata`);
     // console.dir(iconsMetadata, { depth: null });
 
@@ -110,10 +122,13 @@ class ExtensionStore {
   async downloadIconPackVersion(iconPack, versionMetadata) {
     const iconsMetadata =
       iconPack.metadataUrl ?
-      await this.fetchIconsMetadata(iconPack.metadataUrl.replace("{VERSION}", versionMetadata.name)) :
+      await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll("{VERSION}", versionMetadata.name)) :
       null;
 
-    const response = await fetch(iconPack.svgUrl.replace("{VERSION}", versionMetadata.name));
+    // console.log(`iconsMetadata`);
+    // console.dir(iconsMetadata, { depth: null });
+
+    const response = await fetch(iconPack.svgUrl.replaceAll("{VERSION}", versionMetadata.name));
 
     // console.log(`response`);
     // console.dir(response, { depth: null });
@@ -121,6 +136,7 @@ class ExtensionStore {
     if (!response.ok) throw new Error("Network response was not ok");
 
     const responseString = await response.text();
+
     // console.log(`responseString`);
     // console.dir(responseString, { depth: null });
 
@@ -135,33 +151,15 @@ class ExtensionStore {
 
     let iconCount = 0;
 
-    if (fileType === "text/html") {
-      const htmlDoc = parser.parseFromString(responseString, fileType);
-      const htmlElement = htmlDoc.documentElement;
-
-      // console.log(`htmlElement`);
-      // console.dir(htmlElement, { depth: null });
-
-      const svgElements = htmlElement.querySelectorAll("a > svg");
-
-      for await (const svgElement of svgElements) {
-        svgElement.setAttribute("viewBox", "0 0 512 512");
-
-        const symbolId = svgElement.children[0].getAttribute('href');
-
-        const blockList = versionMetadata.blockList || [];
-        if (blockList.includes(symbolId.replace('#', ''))) continue;
-
-        const symbol = htmlElement.querySelector(symbolId);
+    if (fileType === "text/plain" || fileType === "image/svg+xml") {
+      const saveIconFromSymbol = async (symbol, iconPack) => {
         const iconName = symbol.id;
         const iconId = buildIconId(iconPack, iconName);
 
         symbol.id = iconId;
 
-        const iconTags = iconsMetadata.find(
-          (iconMetadata) => iconMetadata.name === iconName,
-        ).tags;
-        svgElement.setAttribute("tags", iconTags.join(" "));
+        const iconTags = iconsMetadata[iconName];
+        // symbol.setAttribute("tags", iconTags.join(" "));
 
         const iconStyle = iconPack.styles.find((style) => {
           return style.filter.test(iconName);
@@ -180,6 +178,38 @@ class ExtensionStore {
         await window.extensionStore.addIcon(icon);
         iconCount++;
       };
+
+      // jsDelivr Docs: https://www.jsdelivr.com/documentation#id-restrictions
+      if (fileType === "text/plain") {
+        const htmlDoc = parser.parseFromString(responseString, 'text/html');
+        const htmlElement = htmlDoc.documentElement;
+
+        // console.log(`htmlElement`);
+        // console.dir(htmlElement, { depth: null });
+
+        const svgElements = htmlElement.querySelectorAll("a > svg");
+
+        for await (const svgElement of svgElements) {
+          svgElement.setAttribute("viewBox", "0 0 512 512");
+
+          const symbolId = svgElement.children[0].getAttribute('href');
+
+          const blockList = versionMetadata.blockList || [];
+          if (blockList.includes(symbolId.replaceAll('#', ''))) continue;
+
+          const symbol = htmlElement.querySelector(symbolId);
+          await saveIconFromSymbol(symbol, iconPack);
+        };
+      } else if (fileType === "image/svg+xml") {
+        const svgDoc = parser.parseFromString(responseString, fileType);
+        const symbols = svgDoc.querySelectorAll("symbol");
+
+        for await (const symbol of symbols) {
+          symbol.classList.add(iconPack.name);
+          if (versionMetadata.symbolViewBox) symbol.setAttribute("viewBox", versionMetadata.symbolViewBox);
+          await saveIconFromSymbol(symbol, iconPack);
+        }
+      }
     } else if (fileType === "application/json") {
       const iconsObject = JSON.parse(responseString);
 
@@ -204,7 +234,7 @@ class ExtensionStore {
 
           // Convert svg to symbol; crude but simple & effective
           let symbolString = iconStyleMetadata.raw
-            .replace('<svg', `<symbol id="${iconId}" class="font-awesome"`)
+            .replace('<svg', `<symbol id="${iconId}" class="${iconPack.name}"`)
             .replace('svg>', 'symbol>');
 
           const icon = {
@@ -283,9 +313,10 @@ class ExtensionStore {
     return [
       {
         name: "Ionicons",
+        homepageUrl: 'https://ionic.io/ionicons',
         changelogUrl: "https://github.com/ionic-team/ionicons/blob/main/CHANGELOG.md",
-        svgUrl: "https://unpkg.com/ionicons@{VERSION}/dist/cheatsheet.html",
-        metadataUrl: "https://unpkg.com/ionicons@{VERSION}/dist/ionicons.json",
+        svgUrl: "https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/cheatsheet.html",
+        metadataUrl: "https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons.json",
         styles: [
           {
             name: "Outline",
@@ -343,6 +374,7 @@ class ExtensionStore {
       },
       {
         name: "Font_Awesome",
+        homepageUrl: 'https://fontawesome.com',
         changelogUrl: "https://fontawesome.com/changelog",
         svgUrl: "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{VERSION}/metadata/icon-families.json",
         styles: [
@@ -365,6 +397,27 @@ class ExtensionStore {
         versions: [
           { name: "6.7.2" },
           { name: "6.6.0" },
+        ],
+      },
+      {
+        name: "Lucide",
+        homepageUrl: 'https://lucide.dev',
+        changelogUrl: "https://github.com/lucide-icons/lucide/releases",
+        svgUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.477.0/sprite.svg",
+        metadataUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.477.0/tags.json",
+        styles: [
+          {
+            name: "Regular",
+            value: "",
+            filter: /.*/,
+          },
+        ],
+        versions: [
+          {
+            name: "0.477.0",
+            // Issue: https://github.com/lucide-icons/lucide/issues/2768
+            symbolViewBox: "0 0 24 24",
+          },
         ],
       },
     ];

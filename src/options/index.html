@@ -435,14 +435,17 @@
 
           <sl-tab-panel name="icon-packs" active>
             <div class="icon-search-controls">
-              <sl-input placeholder="Search" autofocus clearable>
-                <sl-icon slot="prefix" name="search"></sl-icon>
-              </sl-input>
+              <div id="icon-search-row">
+                <sl-input id="search-input" placeholder="Search" autofocus clearable>
+                  <sl-icon slot="prefix" name="search"></sl-icon>
+                </sl-input>
 
-              <sl-select id="icon-types" value="all">
-                <sl-option value="all">
-                  All
-                </sl-option>
+                <div>
+                  <span id="current-icon-count"></span> icons
+                </div>
+              </div>
+
+              <sl-select id="icon-packs-select" value="all">
               </sl-select>
             </div>
           </sl-tab-panel>

@@ -14,7 +14,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 ## Features
 
-- [x] Choose from 3,400+ icons (Ionicons, Font Awesome)
+- [x] Choose from 4,900+ icons (Ionicons, Font Awesome, Lucide)
 - [x] Easily add domains or patterns for more advanced matching
 - [x] Custom colors for light & dark themes
 - [x] Guards against favicon hijacking (e.g. Notion)
@@ -27,23 +27,25 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 - Why these icons?
 
-  - I made this to recreate the easy favicon swapping of a discontinued browser, which used Ionicons. Font Awesome was added because it's a popular and large.
+  - I made this to recreate the easy favicon swapping of a discontinued browser that used Ionicons. Others were added for convenience.
 
-- Can my favorite icon library be added?
+- Can my favorite icon pack be added? <small>_(last updated: March 2025)_</small>
 
+  - Bootstrap
+    - Not right now. It may be possible [in the future](https://github.com/twbs/icons/pull/2114).
   - Iconoir
-
     - Not right now. It may be possible [in the future](https://github.com/iconoir-icons/iconoir/issues/398).
-
+  - Remix Icon
+    - Not right now. It may be possible [in the future](https://github.com/Remix-Design/RemixIcon/pull/979).
+  - Heroicons
+    - Not right now. It's pretty small.
+  - Boxicons
+    - Not right now. It's missing support for sprites and tags.
   - Material Symbols
-
-    - No. It's a smaller, enterprisey library from a megacorporation that may deprecate it at any time.
-
+    - No. It's a smaller, marketed toward enterprise, and made by a megacorporation that may deprecate it at any time.
   - Something else
-
-    - Generally speaking, it needs to have a public CDN to fetch all icons (in symbol or SVG format) and tags, which enables searching. CSS or font-based solutions are not compatible.
-
-    - Uploading your own files is always an option.
+    - Generally speaking, it needs to have a public CDN to fetch all icons in bulk (sprite or symbols or SVGs). The same goes for tags which enable search. CSS or font-based solutions are not compatible.
+    - Uploading your own files is always an option!
 
 ## Credits
 
@@ -51,8 +53,10 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
   - [Ionicons](https://ionic.io/ionicons)
 
-  - [Font Awesome](https://fontawesome.com/s)
+  - [Font Awesome](https://fontawesome.com)
 
-- Web components: [Shoelace](https://shoelace.style/)
+  - [Lucide](https://lucide.dev)
 
-- Logo: inspired by [shapez](https://shapez.io/)
+- Web components: [Shoelace](https://shoelace.style)
+
+- Logo: inspired by [shapez](https://shapez.io)
