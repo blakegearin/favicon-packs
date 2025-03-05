@@ -13,14 +13,14 @@
   <title>Favicon Packs</title>
   <link rel="icon" type="image/svg+xml" href="../../img/logo.svg" />
 
-  <script src="theme.js"></script>
+  <script src="scripts/theme.js"></script>
 
   <!-- Shoelace: https://shoelace.style -->
-  <link rel="stylesheet" href="light.css" />
-  <link rel="stylesheet" href="dark.css" />
+  <link rel="stylesheet" href="styles/light.css" />
+  <link rel="stylesheet" href="styles/dark.css" />
   <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
 
-  <link rel="stylesheet" href="options.css" />
+  <link rel="stylesheet" href="styles/options.css" />
 </head>
 
 <body>
@@ -287,7 +287,16 @@
             </div>
 
             <div class="icon edit">
-              <sl-button class="icon-value"></sl-button>
+              <sl-button id="icon-value"></sl-button>
+
+              <sl-tooltip
+                id="icon-vale-not-found"
+                class="display-none"
+                content="Icon not found"
+                placement="bottom"
+              >
+                <sl-button></sl-button>
+              </sl-tooltip>
             </div>
           </td>
 
@@ -441,7 +450,7 @@
                 </sl-input>
 
                 <div>
-                  <span id="current-icon-count"></span> icons
+                  <span id="current-icon-count">0</span> icons
                 </div>
               </div>
 
@@ -615,7 +624,7 @@
         Cancel
       </sl-button>
 
-      <sl-button id="delete-all-button" variant="danger">
+      <sl-button id="delete-confirmation-button" variant="danger">
         Delete
       </sl-button>
     </div>
@@ -633,10 +642,19 @@
 
       <sl-tab-panel name="general">
         <table id="tableSettings">
+          <thead>
+            <tr>
+              <th class="minimal-width"></th>
+              <th></th>
+              <th class="minimal-width"></th>
+              <th></th>
+            </tr>
+          </thead>
+
           <tbody>
             <tr>
-              <td class="center width-content">
-                <div class="center-cell">
+              <td>
+                <div class="right-align">
                   <sl-switch
                     id="light-theme-switch"
                     size="large"
@@ -644,30 +662,36 @@
                 </div>
               </td>
 
-              <td class="width-auto">
+              <td>
                 <div>
-                  Light Theme
+                  <span>
+                    Light Theme
+                  </span>
                 </div>
               </td>
 
-              <td class="center width-content">
-                <sl-color-picker
-                  id="default-light-theme-color"
-                  label="Select a color"
-                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                ></sl-color-picker>
+              <td>
+                <div class="right-align">
+                  <sl-color-picker
+                    id="default-light-theme-color"
+                    label="Select a color"
+                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                  ></sl-color-picker>
+                </div>
               </td>
 
-              <td class="width-auto">
+              <td>
                 <div>
-                  Default Color for Light Theme
+                  <span>
+                    Default Color for Light Theme
+                  </span>
                 </div>
               </td>
             </tr>
 
             <tr>
-              <td class="center width-content">
-                <div class="center-cell">
+              <td>
+                <div class="right-align">
                   <sl-switch
                     id="dark-theme-switch"
                     size="large"
@@ -675,30 +699,36 @@
                 </div>
               </td>
 
-              <td class="width-auto">
+              <td>
                 <div>
-                  Dark Theme
+                  <span>
+                    Dark Theme
+                  </span>
                 </div>
               </td>
 
-              <td class="center width-content">
-                <sl-color-picker
-                  id="default-dark-theme-color"
-                  label="Select a color"
-                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                ></sl-color-picker>
+              <td>
+                <div class="right-align">
+                  <sl-color-picker
+                    id="default-dark-theme-color"
+                    label="Select a color"
+                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                  ></sl-color-picker>
+                </div>
               </td>
 
-              <td class="width-auto">
+              <td>
                 <div>
-                  Default Color for Dark Theme
+                  <span>
+                    Default Color for Dark Theme
+                  </span>
                 </div>
               </td>
             </tr>
 
             <tr>
-              <td class="center width-content">
-                <div class="center-cell">
+              <td>
+                <div style="text-align: right;">
                   <sl-switch
                     id="any-theme-switch"
                     size="large"
@@ -707,21 +737,58 @@
                 </div>
               </td>
 
-              <td class="width-auto">
-                Any Theme (Fallback)
-              </td>
-
-              <td class="center width-content">
-                <sl-color-picker
-                  id="default-any-theme-color"
-                  label="Select a color"
-                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                ></sl-color-picker>
-              </td>
-
-              <td class="width-auto">
+              <td>
                 <div>
-                  Default Color for Any Theme
+                  <span>Any Theme (Fallback)</span>
+                </div>
+              </td>
+
+              <td>
+                <div class="right-align">
+                  <sl-color-picker
+                    id="default-any-theme-color"
+                    label="Select a color"
+                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                  ></sl-color-picker>
+                </div>
+              </td>
+
+              <td>
+                <div>
+
+                  <span>
+                    Default Color for Any Theme (Fallback)
+                  </span>
+                </div>
+              </td>
+            </tr>
+
+            <tr></tr>
+
+            <tr>
+              <td>
+                <div>
+                  <span>
+                    Logging
+                  </span>
+                </div>
+              </td>
+
+              <td>
+                <div>
+                  <sl-select
+                    id="log-level-select"
+                    size="medium"
+                    placement="bottom"
+                    style="max-width: 150px;"
+                  >
+                    <sl-option value="silent">Silent</sl-option>
+                    <sl-option value="quiet">Quiet</sl-option>
+                    <sl-option value="info">Info</sl-option>
+                    <sl-option value="debug">Debug</sl-option>
+                    <sl-option value="verbose">Verbose</sl-option>
+                    <sl-option value="trace">Trace</sl-option>
+                  </sl-select>
                 </div>
               </td>
             </tr>
@@ -735,8 +802,9 @@
     </sl-tab-group>
   </sl-drawer>
 
+  <script src="../utils/logger.js"></script>
   <script src="../db/store.js"></script>
-  <script src="options.js"></script>
+  <script src="scripts/options.js"></script>
 </body>
 
 </html>

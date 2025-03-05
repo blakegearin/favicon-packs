@@ -85,11 +85,22 @@ table#siteConfigs th:not(.width-auto),
   width: 100%;
 }
 
-table#tableSettings
+#tableSettings
 {
   background: transparent;
+  table-layout: auto;
+}
+
+#tableSettings thead
+{
+  visibility: collapse;
+}
+
+#tableSettings td div
+{
   display: flex;
-  flex-flow: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 #tableSettings tr,
@@ -100,7 +111,7 @@ table#tableSettings
   height: 50px;
 }
 
-table#tableSettings td:not(.width-auto)
+#tableSettings th.minimal-width
 {
   width: 1%;
 }
@@ -152,6 +163,11 @@ tr, td, th
 .center
 {
   text-align: center;
+}
+
+.right-align
+{
+  text-align: right;
 }
 
 td.center {
@@ -271,14 +287,15 @@ sl-tag sl-icon-button
 .favicon-cell img,
 .icon-cell svg,
 .icon-cell sl-skeleton,
-.icon-value
+#icon-value,
+#icon-vale-not-found sl-button
 {
   height: 40px;
   width: 40px;
   display: flex;
 }
 
-.icon-value img
+#icon-value img
 {
   height: 35px;
   width: 35px;

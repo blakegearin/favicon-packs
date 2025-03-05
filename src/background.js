@@ -1,15 +1,17 @@
-console.log("Favicon Packs: background.js loaded");
+fpLogger.quiet("background.js laoded");
 
 function getSiteConfigsOrder() {
+  fpLogger.debug("getSiteConfigsOrder()");
   return JSON.parse(localStorage.getItem('siteConfigsOrder')) || [];
 }
 
 async function initialize() {
-  console.log('initialize');
+  fpLogger.debug("initialize()");
+
   await window.extensionStore.initialize();
 
   browser.browserAction.onClicked.addListener(() => {
-    browser.tabs.create({ url: browser.runtime.getURL("src/options/index.html") });
+    browser.tabs.create({ url: browser.runtime.getURL("src/options/options.html") });
   });
 
   const iconPacks = window.extensionStore.getIconPacks();
@@ -22,58 +24,49 @@ async function initialize() {
   };
 
   browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    // console.log(`request`);
-    // console.dir(request, { depth: null });
-    // console.log(`sender`);
-    // console.dir(sender, { depth: null });
+    fpLogger.trace("request", request);
+    fpLogger.trace("sender", sender);
+    fpLogger.trace("sendResponse", sendResponse);
 
     if (request.action === "replaceFavicon") {
+      fpLogger.debug("replaceFavicon");
 
-
-      const activeSiteConfigs = await this.getActiveSiteConfigs();
-      const validSiteConfigs = activeSiteConfigs.filter(siteConfig =>
-        siteConfig.websitePattern && (siteConfig.iconId || siteConfig.uploadId)
-      );
+      const siteConfigs = await window.extensionStore.getActiveSiteConfigs();
 
       const siteConfigsOrder = getSiteConfigsOrder();
       const sortedSiteConfigs = siteConfigsOrder
-        .map(id => validSiteConfigs.find(siteConfig => siteConfig.id === id))
+        .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
         .filter(Boolean);
 
-      // console.log(`sortedSiteConfigs`);
-      // console.dir(sortedSiteConfigs, { depth: null });
+      fpLogger.debug("sortedSiteConfigs", sortedSiteConfigs);
 
       const siteConfig = sortedSiteConfigs.find((localSiteConfig) => {
-        let websitePattern = localSiteConfig.websitePattern;
+        if (!localSiteConfig.websitePattern) return false;
+        if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false;
 
-        // console.log(`websitePattern`);
-        // console.dir(websitePattern, { depth: null });
+        let websitePattern = localSiteConfig.websitePattern;
+        fpLogger.debug("websitePattern", websitePattern);
 
         if (localSiteConfig.patternType === 'Simple Match') {
           const escapedDomain = websitePattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
           websitePattern = `.*${escapedDomain}.*`;
+          fpLogger.debug("websitePattern", websitePattern);
         }
-
-        // console.log(`websitePattern`);
-        // console.dir(websitePattern, { depth: null });
 
         try {
           const regexp = new RegExp(websitePattern, 'i');
-          // console.log(`regexp`);
-          // console.dir(regexp, { depth: null });
+          fpLogger.debug("regexp", websitePattern);
 
           const matches = regexp.test(sender.url);
-          // console.log(`matches`);
-          // console.dir(matches, { depth: null });
+          fpLogger.debug("matches", matches);
 
           return matches;
         } catch (error) {
-          console.error("Error creating RegExp:", error);
+          fpLogger.error("Error creating RegExp", error);
         }
       });
 
-      // console.log(`siteConfig`);
-      // console.dir(siteConfig, { depth: null });
+      fpLogger.debug("siteConfig", siteConfig);
 
       if (!siteConfig) {
         browser.tabs.sendMessage(sender.tab.id, {
@@ -88,26 +81,20 @@ async function initialize() {
 
       if (siteConfig.uploadId) {
         const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
-        // console.log(`upload`);
-        // console.dir(upload, { depth: null });
+        fpLogger.debug("upload", upload);
 
         imgUrl = upload.dataUri;
       } else {
-        // console.log(`request.colorScheme`);
-        // console.dir(request.colorScheme);
-
         const settingsMetadata = window.extensionStore.getSettingsMetadata();
-        // console.log(`settingsMetadata`);
-        // console.dir(settingsMetadata, { depth: null });
+        fpLogger.debug("settingsMetadata", settingsMetadata);
 
         const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue();
-        // console.log(`darkThemeEnabled`);
-        // console.dir(darkThemeEnabled, { depth: null });
+        fpLogger.debug("darkThemeEnabled", darkThemeEnabled);
 
         const lightThemeEnabled = settingsMetadata.lightThemeEnabled.getValue();
-        // console.log(`lightThemeEnabled`);
-        // console.dir(lightThemeEnabled, { depth: null });
+        fpLogger.debug("lightThemeEnabled", lightThemeEnabled);
 
+        fpLogger.debug("request.colorScheme", request.colorScheme);
         switch (request.colorScheme) {
           case null:
             break;
@@ -119,20 +106,13 @@ async function initialize() {
             break;
         }
 
-        console.log(`imgUrl`);
-        console.dir(imgUrl, { depth: null });
-
-        console.log(`!imgUrl && !darkThemeEnabled && !lightThemeEnabled`);
-        console.dir(!imgUrl && !darkThemeEnabled && !lightThemeEnabled, { depth: null });
-
         if (!imgUrl && !darkThemeEnabled && !lightThemeEnabled) {
+          fpLogger.debug("!imgUrl && !darkThemeEnabled && !lightThemeEnabled");
           imgUrl = siteConfig.anyPngUrl;
         }
       }
 
-      // console.log(`imgUrl`);
-      // console.dir(imgUrl, { depth: null });
-
+      fpLogger.debug("imgUrl", imgUrl);
       browser.tabs.sendMessage(sender.tab.id, {
         action: "setFavicon",
         imgUrl,

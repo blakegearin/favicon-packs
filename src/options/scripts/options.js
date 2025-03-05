@@ -1,10 +1,12 @@
-console.log("Favicon Packs: options.js loaded");
+fpLogger.quiet("options.js loaded");
 
 let ICON_SELECTOR_DRAWER;
 
 const svgNS = "http://www.w3.org/2000/svg";
 
 function svgToPngBase64(svgString) {
+  fpLogger.verbose("svgToPngBase64");
+
   return new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(svgBlob);
@@ -46,8 +48,9 @@ function svgToPngBase64(svgString) {
 
     img.onerror = function(error) {
       URL.revokeObjectURL(url);
-      console.error(error);
-      reject(new Error('Failed to load SVG image'));
+      const errorMessage = 'Failed to load SVG image';
+      fpLogger.error(errorMessage, error);
+      reject(new Error(errorMessage));
     };
 
     img.src = url;
@@ -55,6 +58,8 @@ function svgToPngBase64(svgString) {
 }
 
 function buildUploadImg(upload) {
+  fpLogger.debug("buildUploadImg()");
+
   const iconImage = document.createElement("img");
   iconImage.src = upload.dataUri;
   iconImage.setAttribute('upload-id', upload.id);
@@ -63,7 +68,7 @@ function buildUploadImg(upload) {
 }
 
 function buildSvgSprite(icon, size = 40) {
-  // console.log("buildSvgSprite");
+  fpLogger.trace("buildSvgSprite()");
 
   // svg tags don't work with createElement
   const iconSvg = document.createElementNS(svgNS, "svg");
@@ -85,10 +90,7 @@ function buildSvgSprite(icon, size = 40) {
 }
 
 function createFaviconSprite(icon, siteConfig, theme = null) {
-  // console.log("createFaviconSprite");
-
-  // console.log(`theme`);
-  // console.dir(theme, { depth: null });
+  fpLogger.debug("createFaviconSprite()");
 
   const svgSprite = buildSvgSprite(icon, 1000);
   svgSprite.innerHTML += icon.symbol;
@@ -119,24 +121,24 @@ function createFaviconSprite(icon, siteConfig, theme = null) {
 
   const serializer = new XMLSerializer();
   const updatedSvgString = serializer.serializeToString(svgSprite);
-
-  // console.log(`updatedSvgString`);
-  // console.dir(updatedSvgString, { depth: null });
+  fpLogger.debug("updatedSvgString", updatedSvgString);
 
   return updatedSvgString;
 }
 
 function buildIconPackVariant(iconStyle, iconPackName, iconPackVersion) {
+  fpLogger.trace("buildIconPackVariant()");
   return `icon-pack-variant-${iconStyle}-${iconPackName}-${iconPackVersion.replaceAll('.', '_')}`;
 }
 
 async function populateDrawerIcons() {
+  fpLogger.debug("populateDrawerIcons()");
+
   const icons = await window.extensionStore.getIcons();
+  fpLogger.debug("icons", icons);
+
   const iconListFragment = document.createDocumentFragment();
   const iconSymbols = {};
-
-  // console.log(`icons`);
-  // console.dir(icons, { depth: null });
 
   const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name));
   for (const icon of sortedIcons) {
@@ -162,16 +164,12 @@ async function populateDrawerIcons() {
       ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(svgSprite.cloneNode(true));
     }
 
-    updateCurrentIconCount(sortedIcons.length);
-
     iconDiv.appendChild(svgSprite);
     tooltip.appendChild(iconDiv);
     iconListFragment.appendChild(tooltip);
 
     const iconPackSvgSelector = `svg[icon-pack-name="${icon.iconPackName}"][icon-pack-version="${icon.iconPackVersion}"]`;
-
-    // console.log(`iconPackSvgSelector`);
-    // console.dir(iconPackSvgSelector, { depth: null });
+    fpLogger.verbose("iconPackSvgSelector", iconPackSvgSelector);
 
     if (iconSymbols[iconPackSvgSelector]) {
       iconSymbols[iconPackSvgSelector].push(icon.symbol);
@@ -180,17 +178,17 @@ async function populateDrawerIcons() {
     }
   };
 
+  updateCurrentIconCount(sortedIcons.length);
+
   const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list');
   iconList.replaceChildren(iconListFragment);
 
-  // console.log(`iconSymbols`);
-  // console.dir(iconSymbols, { depth: null });
-
+  fpLogger.debug("iconSymbols", iconSymbols);
   for (let [selector, symbols] of Object.entries(iconSymbols)) {
     const iconPackSvg = document.querySelector(selector);
 
     if (!iconPackSvg) {
-      console.error(`Icon pack SVG not found: ${selector}`);
+      fpLogger.error(`Icon pack SVG not found: ${selector}`);
       continue;
     }
 
@@ -199,11 +197,15 @@ async function populateDrawerIcons() {
 }
 
 async function getSiteConfigsByUpload(uploadId) {
+  fpLogger.debug("getSiteConfigsByUpload()");
+
   const siteConfigs = await window.extensionStore.getSiteConfigs();
   return siteConfigs.filter(siteConfig => siteConfig.uploadId?.toString() === uploadId?.toString());
 }
 
 async function populateDrawerUploads() {
+  fpLogger.debug("populateDrawerUploads()");
+
   const uploads = await window.extensionStore.getUploads();
   const uploadListFragment = document.createDocumentFragment();
 
@@ -239,12 +241,12 @@ async function populateDrawerUploads() {
 
     const uploadDeleteButton = deleteButton.cloneNode(true);
     uploadDeleteButton.addEventListener('click', async () => {
+      fpLogger.info("Upload delete button clicked");
+
       const relatedSiteConfigs = await getSiteConfigsByUpload(upload.id);
+      fpLogger.debug("relatedSiteConfigs", relatedSiteConfigs);
+
       const usageCount = relatedSiteConfigs.length;
-
-      // console.log(`relatedSiteConfigs`);
-      // console.dir(relatedSiteConfigs, { depth: null });
-
       const uploadDate = new Date(parseInt(upload.id, 10));
       const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} at ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
 
@@ -294,13 +296,13 @@ async function populateDrawerUploads() {
     const uploadSelectRadio = selectRadio.cloneNode(true);
 
     const updatedIconUploadId = ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute('upload-id');
-
-    // console.log(`updatedIconUploadId`);
-    // console.dir(updatedIconUploadId);
+    fpLogger.debug("updatedIconUploadId", updatedIconUploadId);
 
     if (updatedIconUploadId?.toString() === upload.id.toString()) uploadSelectRadio.checked = true;
 
     uploadSelectRadio.addEventListener('click', async () => {
+      fpLogger.debug("Upload selected");
+
       ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
         if (radio !== uploadSelectRadio) radio.checked = false;
       });
@@ -326,20 +328,24 @@ async function populateDrawerUploads() {
 }
 
 function updatePriorityOrder(siteConfigsOrder) {
+  fpLogger.verbose("updatePriorityOrder()");
   return localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder));
 }
 
 function getSiteConfigsOrder() {
+  fpLogger.trace("getSiteConfigsOrder()");
   return JSON.parse(localStorage.getItem('siteConfigsOrder')) || [];
 }
 
 function getPriority(id) {
+  fpLogger.debug("getPriority()");
+
   const siteConfigsOrder = getSiteConfigsOrder();
   return siteConfigsOrder.indexOf(id);
 }
 
 async function filterByIconPackVariant(filterIconPackVariant) {
-  // console.log('filterByIconPackVariant')
+  fpLogger.debug("filterByIconPackVariant()");
 
   const iconPackVariants = [];
 
@@ -371,12 +377,12 @@ async function filterByIconPackVariant(filterIconPackVariant) {
 }
 
 function updateCurrentIconCount(iconCount) {
+  fpLogger.debug("updateCurrentIconCount()");
   document.querySelector('#current-icon-count').textContent = iconCount.toLocaleString();
 }
 
 function filterDrawerIcons(filter) {
-  // console.log(`filter`);
-  // console.dir(filter, { depth: null });
+  fpLogger.debug("filterDrawerIcons()");
 
   let currentIconCount = 0;
 
@@ -418,7 +424,7 @@ async function updateSiteConfig({
   anyThemeColor,
   active,
 }) {
-  // console.log('updateSiteConfig');
+  fpLogger.debug("updateSiteConfig()");
 
   const existingSiteConfig = await window.extensionStore.getSiteConfigById(id);
   const activeDefined = active !== undefined;
@@ -442,7 +448,7 @@ async function updateSiteConfig({
     if (!newSiteConfig.iconId) return;
 
     const icon = await window.extensionStore.getIconById(newSiteConfig.iconId);
-    if (!icon) console.error(`Icon not found: ${iconId}`);
+    if (!icon) fpLogger.error('Icon not found', iconId);
 
     if (iconId || lightThemeColor) {
       const faviconSpriteLight = createFaviconSprite(icon, newSiteConfig, 'light');
@@ -469,10 +475,9 @@ async function updateSiteConfig({
     delete newSiteConfig.darkPngUrl;
   }
 
-  // console.log(`newSiteConfig`);
-  // console.dir(newSiteConfig, { depth: null });
-
+  fpLogger.debug("newSiteConfig", newSiteConfig);
   const updatedSiteConfig = await window.extensionStore.updateSiteConfig(newSiteConfig);
+  fpLogger.debug("updatedSiteConfig", updatedSiteConfig);
 
   if (activeDefined) {
     const siteConfigs = await window.extensionStore.getSiteConfigs();
@@ -483,12 +488,16 @@ async function updateSiteConfig({
 }
 
 function updateRecordsSummary(siteConfigs) {
+  fpLogger.debug("updateRecordsSummary()");
+
   document.querySelector('#siteConfigs-length').innerText = siteConfigs.length;
   document.querySelector('#active-siteConfigs-length').innerText =
     siteConfigs.filter(siteConfig => siteConfig.active)?.length || 0;
 }
 
 async function swapPriorities(record1Id, direction) {
+  fpLogger.debug("swapPriorities()");
+
   const siteConfigsOrder = getSiteConfigsOrder();
   const currentIndex = siteConfigsOrder.indexOf(record1Id);
 
@@ -500,7 +509,6 @@ async function swapPriorities(record1Id, direction) {
 
   const targetIndex = direction === 'increment' ? currentIndex - 1 : currentIndex + 1;
   const record2Id = siteConfigsOrder[targetIndex];
-  // const record2 = siteConfigs.find(siteConfig => siteConfig.id === record2Id);
   const record2 = await window.extensionStore.getSiteConfigById(record2Id);
 
   [siteConfigsOrder[currentIndex], siteConfigsOrder[targetIndex]] =
@@ -522,6 +530,8 @@ async function swapPriorities(record1Id, direction) {
 }
 
 async function setPriorityButtonVisibility(row, priority) {
+  fpLogger.debug("setPriorityButtonVisibility()");
+
   const siteConfigs = await window.extensionStore.getSiteConfigs();
   const incrementButton = row.querySelector('.increment');
   const decrementButton = row.querySelector('.decrement');
@@ -544,7 +554,7 @@ async function setPriorityButtonVisibility(row, priority) {
 }
 
 async function populateTableRow(siteConfig, insertion) {
-  // console.log('populateTableRow');
+  fpLogger.debug("populateTableRow()");
 
   const id = siteConfig.id;
   const rowId = `row-${id}`;
@@ -568,9 +578,11 @@ async function populateTableRow(siteConfig, insertion) {
   await setPriorityButtonVisibility(newRow, priority);
 
   incrementButton.addEventListener('click', () => {
+    fpLogger.debug("Increment button clicked");
     void swapPriorities(siteConfig.id, 'increment');
   });
   decrementButton.addEventListener('click', () => {
+    fpLogger.debug("Decrement button clicked");
     void swapPriorities(siteConfig.id, 'decrement');
   });
 
@@ -583,6 +595,7 @@ async function populateTableRow(siteConfig, insertion) {
 
   const toggleTypeButton = newRow.querySelector('.toggle-type');
   toggleTypeButton.addEventListener('click', () => {
+    fpLogger.debug("Toggle type button clicked");
     const patternType = siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match';
     updateSiteConfig({ id, patternType });
   });
@@ -609,7 +622,7 @@ async function populateTableRow(siteConfig, insertion) {
 
   // addEventListener does not allow editing multiple times
   editSiteButton.onclick = () => {
-    // console.log('editSiteButton clicked');
+    fpLogger.debug("editSiteButton clicked");
 
     siteRead.classList.toggle('display-none');
     siteEdit.classList.toggle('display-none');
@@ -622,14 +635,16 @@ async function populateTableRow(siteConfig, insertion) {
   Promise.all([
     customElements.whenDefined('sl-input'),
   ]).then(() => {
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', (event) => {
       event.preventDefault();
+      fpLogger.info("Save button clicked");
 
       const websitePattern = siteMatchInput.value;
       updateSiteConfig({ id, websitePattern });
     });
 
-    form.addEventListener('reset', event => {
+    form.addEventListener('reset', () => {
+      fpLogger.debug("Reset button clicked");
       const siteMatchInput = newRow.querySelector('.site-cell sl-input');
 
       siteMatchInput.updateComplete.then(() => {
@@ -644,13 +659,20 @@ async function populateTableRow(siteConfig, insertion) {
 
   if (siteConfig.iconId) {
     icon = await window.extensionStore.getIconById(siteConfig.iconId);
-    if (!icon) console.error(`Icon not found: ${siteConfig.iconId}`);
 
-    const svgSprite = buildSvgSprite(icon);
+    if (icon) {
+      const svgSprite = buildSvgSprite(icon);
 
-    newRow.querySelectorAll('.icon-value').forEach((iconValueElement) => {
-      iconValueElement.replaceChildren(svgSprite.cloneNode(true));
-    });
+      newRow.querySelector('#icon-value').replaceChildren(svgSprite.cloneNode(true));
+      newRow.querySelector('#icon-value').classList.remove('display-none');
+      newRow.querySelector('#icon-vale-not-found').classList.add('display-none');
+    } else {
+      fpLogger.quiet(`Icon not found, likely due to icon pack deletion: ${siteConfig.iconId}`);
+
+      newRow.querySelector('#icon-value').replaceChildren();
+      newRow.querySelector('#icon-value').classList.add('display-none');
+      newRow.querySelector('#icon-vale-not-found').classList.remove('display-none');
+    }
 
     newRow.querySelector('.icon-cell .add').classList.add('display-none');
     newRow.querySelector('.icon-cell .edit').classList.remove('display-none');
@@ -691,13 +713,10 @@ async function populateTableRow(siteConfig, insertion) {
 
     newRow.querySelector(".favicon-value.image-display").classList.add('display-none');
   } else if (siteConfig.uploadId) {
-    // console.log(`siteConfig.uploadId`);
-    // console.dir(siteConfig.uploadId, { depth: null });
+    fpLogger.quiet("siteConfig.uploadId", siteConfig.uploadId);
 
     const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
-
-    // console.log(`upload`);
-    // console.dir(upload, { depth: null });
+    fpLogger.quiet("upload", upload);
 
     const imageElement = buildUploadImg(upload);
 
@@ -722,6 +741,8 @@ async function populateTableRow(siteConfig, insertion) {
 
   const addIconButton = newRow.querySelector('.icon-cell .add sl-button');
   addIconButton.addEventListener('click', () => {
+    fpLogger.debug("Add icon button clicked");
+
     ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id);
 
     ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click();
@@ -749,8 +770,9 @@ async function populateTableRow(siteConfig, insertion) {
     ICON_SELECTOR_DRAWER.hide();
   });
 
-  const selectIconButton = newRow.querySelector('.icon-cell .edit sl-button');
-  selectIconButton.addEventListener('click', async () => {
+  const updateIcon = async () => {
+    fpLogger.debug("Opening icon selector drawer");
+
     if (siteConfig.uploadId) {
       ICON_SELECTOR_DRAWER.querySelector('[panel="upload"]').click();
 
@@ -770,7 +792,7 @@ async function populateTableRow(siteConfig, insertion) {
       ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click();
       ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = '';
 
-      if (siteConfig.iconId) {
+      if (siteConfig.iconId && icon) {
         ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon));
       }
     }
@@ -778,6 +800,9 @@ async function populateTableRow(siteConfig, insertion) {
     ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id);
 
     ICON_SELECTOR_DRAWER.show();
+  };
+  newRow.querySelectorAll('.icon-cell .edit sl-button').forEach((selectIconButton) => {
+    selectIconButton.addEventListener('click', updateIcon);
   });
 
   // Light Theme column
@@ -788,6 +813,8 @@ async function populateTableRow(siteConfig, insertion) {
   } else {
     lightThemeColorPicker.parentNode.classList.remove('display-none');
     lightThemeColorPicker.addEventListener('sl-blur', (event) => {
+      fpLogger.info("Updating light theme color");
+
       event.target.updateComplete.then(() => {
         const lightThemeColor = event.target.input.value;
         updateSiteConfig({ id, lightThemeColor });
@@ -806,6 +833,8 @@ async function populateTableRow(siteConfig, insertion) {
   } else {
     darkThemeColorPicker.parentNode.classList.remove('display-none');
     darkThemeColorPicker.addEventListener('sl-blur', (event) => {
+      fpLogger.info("Updating dark theme color");
+
       event.target.updateComplete.then(() => {
         const darkThemeColor = event.target.input.value;
         updateSiteConfig({ id, darkThemeColor });
@@ -824,6 +853,8 @@ async function populateTableRow(siteConfig, insertion) {
   } else {
     anyThemeColorPicker.parentNode.classList.remove('display-none');
     anyThemeColorPicker.addEventListener('sl-blur', (event) => {
+      fpLogger.info("Updating icon color");
+
       event.target.updateComplete.then(() => {
         const anyThemeColor = event.target.input.value;
         updateSiteConfig({ id, anyThemeColor });
@@ -847,22 +878,21 @@ async function populateTableRow(siteConfig, insertion) {
 
   switchElement.addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
+      fpLogger.info("Updating active");
       const active = event.target.checked;
       updateSiteConfig({ id, active });
     });
   });
 
-  // console.log(`insertion`);
-  // console.dir(insertion, { depth: null });
-
   if (insertion) {
+    fpLogger.debug("insertion");
     const tableBody = document.querySelector('#siteConfigs tbody');
     tableBody.appendChild(newRow);
   }
 }
 
 async function populateTable(siteConfigs) {
-  // console.log('populateTable');
+  fpLogger.debug("populateTable()");
 
   const tableBody = document.querySelector('#siteConfigs tbody');
   tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove());
@@ -878,8 +908,7 @@ async function populateTable(siteConfigs) {
     updatePriorityOrder(siteConfigsOrder);
   }
 
-  // console.log(`siteConfigsOrder`);
-  // console.dir(siteConfigsOrder, { depth: null });
+  fpLogger.debug("siteConfigsOrder", siteConfigsOrder);
 
   const sortedSiteConfigs = siteConfigsOrder
     .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
@@ -899,6 +928,8 @@ async function populateTable(siteConfigs) {
 }
 
 function openTabPanels(tabPanelName) {
+  fpLogger.debug("openTabPanels()");
+
   const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="icon-packs"]');
   const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="upload"]');
 
@@ -915,13 +946,17 @@ function openTabPanels(tabPanelName) {
 }
 
 function showDeleteConfirmationDialog(deleteFunction, confirmationText) {
+  fpLogger.debug("showDeleteConfirmationDialog()");
+
   const deleteConfirmationDialog = document.querySelector('sl-dialog#delete-confirmation');
 
   deleteConfirmationDialog.querySelector('#delete-cancel-button').addEventListener('click', async () => {
+    fpLogger.debug("Delete cancel button clicked");
     deleteConfirmationDialog.hide();
   });
 
-  deleteConfirmationDialog.querySelector('#delete-all-button').addEventListener('click', async () => {
+  deleteConfirmationDialog.querySelector('#delete-confirmation-button').addEventListener('click', async () => {
+    fpLogger.info("Delete confirmation button clicked");
     await deleteFunction();
     deleteConfirmationDialog.hide();
   });
@@ -932,6 +967,8 @@ function showDeleteConfirmationDialog(deleteFunction, confirmationText) {
 }
 
 async function createVersionRow(iconPack, versionMetadata) {
+  fpLogger.verbose("createVersionRow()");
+
   const versionRow = document.createElement('tr');
 
   const versionCell = document.createElement('td');
@@ -998,6 +1035,7 @@ async function createVersionRow(iconPack, versionMetadata) {
   }
 
   downloadButton.addEventListener('click', async () => {
+    fpLogger.info("Downloading icon pack version");
     toggleLoadingSpinner();
 
     const iconCount = await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata);
@@ -1023,6 +1061,7 @@ async function createVersionRow(iconPack, versionMetadata) {
   });
 
   removeButton.addEventListener('click', async () => {
+    fpLogger.info("Removing icon pack version");
     toggleLoadingSpinner();
 
     await window.extensionStore.deleteIconsByIconPackVersion(iconPack.name, versionMetadata.name);
@@ -1055,6 +1094,8 @@ async function createVersionRow(iconPack, versionMetadata) {
 }
 
 async function createIconPackTable(iconPack) {
+  fpLogger.verbose("createIconPackTable()");
+
   const iconPackDiv = document.createElement('div');
   iconPackDiv.classList.add('center');
 
@@ -1131,6 +1172,8 @@ async function createIconPackTable(iconPack) {
 }
 
 function toggleLoadingSpinner() {
+  fpLogger.debug("toggleLoadingSpinner()");
+
   // Add small delay to avoid race conditions
   setTimeout(() => {
     document.querySelector('div > #loading-overlay').classList.toggle('display-none');
@@ -1138,7 +1181,7 @@ function toggleLoadingSpinner() {
 }
 
 async function populateIconPackVariantSelector() {
-  // console.log('populateIconPackVariantSelector');
+  fpLogger.debug("populateIconPackVariantSelector()");
 
   const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
   iconPacksSelect.replaceChildren();
@@ -1193,6 +1236,7 @@ async function populateIconPackVariantSelector() {
 }
 
 document.addEventListener("DOMContentLoaded", async function() {
+  fpLogger.trace("DOMContentLoaded");
   await window.extensionStore.initialize();
 
   const settingsMetadata = window.extensionStore.getSettingsMetadata();
@@ -1208,12 +1252,14 @@ document.addEventListener("DOMContentLoaded", async function() {
   const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
   iconPacksSelect.addEventListener('sl-change', (event) => {
     event.target.updateComplete.then(async () => {
+      fpLogger.info("Filtering by icon pack variant");
       await filterByIconPackVariant(event.target.value);
     });
   });
 
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group');
   iconDrawerTabGroup.addEventListener('sl-tab-show', (event) => {
+    fpLogger.debug("Switching tab un icon selector drawer");
     openTabPanels(event.detail.name);
   });
 
@@ -1221,6 +1267,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   await populateDrawerUploads();
 
   ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener('click', () => {
+    fpLogger.info("Clear icon button clicked");
+
     ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
       radio.checked = false;
     });
@@ -1232,6 +1280,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   });
 
   ICON_SELECTOR_DRAWER.querySelector('#save-icon-button').addEventListener('click', async () => {
+    fpLogger.info("Saving icon");
+
     const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon');
     const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id');
 
@@ -1255,6 +1305,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
+      fpLogger.debug("Search input event fired");
       const searchQuery = event.target.input.value;
       filterDrawerIcons(searchQuery);
     });
@@ -1262,6 +1313,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   ICON_SELECTOR_DRAWER.querySelector('#upload > button').addEventListener('click', async (event) => {
     event.preventDefault();
+    fpLogger.debug("Upload button clicked");
 
     const fileInput = ICON_SELECTOR_DRAWER.querySelector('#icon-upload-input');
     const file = fileInput.files[0];
@@ -1298,12 +1350,13 @@ document.addEventListener("DOMContentLoaded", async function() {
 
       await populateDrawerUploads();
     } catch (error) {
-      console.error(error.message);
+      fpLogger.error("Failed to convert file to data URI", error);
       fileInput.value = '';
     }
   });
 
   document.querySelector('#pattern-type-header sl-icon-button').addEventListener('click', () => {
+    fpLogger.debug("Opening pattern type drawer");
     document.querySelector('#pattern-types').show();
   });
 
@@ -1314,6 +1367,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const selectAllButton = document.querySelector('#select-all');
   selectAllButton.addEventListener('sl-change', (event) => {
+    fpLogger.debug("Select all button clicked");
     const isChecked = event.target.checked;
 
     document.querySelectorAll('sl-checkbox.select-all-target').forEach((checkbox) => {
@@ -1390,6 +1444,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   // Action buttons
   const createDropdown = document.querySelector('#create-dropdown');
   createDropdown.addEventListener('sl-select', async (event) => {
+    fpLogger.info("Create button clicked");
 
     const settingsMetadata = window.extensionStore.getSettingsMetadata();
     const defaultLightThemeColor = settingsMetadata.lightThemeDefaultColor.getValue();
@@ -1445,6 +1500,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   }
 
   document.querySelector('#delete-action-button').addEventListener('click', async () => {
+    fpLogger.debug("Delete button clicked");
     const { rowsChecked, ids } = getRowsChecked();
 
     const deleteCount = ids.length;
@@ -1461,6 +1517,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   });
 
   document.querySelector('#activate-action-button').addEventListener('click', async () => {
+    fpLogger.debug("Activate button clicked");
     const { rowsChecked } = getRowsChecked();
 
     rowsChecked.forEach(row => {
@@ -1470,6 +1527,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   });
 
   document.querySelector('#deactivate-action-button').addEventListener('click', async () => {
+    fpLogger.debug("Deactivate button clicked");
     const { rowsChecked } = getRowsChecked();
 
     for (const row of rowsChecked) {
@@ -1479,6 +1537,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   });
 
   document.querySelector('#duplicate-action-button').addEventListener('click', async () => {
+    fpLogger.debug("Duplicate button clicked");
     const { rowsChecked, ids } = getRowsChecked();
 
     if (rowsChecked.length !== 1) return;
@@ -1506,13 +1565,12 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   const settingsDialog = document.querySelector('#settings-dialog');
   document.querySelector('#open-settings-button').addEventListener('click', async () => {
+    fpLogger.debug("Open settings button clicked");
     settingsDialog.show();
   });
 
   const iconPacksDiv = document.querySelector('#icon-packs-tables');
-
-  // console.log(`iconPacksDiv`);
-  // console.dir(iconPacksDiv, { depth: null });
+  fpLogger.debug("iconPacksDiv", iconPacksDiv);
 
   const iconPacks = window.extensionStore.getIconPacks();
   for await (const iconPack of iconPacks) {
@@ -1525,9 +1583,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   toggleLoadingSpinner();
 });
 
-//
 // Theme selector
-//
 (() => {
   function getTheme() {
     return localStorage.getItem('theme') || 'auto';

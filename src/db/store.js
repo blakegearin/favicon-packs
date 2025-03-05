@@ -1,4 +1,5 @@
-// src/db/store.js
+fpLogger.info("store.js loaded");
+
 const DB_NAME = "faviconPacksData";
 const DB_VERSION = 1;
 const STORES = {
@@ -21,6 +22,8 @@ class ExtensionStore {
   }
 
   generateUUID() {
+    fpLogger.verbose("generateUUID()");
+
     const randomValues = new Uint8Array(16);
     crypto.getRandomValues(randomValues);
 
@@ -40,6 +43,8 @@ class ExtensionStore {
   }
 
   async initialize() {
+    fpLogger.verbose("initialize()");
+
     if (this.db) return Promise.resolve();
 
     return new Promise((resolve, reject) => {
@@ -81,6 +86,8 @@ class ExtensionStore {
   }
 
   async fetchIconsMetadata(metadataUrl) {
+    fpLogger.verbose("fetchIconsMetadata()");
+
     let responseText;
 
     try {
@@ -140,24 +147,18 @@ class ExtensionStore {
   }
 
   async downloadSvgIconsFromUrl(iconPack, versionMetadata, url, iconsMetadata) {
-    const response = await fetch(url.replaceAll("{VERSION}", versionMetadata.name));
+    fpLogger.verbose("downloadSvgIconsFromUrl()");
 
-    // console.log(`response`);
-    // console.dir(response, { depth: null });
+    const response = await fetch(url.replaceAll("{VERSION}", versionMetadata.name));
+    fpLogger.verbose("response", response);
 
     if (!response.ok) throw new Error("Network response was not ok");
 
     const responseString = await response.text();
-
-    // console.log(`responseString`);
-    // console.dir(responseString, { depth: null });
+    fpLogger.verbose("responseString", responseString);
 
     const fileType = response.headers.get("content-type").split(";")[0];
-
-    // console.log(`fileType`);
-    // console.dir(fileType, { depth: null });
-
-    const parser = new DOMParser();
+    fpLogger.debug("fileType", fileType);
 
     const buildIconId = (iconPack, iconName) => `${iconPack.name}-${versionMetadata.name}-${iconName}`;
 
@@ -165,6 +166,8 @@ class ExtensionStore {
 
     if (fileType === "text/plain" || fileType === "image/svg+xml") {
       const saveIconFromSymbol = async (symbol, iconPack) => {
+        fpLogger.verbose("saveIconFromSymbol", saveIconFromSymbol);
+
         const iconName = symbol.id.replace('tabler-', '');
         const iconId = buildIconId(iconPack, iconName);
 
@@ -190,6 +193,8 @@ class ExtensionStore {
         await window.extensionStore.addIcon(icon);
         iconCount++;
       };
+
+      const parser = new DOMParser();
 
       // jsDelivr Docs: https://www.jsdelivr.com/documentation#id-restrictions
       if (fileType === "text/plain") {
@@ -224,21 +229,16 @@ class ExtensionStore {
       }
     } else if (fileType === "application/json") {
       const iconsObject = JSON.parse(responseString);
-
-      // console.log(`iconsObject`);
-      // console.dir(iconsObject, { depth: null });
+      fpLogger.debug("iconsObject", iconsObject);
 
       for (const [originalIconName, iconMetadata] of Object.entries(iconsObject)) {
-        // console.log(`iconMetadata`);
-        // console.dir(iconMetadata);
+        fpLogger.verbose("originalIconName", originalIconName);
 
         const iconTags = iconMetadata?.search?.terms || [];
         iconTags.push(originalIconName);
 
         const iconStyles = iconMetadata?.svgs?.classic;
-
-        // console.log(`iconStyles`);
-        // console.dir(iconStyles, { depth: null });
+        fpLogger.debug("iconStyles", iconStyles);
 
         for (const [iconStyle, iconStyleMetadata] of Object.entries(iconStyles)) {
           const iconName = `${originalIconName}-${iconStyle}`;
@@ -259,6 +259,8 @@ class ExtensionStore {
             symbol: symbolString,
           };
 
+          fpLogger.debug("icon", icon);
+
           await window.extensionStore.addIcon(icon);
           iconCount++;
         }
@@ -269,6 +271,8 @@ class ExtensionStore {
   }
 
   async downloadIconPackVersion(iconPack, versionMetadata) {
+    fpLogger.debug("downloadIconPackVersion()");
+
     const iconsMetadata =
       iconPack.metadataUrl ?
       await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll("{VERSION}", versionMetadata.name)) :
@@ -291,6 +295,8 @@ class ExtensionStore {
   }
 
   async deleteIconsByIconPackVersion(iconPackName, iconPackVersion) {
+    fpLogger.debug("deleteIconsByIconPackVersion()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.icons], "readwrite");
       const store = transaction.objectStore(STORES.icons);
@@ -326,6 +332,8 @@ class ExtensionStore {
   }
 
   async getIconCountByIconPackVersion(iconPackName, iconPackVersion) {
+    fpLogger.debug("getIconCountByIconPackVersion()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.icons], "readonly");
       const store = transaction.objectStore(STORES.icons);
@@ -344,6 +352,8 @@ class ExtensionStore {
   }
 
   getIconPacks() {
+    fpLogger.verbose("getIconPacks()");
+
     return [
       {
         name: "Ionicons",
@@ -474,6 +484,8 @@ class ExtensionStore {
   }
 
   checkAnyThemeEnabled() {
+    fpLogger.debug("checkAnyThemeEnabled()");
+
     const lightThemeHidden = document.documentElement.style.getPropertyValue('--light-theme-display') === 'none';
     const darkThemeHidden = document.documentElement.style.getPropertyValue('--dark-theme-display') === 'none';
 
@@ -487,11 +499,11 @@ class ExtensionStore {
     const anyThemeToggleId = "#any-theme-switch";
     const toggleElement = document.querySelector(anyThemeToggleId);
     if (toggleElement) toggleElement.checked = anyThemeEnabled;
-
-    // this.getSetting('anyThemeEnabled').apply(anyTheme);
   }
 
   getSettingsMetadata() {
+    fpLogger.debug("getSettingsMetadata()");
+
     return {
       lightThemeEnabled: {
         getValue: () => {
@@ -507,7 +519,7 @@ class ExtensionStore {
 
           const apply = (value) => {
             const isEnabled = value.toString() === 'true';
-            // console.log(`Setting ${storageKey} to ${isEnabled}`);
+            fpLogger.debug(`Setting ${storageKey} to ${value}`);
 
             localStorage.setItem(storageKey, isEnabled);
 
@@ -548,7 +560,7 @@ class ExtensionStore {
 
           const apply = (value) => {
             const isEnabled = value.toString() === 'true';
-            // console.log(`Setting ${storageKey} to ${isEnabled}`);
+            fpLogger.debug(`Setting ${storageKey} to ${value}`);
 
             localStorage.setItem(storageKey, isEnabled);
 
@@ -586,7 +598,7 @@ class ExtensionStore {
           const defaultValue = '#333333';
 
           const apply = (value) => {
-            // console.log(`Setting ${storageKey} to ${value}`);
+            fpLogger.debug(`Setting ${storageKey} to ${value}`);
 
             localStorage.setItem(storageKey, value);
 
@@ -652,7 +664,7 @@ class ExtensionStore {
           const defaultValue = '#808080';
 
           const apply = (value) => {
-            // console.log(`Setting ${storageKey} to ${value}`);
+            fpLogger.debug(`Setting ${storageKey} to ${value}`);
 
             localStorage.setItem(storageKey, value);
 
@@ -674,19 +686,49 @@ class ExtensionStore {
           });
         }
       },
+      anyThemeDefaultColor: {
+        getValue: () => fpLogger.getLogLevel(),
+        initialize: () => {
+          const storageKey = fpLogger.storageKey;
+          const inputId = "#log-level-select";
+
+          const apply = (value) => {
+            fpLogger.quiet(`Setting ${storageKey} to ${value}`);
+            fpLogger.setLogLevel(value);
+          }
+
+          const existingValue = fpLogger.getLogLevelName();
+
+          const inputElement = document.querySelector(inputId);
+          if (!inputElement) return;
+
+          inputElement.value = existingValue;
+
+          inputElement.addEventListener('sl-change', (event) => {
+            event.target.updateComplete.then(async () => {
+              fpLogger.quiet("Updating log level", event.target.value);
+              apply(event.target.value);
+            });
+          });
+        }
+      },
     };
   }
 
   getSetting(storageKey) {
+    fpLogger.trace("getSetting()");
     return this.getSettingsMetadata()[storageKey];
   }
 
   getSettingValue(storageKey) {
+    fpLogger.trace("getSettingValue()");
     return this.getSetting(storageKey).getValue();
   }
 
   // Methods for siteConfigs
   async addSiteConfig(siteConfig) {
+    fpLogger.debug("addSiteConfig()");
+
     const configWithId = {
       ...siteConfig,
       id: this.generateUUID()
@@ -696,14 +738,17 @@ class ExtensionStore {
   }
 
   async getSiteConfigById(id) {
+    fpLogger.verbose("getSiteConfigById()");
     return await this._getRecord(STORES.siteConfigs, id);
   }
 
   async getSiteConfigs() {
+    fpLogger.verbose("getSiteConfigs()");
     return this._getAllRecords(STORES.siteConfigs);
   }
 
   async getActiveSiteConfigs() {
+    fpLogger.debug("getActiveSiteConfigs()");
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.siteConfigs], "readonly");
       const store = transaction.objectStore(STORES.siteConfigs);
@@ -716,19 +761,24 @@ class ExtensionStore {
   }
 
   async updateSiteConfig(siteConfig) {
+    fpLogger.debug("updateSiteConfig()");
     return this._updateRecord(STORES.siteConfigs, siteConfig);
   }
 
   async deleteSiteConfig(id) {
+    fpLogger.debug("deleteSiteConfig()");
     return this._deleteRecord(STORES.siteConfigs, id);
   }
 
   async deleteSiteConfigs(ids) {
+    fpLogger.debug("deleteSiteConfigs()");
     return this._deleteRecords(STORES.siteConfigs, ids);
   }
 
   // Methods for icons
   async addIcon(icon) {
+    fpLogger.verbose("addIcon()");
+
     try {
       const iconRecord = icon.id ? await this.getIconById(icon.id) : null;
 
@@ -752,23 +802,29 @@ class ExtensionStore {
   }
 
   async getIconById(id) {
+    fpLogger.trace("getIconById()");
     return await this._getRecord(STORES.icons, id);
   }
 
   async getIcons() {
+    fpLogger.verbose("getIcons()");
     return this._getAllRecords(STORES.icons);
   }
 
   async updateIcon(icon) {
+    fpLogger.debug("updateIcon()");
     return this._updateRecord(STORES.icons, icon);
   }
 
   async deleteIcon(id) {
+    fpLogger.debug("deleteIcon()");
     return this._deleteRecord(STORES.icons, id);
   }
 
   // Methods for upload
   async addUpload(upload) {
+    fpLogger.debug("addUpload()");
+
     const configWithId = {
       ...upload,
       id: Date.now(),
@@ -778,27 +834,34 @@ class ExtensionStore {
   }
 
   async getUploadById(id) {
+    fpLogger.debug("getUploadById()");
     return await this._getRecord(STORES.uploads, parseInt(id));
   }
 
   async getUploads() {
+    fpLogger.debug("getUploads()");
     return this._getAllRecords(STORES.uploads);
   }
 
   async updateUpload(upload) {
+    fpLogger.debug("updateUpload()");
     return this._updateRecord(STORES.uploads, upload);
   }
 
   async deleteUpload(id) {
+    fpLogger.debug("deleteUpload()");
     return this._deleteRecord(STORES.uploads, id);
   }
 
   async deleteUploads(ids) {
+    fpLogger.debug("deleteUploads()");
     return this._deleteRecords(STORES.uploads, ids);
   }
 
   // Private helper methods
   async _addRecord(storeName, record) {
+    fpLogger.trace("_addRecord()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
@@ -810,6 +873,8 @@ class ExtensionStore {
   }
 
   async _getAllRecords(storeName) {
+    fpLogger.trace("_getAllRecords()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
@@ -821,6 +886,8 @@ class ExtensionStore {
   }
 
   async _getRecord(storeName, id) {
+    fpLogger.trace("_getRecord()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
@@ -832,6 +899,8 @@ class ExtensionStore {
   }
 
   async _updateRecord(storeName, record) {
+    fpLogger.trace("_updateRecord()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
@@ -843,6 +912,8 @@ class ExtensionStore {
   }
 
   async _deleteRecord(storeName, id) {
+    fpLogger.trace("_deleteRecord()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);
@@ -854,6 +925,8 @@ class ExtensionStore {
   }
 
   async _deleteRecords(storeName, ids) {
+    fpLogger.trace("_deleteRecords()");
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], "readwrite");
       const store = transaction.objectStore(storeName);

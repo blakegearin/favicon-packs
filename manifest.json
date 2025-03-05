@@ -14,9 +14,10 @@
     "storage",
     "<all_urls>"
   ],
-  "options_page": "src/options/index.html",
+  "options_page": "src/options/options.html",
   "background": {
     "scripts": [
+      "src/utils/logger.js",
       "src/db/store.js",
       "src/background.js"
     ],
