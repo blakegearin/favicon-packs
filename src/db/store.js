@@ -92,29 +92,20 @@ class ExtensionStore {
 
     try {
       const response = await fetch(metadataUrl);
-
-      // console.log(`response`);
-      // console.dir(response, { depth: null });
+      fpLogger.verbose("response", response);
 
       if (!response.ok) throw new Error("Network response was not ok");
 
       responseText = await response.text();
     } catch (error) {
-      console.error("Fetch error: ", error);
+      fpLogger.error("error ", error);
     }
 
-    // console.log(`metadata`);
-    // console.dir(metadata, { depth: null });
-
     const parsedResponse = JSON.parse(responseText);
-
-    // console.log(`parsedResponse`);
-    // console.dir(parsedResponse, { depth: null });
+    fpLogger.verbose("parsedResponse", parsedResponse);
 
     let iconsMetadata = parsedResponse;
-
-    // console.log(`iconsMetadata`);
-    // console.dir(iconsMetadata, { depth: null });
+    fpLogger.verbose("iconsMetadata", iconsMetadata);
 
     if (parsedResponse?.icons) {
       const iconObjects = {};
@@ -140,9 +131,7 @@ class ExtensionStore {
       iconsMetadata = iconObjects;
     }
 
-    // console.log(`iconsMetadata`);
-    // console.dir(iconsMetadata, { depth: null });
-
+    fpLogger.verbose("iconsMetadata", iconsMetadata);
     return iconsMetadata || null;
   }
 
@@ -200,9 +189,7 @@ class ExtensionStore {
       if (fileType === "text/plain") {
         const htmlDoc = parser.parseFromString(responseString, 'text/html');
         const htmlElement = htmlDoc.documentElement;
-
-        // console.log(`htmlElement`);
-        // console.dir(htmlElement, { depth: null });
+        fpLogger.verbose("htmlElement", htmlElement);
 
         const svgElements = htmlElement.querySelectorAll("a > svg");
 
@@ -278,8 +265,7 @@ class ExtensionStore {
       await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll("{VERSION}", versionMetadata.name)) :
       null;
 
-    // console.log(`iconsMetadata`);
-    // console.dir(iconsMetadata, { depth: null });
+    fpLogger.verbose("iconsMetadata", iconsMetadata);
 
     let iconCount = 0;
 
@@ -323,7 +309,7 @@ class ExtensionStore {
       request.onerror = () => reject(request.error);
 
       transaction.oncomplete = () => {
-        console.log(`Deleted ${deletedCount} icons from ${iconPackName} ${iconPackVersion}`);
+        fpLogger.quiet(`Deleted ${deletedCount} icons from ${iconPackName} ${iconPackVersion}`);
         resolve(deletedCount);
       };
 
@@ -613,7 +599,7 @@ class ExtensionStore {
           const defaultValue = '#cccccc';
 
           const apply = (value) => {
-            // console.log(`Setting ${storageKey} to ${value}`);
+            fpLogger.debug(`Setting ${storageKey} to ${value}`);
 
             localStorage.setItem(storageKey, value);
 
@@ -668,8 +654,7 @@ class ExtensionStore {
           });
         }
       },
-      anyThemeDefaultColor: {
-        getValue: () => fpLogger.getLogLevel(),
+      logLevel: {
         initialize: () => {
           const storageKey = fpLogger.storageKey;
           const inputId = "#log-level-select";
@@ -735,7 +720,7 @@ class ExtensionStore {
       const transaction = this.db.transaction([STORES.siteConfigs], "readonly");
       const store = transaction.objectStore(STORES.siteConfigs);
       const index = store.index("active");
-      const request = index.getAll(IDBKeyRange.only(true));
+      const request = index.getAll(IDBKeyRange.only(1)); // 1 is true
 
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -767,17 +752,13 @@ class ExtensionStore {
       if (!iconRecord) {
         return await this._addRecord(STORES.icons, icon);
       } else {
-        // The icon already exists, so you can return the existing icon or handle it in a different way
         return iconRecord;
       }
     } catch (error) {
       if (error.name === 'DOMException' && error.code === DOMException.CONSTRAINT_ERR) {
-        // Handle the constraint violation error
-        console.error('Error adding icon:', error);
-        // You can try to generate a new ID and retry the operation, or handle it in a different way
+        fpLogger.error('Error adding icon', error);
         return null;
       } else {
-        // Rethrow the error for other types of errors
         throw error;
       }
     }

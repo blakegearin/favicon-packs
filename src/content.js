@@ -1,4 +1,4 @@
-console.log("Favicon Packs: content.js loaded");
+fpLogger.quiet("content.js loaded");
 
 (function() {
   const FAVICON_ID = "favicon-packs-favicon";
@@ -10,6 +10,8 @@ console.log("Favicon Packs: content.js loaded");
   let changeTimeout = null;
 
   function setOurChange(value) {
+    fpLogger.debug('setOurChange()');
+
     if (changeTimeout) clearTimeout(changeTimeout);
 
     isOurChange = value;
@@ -27,6 +29,8 @@ console.log("Favicon Packs: content.js loaded");
 
   // Update the cleanupExistingIcons function to be more thorough
   function cleanupExistingIcons() {
+    fpLogger.debug('cleanupExistingIcons()');
+
     const selectors = [
       'link[rel*="icon"]',
       'link[rel*="shortcut"]',
@@ -50,9 +54,11 @@ console.log("Favicon Packs: content.js loaded");
   }
 
   function replaceFavicon(imgUrl) {
+    fpLogger.debug('replaceFavicon()');
+
     // Prevent concurrent initializations
     if (isInitializing) {
-      console.log('Favicon Packs: Already initializing, skipping');
+      fpLogger.info('Already initializing, skipping');
       return;
     }
 
@@ -89,7 +95,7 @@ console.log("Favicon Packs: content.js loaded");
       `;
       document.head.appendChild(style);
 
-      console.log('Favicon Packs: Successfully replaced favicon');
+      fpLogger.quiet('Successfully replaced favicon');
       return link;
     } finally {
       isInitializing = false;
@@ -97,6 +103,7 @@ console.log("Favicon Packs: content.js loaded");
   }
 
   function getColorScheme() {
+    fpLogger.debug('getColorScheme()');
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
@@ -104,9 +111,11 @@ console.log("Favicon Packs: content.js loaded");
 
   // Update the persistence check to be more aggressive
   function persistentReplace(imgUrl, retryCount = 0) {
+    fpLogger.debug('persistentReplace()');
+
     const favicon = replaceFavicon(imgUrl);
     if (!favicon) {
-      console.log('Favicon Packs: Failed to replace favicon');
+      fpLogger.quiet('Failed to replace favicon');
       return;
     }
 
@@ -129,7 +138,7 @@ console.log("Favicon Packs: content.js loaded");
         if (needsReplacement) {
           clearInterval(checkInterval);
           if (retryCount < MAX_RETRIES) {
-            console.log(`Favicon Packs: Retry attempt ${retryCount + 1}`);
+            fpLogger.info(`Retry attempt ${retryCount + 1}`);
 
             // Add small random delay before retry
             setTimeout(
@@ -139,7 +148,7 @@ console.log("Favicon Packs: content.js loaded");
               Math.random() * 100,
             );
           } else {
-            console.log('Favicon Packs: Max retries reached, giving up');
+            fpLogger.info('Max retries reached, giving up');
           }
         }
       },
@@ -149,13 +158,15 @@ console.log("Favicon Packs: content.js loaded");
 
   // Listen for favicon updates from background script
   browser.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
+    fpLogger.trace("request", request);
+
     if (request.action === "setFavicon") {
-      // console.log(`request.imgUrl`);
-      // console.dir(request.imgUrl, { depth: null });
+      fpLogger.debug("request.imgUrl", request.imgUrl);
 
       // Return early if imgUrl is null
       if (!request.imgUrl) {
-        console.log('Favicon Packs: No favicon URL provided, stopping favicon management');
+        fpLogger.info('No favicon URL provided, stopping favicon management');
+
         hasInitialized = false;
         isInitializing = false;
         return;
@@ -168,8 +179,10 @@ console.log("Favicon Packs: content.js loaded");
   });
 
   function initialize() {
+    fpLogger.debug('initialize()');
+
     if (hasInitialized) {
-      console.log('Favicon Packs: Already initialized, skipping');
+      fpLogger.debug('Already initialized, skipping');
       return;
     }
 
@@ -182,6 +195,8 @@ console.log("Favicon Packs: content.js loaded");
   }
 
   function setupFaviconObserver() {
+    fpLogger.debug('setupFaviconObserver()');
+
     const observer = new MutationObserver((mutations) => {
       if (isOurChange) return;
 
@@ -204,7 +219,8 @@ console.log("Favicon Packs: content.js loaded");
       }
 
       if (needsReset) {
-        console.log('Favicon modification detected, resetting...');
+        fpLogger.info('Favicon modification detected, resetting...');
+
         hasInitialized = false;
         cleanupExistingIcons();
 
@@ -231,16 +247,22 @@ console.log("Favicon Packs: content.js loaded");
   // Multiple initialization points to catch different site behaviors
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
+      fpLogger.debug('DOMContentLoaded');
+
       initialize();
       setupFaviconObserver();
     });
   } else {
+    fpLogger.debug('Already loaded');
+
     initialize();
     setupFaviconObserver();
   }
 
   // Watch for theme changes
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    fpLogger.info('Theme change detected, resetting...');
+
     hasInitialized = false;
     initialize();
   });

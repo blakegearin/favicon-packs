@@ -879,7 +879,8 @@ async function populateTableRow(siteConfig, insertion) {
   switchElement.addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
       fpLogger.info("Updating active");
-      const active = event.target.checked;
+      const checked = event.target.checked;
+      const active = checked ? 1: 0;
       updateSiteConfig({ id, active });
     });
   });
@@ -1005,8 +1006,6 @@ async function createVersionRow(iconPack, versionMetadata) {
   const downloadedCountBadge = document.createElement('sl-badge');
   downloadedCountBadge.setAttribute('variant', isDownloaded ? 'success' : 'neutral');
   downloadedCountBadge.setAttribute('pill', '');
-
-  localStorage.setItem('iconPack', iconPack.name);
 
   downloadedCountBadge.textContent = iconCount;
   countCell.appendChild(downloadedCountBadge);
@@ -1453,7 +1452,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const siteConfig = await window.extensionStore.addSiteConfig({
       patternType: 'Simple Match',
-      active: true,
+      active: 1, // Default to active
       lightThemeColor: defaultLightThemeColor,
       darkThemeColor: defaultDarkThemeColor,
       anyThemeColor: defaultNoThemeColor,

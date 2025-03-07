@@ -32,8 +32,11 @@ async function initialize() {
       fpLogger.debug("replaceFavicon");
 
       const siteConfigs = await window.extensionStore.getActiveSiteConfigs();
+      fpLogger.debug("siteConfigs", siteConfigs);
 
       const siteConfigsOrder = getSiteConfigsOrder();
+      fpLogger.debug("siteConfigsOrder", siteConfigsOrder);
+
       const sortedSiteConfigs = siteConfigsOrder
         .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
         .filter(Boolean);
