@@ -394,23 +394,6 @@ class ExtensionStore {
               "logo-venmo",
             ],
           },
-          {
-            name: "7.3.1",
-            blockList: [
-              "chevron-expand",
-              "chevron-expand-outline",
-              "chevron-expand-sharp",
-              "logo-behance",
-              "logo-bitbucket",
-              "logo-docker",
-              "logo-edge",
-              "logo-facebook",
-              "logo-npm",
-              "logo-paypal",
-              "logo-soundcloud",
-              "logo-venmo",
-            ],
-          },
         ],
       },
       {
@@ -434,15 +417,14 @@ class ExtensionStore {
         ],
         versions: [
           { name: "6.7.2" },
-          { name: "6.6.0" },
         ],
       },
       {
         name: "Lucide",
         homepageUrl: 'https://lucide.dev',
         changelogUrl: "https://github.com/lucide-icons/lucide/releases",
-        svgUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.477.0/sprite.svg",
-        metadataUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.477.0/tags.json",
+        svgUrl: "https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/sprite.svg",
+        metadataUrl: "https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/tags.json",
         styles: [
           {
             name: "Regular",
@@ -463,7 +445,7 @@ class ExtensionStore {
         changelogUrl: "https://tabler.io/changelog",
         svgUrl: [
           "https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite.svg",
-          "https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite-filled.svg"
+          "https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite-filled.svg",
         ],
         metadataUrl: "https://cdn.jsdelivr.net/npm/@tabler/icons@{VERSION}/icons.json",
         styles: [
