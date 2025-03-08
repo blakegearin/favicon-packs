@@ -1,3 +1,4 @@
+/* Variables */
 :root
 {
   --sl-input-spacing-medium: 0.5rem;
@@ -31,6 +32,7 @@
   --scrollbar-foreground: #9C9C9E;
 }
 
+/* General Tags */
 html, body
 {
   height: 100%;
@@ -48,6 +50,121 @@ sl-select
   caret-color: transparent;
 }
 
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+  background: var(--table-background)
+}
+
+table th.width-content,
+table td.width-content
+{
+  min-width: max-content;
+}
+
+tr, td, th
+{
+  border: 1px solid var(--table-border);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+td.center {
+  line-height: 1;
+}
+
+td.center sl-icon
+{
+  display: block;
+  margin: auto;
+}
+
+td.center-priority {
+  height: 100%;
+}
+
+td.center-priority sl-icon,
+td.center-priority sl-skeleton
+{
+  display: inline-block;
+  vertical-align: middle;
+}
+
+th.min-width
+{
+  padding-left: 16px;
+}
+
+/* Helper Classes */
+.display-none
+{
+  display: none !important;
+}
+
+.hidden
+{
+  visibility: hidden;
+}
+
+.center
+{
+  text-align: center;
+}
+
+.right-align
+{
+  text-align: right;
+}
+
+.center-cell
+{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Shoelace Tags */
+sl-card
+{
+  --sl-panel-background-color: var(--sl-color-neutral-0);
+}
+
+sl-checkbox,
+sl-switch,
+sl-radio
+{
+  padding-inline-start: 0.5em;
+}
+
+sl-button.square,
+sl-skeleton.square
+{
+  --border-radius: var(--sl-border-radius-medium);
+  height: 40px;
+  width: 40px;
+}
+
+sl-skeleton.circle
+{
+  --border-radius: var(--sl-border-radius-circle);
+  height: 40px;
+  width: 40px;
+}
+
+sl-drawer table
+{
+  table-layout: fixed;
+}
+
+.priority-icons sl-skeleton.circle
+{
+  height: 20px;
+  width: 20px;
+  margin: 0 3px;
+}
+
+/* Title */
 #options-title
 {
   display: flex;
@@ -62,27 +179,12 @@ sl-select
   height: 100%;
 }
 
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-  background: var(--table-background)
-}
 
+/* Table */
 table#siteConfigs th:not(.width-auto),
 #icon-packs-tables table th:not(.width-auto)
 {
   width: 1%;
-}
-
-#icon-packs-tables table
-{
-  table-layout: auto;
-}
-
-#icon-packs-tables div
-{
-  width: 100%;
 }
 
 #tableSettings
@@ -116,17 +218,14 @@ table#siteConfigs th:not(.width-auto),
   width: 1%;
 }
 
-table th.width-content,
-table td.width-content
+#icon-packs-tables table
 {
-  min-width: max-content;
+  table-layout: auto;
 }
 
-tr, td, th
+#icon-packs-tables div
 {
-  border: 1px solid var(--table-border);
-  padding: 6px 8px;
-  text-align: left;
+  width: 100%;
 }
 
 .sl-spinner
@@ -148,47 +247,6 @@ tr, td, th
 .no-data-row td
 {
   padding: 18px 0px;
-}
-
-.display-none
-{
-  display: none !important;
-}
-
-.hidden
-{
-  visibility: hidden;
-}
-
-.center
-{
-  text-align: center;
-}
-
-.right-align
-{
-  text-align: right;
-}
-
-td.center {
-  line-height: 1;
-}
-
-td.center sl-icon
-{
-  display: block;
-  margin: auto;
-}
-
-td.center-priority {
-  height: 100%;
-}
-
-td.center-priority sl-icon,
-td.center-priority sl-skeleton
-{
-  display: inline-block;
-  vertical-align: middle;
 }
 
 sl-tab-panel[name="icon-packs"] .icon-pack-header th
@@ -253,18 +311,6 @@ sl-drawer [slot="label"]
 .site-cell > sl-input
 {
   --sl-input-font-family: monospace;
-}
-
-th.min-width
-{
-  padding-left: 16px;
-}
-
-.center-cell
-{
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .type-cell,
@@ -335,28 +381,6 @@ sl-tag sl-icon-button
   font-size: 1rem;
 }
 
-sl-button.square,
-sl-skeleton.square
-{
-  --border-radius: var(--sl-border-radius-medium);
-  height: 40px;
-  width: 40px;
-}
-
-.priority-icons sl-skeleton.circle
-{
-  height: 20px;
-  width: 20px;
-  margin: 0 3px;
-}
-
-sl-skeleton.circle
-{
-  --border-radius: var(--sl-border-radius-circle);
-  height: 40px;
-  width: 40px;
-}
-
 #loading-overlay
 {
   position: fixed;
@@ -408,11 +432,6 @@ sl-skeleton.circle
   width: 40px;
 }
 
-sl-drawer table
-{
-  table-layout: fixed;
-}
-
 #delete-confirmation sl-alert
 {
   margin-top: 2rem;
@@ -440,18 +459,6 @@ sl-drawer table
 #pattern-types #parts-of-a-url img
 {
   border-radius: var(--border-radius);
-}
-
-sl-card
-{
-  --sl-panel-background-color: var(--sl-color-neutral-0);
-}
-
-sl-checkbox,
-sl-switch,
-sl-radio
-{
-  padding-inline-start: 0.5em;
 }
 
 .upload-list-item div[slot="footer"]
@@ -1023,4 +1030,16 @@ sl-tab
   .drawer__panel {
     border: solid 1px var(--sl-color-neutral-0);
   }
+}
+
+/* Beta badge */
+#backup-action-buttons sl-badge
+{
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+#backup-action-buttons:hover sl-badge
+{
+  opacity: 1;
 }
