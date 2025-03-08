@@ -6,7 +6,7 @@
  * @param {IDBDatabase} idbDatabase The database to export from
  * @return {Promise<string>}
  */
-function exportToJson(idbDatabase) {
+function exportToJson (idbDatabase) {
   return new Promise((resolve, reject) => {
     const exportObject = {}
     if (idbDatabase.objectStoreNames.length === 0) {
@@ -56,7 +56,7 @@ function exportToJson(idbDatabase) {
  * @param {string}      json        Data to import, one key per object store
  * @return {Promise<void>}
  */
-function importFromJson(idbDatabase, json) {
+function importFromJson (idbDatabase, json) {
   return new Promise((resolve, reject) => {
     const transaction = idbDatabase.transaction(
       idbDatabase.objectStoreNames,
@@ -91,7 +91,7 @@ function importFromJson(idbDatabase, json) {
  * @param {IDBDatabase} idbDatabase The database to delete all data from
  * @return {Promise<void>}
  */
-function clearDatabase(idbDatabase) {
+function clearDatabase (idbDatabase) {
   return new Promise((resolve, reject) => {
     const transaction = idbDatabase.transaction(
       idbDatabase.objectStoreNames,

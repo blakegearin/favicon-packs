@@ -23,21 +23,30 @@
   ],
   "bookmarks.useWorkaroundForFormatters": true,
   "cSpell.words": [
+    "Boxicons",
+    "Iconoir",
     "ionicon",
     "Ionicons",
+    "shapez",
+    "Tabler",
     "xlink"
   ],
   "editor.tabSize": 2,
-  "editor.formatOnSave": true,
   "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 2000,
   "html.format.wrapAttributes": "force-expand-multiline",
   "html.format.indentInnerHtml": true,
   "html.format.extraLiners": "",
   "[html]": {
     "editor.defaultFormatter": "Jota0222.multi-formatter",
+    "editor.formatOnSave": true,
     "multiFormatter.formatterList": [
       "rbalet.vscode-sorting-attrs",
       "vscode.html-language-features"
     ]
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode",
+    "editor.formatOnSave": true
   }
 }
