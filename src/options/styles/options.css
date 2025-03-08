@@ -115,6 +115,7 @@ th.min-width
 .right-align
 {
   text-align: right;
+  justify-content: end;
 }
 
 .center-cell
@@ -122,6 +123,11 @@ th.min-width
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.mw-100
+{
+  min-width: 100px;
 }
 
 /* Shoelace Tags */
@@ -442,6 +448,12 @@ sl-tag sl-icon-button
   word-wrap: break-word;
 }
 
+/* Pattern Types Dialog */
+#pattern-types
+{
+  --width: 50vw;
+}
+
 #pattern-types div
 {
   display: flex;
@@ -459,6 +471,11 @@ sl-tag sl-icon-button
 #pattern-types #parts-of-a-url img
 {
   border-radius: var(--border-radius);
+}
+
+#parts-of-a-url
+{
+  width: 100%;
 }
 
 .upload-list-item div[slot="footer"]
@@ -520,11 +537,6 @@ sl-tag sl-icon-button
   justify-content: space-between;
 }
 
-#settings-dialog
-{
-  --size: 70vh;
-}
-
 .ionicon-fill-none {
   fill: none;
 }
@@ -565,6 +577,11 @@ sl-tag sl-icon-button
   padding: 0;
   margin: 0;
   cursor: pointer;
+}
+
+#open-settings-button
+{
+  font-size: 1.25rem;
 }
 
 #theme-selector:not(:defined)
@@ -1042,4 +1059,24 @@ sl-tab
 #backup-action-buttons:hover sl-badge
 {
   opacity: 1;
+}
+
+
+/* Settings Dialog */
+#settings-dialog
+{
+  --size: 70vh;
+}
+
+#settings-dialog sl-tab-group,
+#settings-dialog sl-tab-panel,
+#settings-dialog sl-tab-group::part(base),
+#settings-dialog sl-tab-group::part(body)
+{
+  height: 100% !important;
+}
+
+#log-level-select
+{
+  max-width: 150px;
 }

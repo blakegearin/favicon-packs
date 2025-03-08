@@ -17,6 +17,11 @@ class ExtensionStore {
     this.db = null
   }
 
+  getDatabase () {
+    fpLogger.debug('getDatabase()')
+    return this.db
+  }
+
   generateUUID () {
     fpLogger.verbose('generateUUID()')
 
@@ -683,6 +688,37 @@ class ExtensionStore {
             event.target.updateComplete.then(() => {
               const color = event.target.input.value
               apply(color)
+            })
+          })
+        }
+      },
+      importPriority: {
+        getValue: () => {
+          const storageKey = 'importPrioritySelect'
+          return window.localStorage.getItem(storageKey)
+        },
+        initialize: () => {
+          const storageKey = 'importPrioritySelect'
+          const inputId = '#import-priority-select'
+          const defaultValue = 'lowest-priority'
+
+          const apply = value => {
+            fpLogger.quiet(`Setting ${storageKey} to ${value}`)
+            window.localStorage.setItem(storageKey, value)
+          }
+
+          const existingValue = window.localStorage.getItem(storageKey)
+          const currentValue = existingValue || defaultValue
+          apply(currentValue)
+
+          const inputElement = document.querySelector(inputId)
+          if (!inputElement) return
+
+          inputElement.value = currentValue
+
+          inputElement.addEventListener('sl-change', event => {
+            event.target.updateComplete.then(async () => {
+              apply(event.target.value)
             })
           })
         }

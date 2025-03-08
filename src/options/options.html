@@ -60,7 +60,6 @@
       <sl-icon-button
         id="open-settings-button"
         name="gear-fill"
-        style="font-size: 1.25rem;"
       ></sl-icon-button>
 
       <a
@@ -137,6 +136,7 @@
             <sl-button
               slot="trigger"
               variant="primary"
+              caret
             >
               Create
             </sl-button>
@@ -522,8 +522,23 @@
       <div class="helper-row">
         <span></span>
 
-        <div>
+        <div id="backup-action-buttons">
+          <sl-badge
+            variant="warning"
+            pill
+          >
+            Beta
+          </sl-badge>
+
+          <input
+            id="import-file-input"
+            class="display-none"
+            type="file"
+            accept=".json"
+          >
+
           <sl-button
+            id="import-action-button"
             variant="neutral"
             outline
           >
@@ -531,7 +546,7 @@
           </sl-button>
 
           <sl-button
-            id="export-button"
+            id="export-action-button"
             variant="neutral"
             outline
           >
@@ -791,10 +806,9 @@
     <sl-dialog
       id="pattern-types"
       label="Pattern Types"
-      style="--width: 50vw;"
     >
       <div>
-        <sl-details open>
+        <sl-details open="">
           <div slot="summary">
             <sl-tag variant="primary">
               Simple Match
@@ -849,9 +863,9 @@
             </div>
 
             <img
+              id="parts-of-a-url"
               src="../../img/parts-of-a-url.png"
               alt="Parts of a URL"
-              style="width: 100%"
             >
           </div>
         </sl-card>
@@ -921,7 +935,7 @@
               <tr>
                 <th class="minimal-width"></th>
                 <th></th>
-                <th class="minimal-width"></th>
+                <th class="mw-100"></th>
                 <th></th>
               </tr>
             </thead>
@@ -1003,7 +1017,7 @@
 
               <tr>
                 <td>
-                  <div style="text-align: right;">
+                  <div class="right-align">
                     <sl-switch
                       id="any-theme-switch"
                       size="large"
@@ -1055,7 +1069,6 @@
                       id="log-level-select"
                       size="medium"
                       placement="bottom"
-                      style="max-width: 150px;"
                     >
                       <sl-option value="silent">Silent</sl-option>
                       <sl-option value="quiet">Quiet</sl-option>
@@ -1063,6 +1076,28 @@
                       <sl-option value="debug">Debug</sl-option>
                       <sl-option value="verbose">Verbose</sl-option>
                       <sl-option value="trace">Trace</sl-option>
+                    </sl-select>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="right-align">
+                    <span">
+                      Import priority
+
+                    </span">
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <sl-select
+                      id="import-priority-select"
+                      size="medium"
+                      placement="bottom"
+                    >
+                      <sl-option value="highest-priority">Highest priority</sl-option>
+                      <sl-option value="lowest-priority">Lowest priority</sl-option>
                     </sl-select>
                   </div>
                 </td>

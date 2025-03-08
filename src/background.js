@@ -56,7 +56,7 @@ async function initialize () {
           let websitePattern = localSiteConfig.websitePattern
           fpLogger.debug('websitePattern', websitePattern)
 
-          if (localSiteConfig.patternType === 'Simple Match') {
+          if (localSiteConfig.patternType === 0) {
             const escapedDomain = websitePattern.replace(
               /[-/\\^$*+?.()|[\]{}]/g,
               '\\$&'

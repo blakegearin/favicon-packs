@@ -381,7 +381,10 @@ function updatePriorityOrder (siteConfigsOrder) {
 function getSiteConfigsOrder () {
   fpLogger.trace('getSiteConfigsOrder()')
 
-  return JSON.parse(window.localStorage.getItem('siteConfigsOrder')) || []
+  let rawSiteConfigsOrder = window.localStorage.getItem('siteConfigsOrder')
+  if (['undefined', 'null', ''].includes(rawSiteConfigsOrder)) rawSiteConfigsOrder = '[]'
+
+  return JSON.parse(rawSiteConfigsOrder)
 }
 
 function getPriority (id) {
@@ -482,14 +485,22 @@ async function updateSiteConfig ({
   anyThemeColor,
   active
 }) {
-  fpLogger.debug('updateSiteConfig()')
+  fpLogger.silent('updateSiteConfig()')
 
   const existingSiteConfig = await window.extensionStore.getSiteConfigById(id)
+
+  // Boolean values have to be handled differently than a simple || since 0 is falsy
   const activeDefined = active !== undefined
+  fpLogger.verbose('activeDefined', activeDefined)
+
+  const patternTypeDefined = patternType !== undefined
+  fpLogger.verbose('patternTypeDefined', patternTypeDefined)
 
   const newSiteConfig = {
     id,
-    patternType: patternType || existingSiteConfig.patternType,
+    patternType: patternTypeDefined
+      ? patternType
+      : existingSiteConfig.patternType,
     websitePattern: websitePattern || existingSiteConfig.websitePattern,
     iconId: iconId || existingSiteConfig.iconId,
     uploadId: uploadId || existingSiteConfig.uploadId,
@@ -660,17 +671,19 @@ async function populateTableRow (siteConfig, insertion) {
 
   // Pattern Type column
   const patternTypeTag = newRow.querySelector('.type-cell sl-tag')
-  patternTypeTag.innerText = siteConfig.patternType
+  patternTypeTag.innerText =
+    siteConfig.patternType === 0 ? 'Simple Match' : 'Regex Match'
 
-  const variantValue =
-    siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary'
+  const variantValue = siteConfig.patternType === 0 ? 'primary' : 'warning'
   patternTypeTag.setAttribute('variant', variantValue)
 
   const toggleTypeButton = newRow.querySelector('.toggle-type')
   toggleTypeButton.addEventListener('click', () => {
-    fpLogger.debug('Toggle type button clicked')
-    const patternType =
-      siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match'
+    fpLogger.silent('Toggle type button clicked')
+
+    const patternType = 1 - siteConfig.patternType // Fun way to toggle between 0 and 1
+    fpLogger.silent('patternType', patternType)
+
     updateSiteConfig({ id, patternType })
   })
 
@@ -1024,12 +1037,16 @@ async function populateTableRow (siteConfig, insertion) {
 }
 
 async function populateTable (siteConfigs) {
-  fpLogger.debug('populateTable()')
+  fpLogger.silent('populateTable()')
+  fpLogger.silent('siteConfigs', siteConfigs)
 
   const tableBody = document.querySelector('#siteConfigs tbody')
   tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove())
 
   let siteConfigsOrder = getSiteConfigsOrder()
+  fpLogger.silent('siteConfigsOrder', siteConfigsOrder)
+
+  // debugger
 
   // Remove any siteConfigs that no longer exist
   if (siteConfigsOrder.length > siteConfigs.length) {
@@ -1596,6 +1613,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     })
 
   const siteConfigs = await window.extensionStore.getSiteConfigs()
+  fpLogger.silent('siteConfigs', siteConfigs)
 
   await populateTable(siteConfigs)
   updateRecordsSummary(siteConfigs)
@@ -1701,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue()
 
     const siteConfig = await window.extensionStore.addSiteConfig({
-      patternType: 'Simple Match',
+      patternType: 0, // Default to "Simple Match"
       active: 1, // Default to active
       lightThemeColor: defaultLightThemeColor,
       darkThemeColor: defaultDarkThemeColor,
@@ -1822,6 +1840,116 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       selectAllButton.removeAttribute('checked')
       selectAllButton.removeAttribute('indeterminate')
+    })
+
+  document
+    .querySelector('#import-action-button')
+    .addEventListener('click', async event => {
+      event.preventDefault()
+
+      fpLogger.silent('Import button clicked')
+
+      const inputElement = document.querySelector('#import-file-input')
+
+      // Remove any existing event listeners by cloning the element
+      const newInputElement = inputElement.cloneNode(true)
+      inputElement.parentNode.replaceChild(newInputElement, inputElement)
+
+      newInputElement.addEventListener('change', async () => {
+        fpLogger.silent(
+          'inputElement.files.length',
+          newInputElement.files.length
+        )
+
+        if (!newInputElement.files.length) {
+          fpLogger.info('No file selected')
+          return
+        }
+
+        const file = newInputElement.files[0]
+        const fileUrl = URL.createObjectURL(file)
+
+        const response = await fetch(fileUrl)
+        fpLogger.debug('response', response)
+
+        if (!response.ok) {
+          fpLogger.error('Failed to fetch file', response.statusText)
+          return
+        }
+
+        const responseString = await response.text()
+        fpLogger.verbose('responseString', responseString)
+
+        const idbDatabase = window.extensionStore.getDatabase()
+        fpLogger.verbose('idbDatabase', idbDatabase)
+
+        const imports = await window.importFromJson(idbDatabase, responseString)
+        fpLogger.quiet('imports', imports)
+
+        const siteConfigsOrder = getSiteConfigsOrder()
+
+        const importedIds = imports?.imported?.siteConfigs?.ids || []
+
+        const settingsMetadata = window.extensionStore.getSettingsMetadata()
+        const importPriority = settingsMetadata.importPriority.getValue()
+        fpLogger.silent('importPriority', importPriority)
+
+        let newSiteConfigsOrder;
+
+        if (importPriority === 'highest-priority') {
+          newSiteConfigsOrder = importedIds.concat(siteConfigsOrder)
+        } else {
+          newSiteConfigsOrder = siteConfigsOrder.concat(importedIds)
+        }
+
+        fpLogger.silent('newSiteConfigsOrder', newSiteConfigsOrder)
+
+        updatePriorityOrder(newSiteConfigsOrder)
+
+        const siteConfigs = await window.extensionStore.getSiteConfigs()
+        fpLogger.silent('siteConfigs', siteConfigs)
+
+        await populateTable(siteConfigs)
+        updateRecordsSummary(siteConfigs)
+
+        // Clear the file input
+        newInputElement.value = ''
+      })
+
+      newInputElement.click()
+    })
+
+  document
+    .querySelector('#export-action-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Export button clicked')
+
+      const idbDatabase = window.extensionStore.getDatabase()
+      window
+        .exportToJson(idbDatabase, ['icons'])
+        .then(jsonString => {
+          fpLogger.verbose('jsonString', jsonString)
+
+          const blob = new Blob([jsonString], { type: 'application/json' })
+          const url = URL.createObjectURL(blob)
+
+          const downloadLink = document.createElement('a')
+          downloadLink.href = url
+          const formattedExtensionName = fpLogger.extensionName.replaceAll(
+            ' ',
+            '-'
+          )
+          downloadLink.download = `${formattedExtensionName}-export-${Date.now()}.json`
+
+          document.body.appendChild(downloadLink)
+          downloadLink.click()
+          document.body.removeChild(downloadLink)
+
+          setTimeout(() => URL.revokeObjectURL(url), 100)
+        })
+        .catch(error => {
+          fpLogger.error('Failed to export data', error)
+        })
     })
 
   const settingsDialog = document.querySelector('#settings-dialog')

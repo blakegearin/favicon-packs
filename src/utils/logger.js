@@ -49,6 +49,10 @@ class Logger {
     console.groupEnd()
   }
 
+  silent (message, variable) {
+    this.log(logLevels.silent, message, variable)
+  }
+
   quiet (message, variable) {
     this.log(logLevels.quiet, message, variable)
   }

@@ -4,22 +4,25 @@
  * Export all data from an IndexedDB database
  *
  * @param {IDBDatabase} idbDatabase The database to export from
+ * @param {Array<string>} [excludeStores=[]] Array of store names to exclude from export
  * @return {Promise<string>}
  */
-function exportToJson (idbDatabase) {
+function exportToJson (idbDatabase, excludeStores = []) {
   return new Promise((resolve, reject) => {
     const exportObject = {}
-    if (idbDatabase.objectStoreNames.length === 0) {
+
+    const storeNames = Array.from(idbDatabase.objectStoreNames).filter(
+      storeName => !excludeStores.includes(storeName)
+    )
+
+    if (storeNames.length === 0) {
       resolve(JSON.stringify(exportObject))
     } else {
-      const transaction = idbDatabase.transaction(
-        idbDatabase.objectStoreNames,
-        'readonly'
-      )
+      const transaction = idbDatabase.transaction(storeNames, 'readonly')
 
       transaction.addEventListener('error', reject)
 
-      for (const storeName of idbDatabase.objectStoreNames) {
+      for (const storeName of storeNames) {
         const allObjects = []
         transaction
           .objectStore(storeName)
@@ -27,18 +30,20 @@ function exportToJson (idbDatabase) {
           .addEventListener('success', event => {
             const cursor = event.target.result
             if (cursor) {
-              // Cursor holds value, put it into store data
-              allObjects.push(cursor.value)
+              const record = cursor.value
+
+              if (record && typeof record === 'object' && 'id' in record) {
+                delete record.id
+              }
+
+              allObjects.push(record)
               cursor.continue()
             } else {
               // No more values, store is done
               exportObject[storeName] = allObjects
 
               // Last store was handled
-              if (
-                idbDatabase.objectStoreNames.length ===
-                Object.keys(exportObject).length
-              ) {
+              if (storeNames.length === Object.keys(exportObject).length) {
                 resolve(JSON.stringify(exportObject))
               }
             }
@@ -54,7 +59,7 @@ function exportToJson (idbDatabase) {
  *
  * @param {IDBDatabase} idbDatabase Database to import into
  * @param {string}      json        Data to import, one key per object store
- * @return {Promise<void>}
+ * @return {Promise<object>} Information about the imported data
  */
 function importFromJson (idbDatabase, json) {
   return new Promise((resolve, reject) => {
@@ -65,18 +70,64 @@ function importFromJson (idbDatabase, json) {
     transaction.addEventListener('error', reject)
 
     var importObject = JSON.parse(json)
+    const importResults = {}
+    let processedStores = 0
+    const totalStores = Object.keys(importObject).filter(
+      storeName =>
+        Array.from(idbDatabase.objectStoreNames).includes(storeName) &&
+        importObject[storeName].length > 0
+    ).length
+
+    if (totalStores === 0) {
+      resolve({ success: true, imported: {} })
+      return
+    }
+
     for (const storeName of idbDatabase.objectStoreNames) {
-      let count = 0
-      for (const toAdd of importObject[storeName]) {
+      if (!importObject[storeName] || importObject[storeName].length === 0)
+        continue
+
+      importResults[storeName] = {
+        count: 0,
+        ids: []
+      }
+
+      const records = importObject[storeName]
+      let processedRecords = 0
+
+      for (const toAdd of records) {
+        // Generate a new ID for each record
+        if (!toAdd.id && storeName === 'siteConfigs') {
+          toAdd.id = window.extensionStore.generateUUID()
+        } else if (!toAdd.id && storeName === 'uploads') {
+          toAdd.id = Date.now() + processedRecords // Add index to avoid collisions
+        }
+
         const request = transaction.objectStore(storeName).add(toAdd)
-        request.addEventListener('success', () => {
-          count++
-          if (count === importObject[storeName].length) {
-            // Added all objects for this store
-            delete importObject[storeName]
-            if (Object.keys(importObject).length === 0) {
-              // Added all object stores
-              resolve()
+
+        request.addEventListener('success', event => {
+          importResults[storeName].ids.push(toAdd.id || event.target.result)
+          importResults[storeName].count++
+
+          processedRecords++
+          if (processedRecords === records.length) {
+            processedStores++
+            if (processedStores === totalStores) {
+              resolve({ success: true, imported: importResults })
+            }
+          }
+        })
+
+        request.addEventListener('error', event => {
+          fpLogger.error(
+            `Error importing record in ${storeName}:`,
+            event.target.error
+          )
+          processedRecords++
+          if (processedRecords === records.length) {
+            processedStores++
+            if (processedStores === totalStores) {
+              resolve({ success: true, imported: importResults })
             }
           }
         })
