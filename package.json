@@ -1,0 +1,11 @@
+{
+  "standard": {
+    "globals": [
+      "browser",
+      "fpLogger"
+    ],
+    "ignore": [
+      "src/db/idb-backup-and-restore.js"
+    ]
+  }
+}

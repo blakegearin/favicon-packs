@@ -10,6 +10,9 @@
 
 # Favicon Packs
 
+[![Javascript Style Guide](https://img.shields.io/badge/code_style-standard-f3df49)](https://standardjs.com)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to apply icon packs as [favicons](https://en.wikipedia.org/wiki/Favicon).
 
 ## Features

@@ -1,419 +1,420 @@
-fpLogger.quiet("options.js loaded");
+fpLogger.quiet('options.js loaded')
 
-let ICON_SELECTOR_DRAWER;
+let ICON_SELECTOR_DRAWER
 
-const svgNS = "http://www.w3.org/2000/svg";
+const svgNS = 'http://www.w3.org/2000/svg'
 
-function svgToPngBase64(svgString) {
-  fpLogger.verbose("svgToPngBase64");
+function svgToPngBase64 (svgString) {
+  fpLogger.verbose('svgToPngBase64')
 
   return new Promise((resolve, reject) => {
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(svgBlob);
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(svgBlob)
 
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
+    const img = new window.Image()
+    img.onload = function () {
+      const canvas = document.createElement('canvas')
 
       // Ensure valid dimensions
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
+      canvas.width = img.naturalWidth || img.width
+      canvas.height = img.naturalHeight || img.height
 
       if (canvas.width === 0 || canvas.height === 0) {
-        URL.revokeObjectURL(url);
-        reject(new Error('Invalid SVG dimensions - width and height must be greater than 0'));
-        return;
+        URL.revokeObjectURL(url)
+        reject(new Error('Invalid SVG dimensions - width and height must be greater than 0'))
+        return
       }
 
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
 
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url)
 
       canvas.toBlob(
         blob => {
           if (!blob) {
-            reject(new Error('Failed to generate PNG blob'));
-            return;
+            reject(new Error('Failed to generate PNG blob'))
+            return
           }
 
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
+          const reader = new window.FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.onerror = () => reject(reader.error)
+          reader.readAsDataURL(blob)
         },
-        'image/png',
-      );
-    };
+        'image/png'
+      )
+    }
 
-    img.onerror = function(error) {
-      URL.revokeObjectURL(url);
-      const errorMessage = 'Failed to load SVG image';
-      fpLogger.error(errorMessage, error);
-      reject(new Error(errorMessage));
-    };
+    img.onerror = function (error) {
+      URL.revokeObjectURL(url)
+      const errorMessage = 'Failed to load SVG image'
+      fpLogger.error(errorMessage, error)
+      reject(new Error(errorMessage))
+    }
 
-    img.src = url;
-  });
+    img.src = url
+  })
 }
 
-function buildUploadImg(upload) {
-  fpLogger.debug("buildUploadImg()");
+function buildUploadImg (upload) {
+  fpLogger.debug('buildUploadImg()')
 
-  const iconImage = document.createElement("img");
-  iconImage.src = upload.dataUri;
-  iconImage.setAttribute('upload-id', upload.id);
+  const iconImage = document.createElement('img')
+  iconImage.src = upload.dataUri
+  iconImage.setAttribute('upload-id', upload.id)
 
-  return iconImage;
+  return iconImage
 }
 
-function buildSvgSprite(icon, size = 40) {
-  fpLogger.trace("buildSvgSprite()");
+function buildSvgSprite (icon, size = 40) {
+  fpLogger.trace('buildSvgSprite()')
 
   // svg tags don't work with createElement
-  const iconSvg = document.createElementNS(svgNS, "svg");
-  iconSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  iconSvg.setAttribute("viewBox", "0 0 512 512");
-  iconSvg.setAttribute("icon-id", icon.id);
+  const iconSvg = document.createElementNS(svgNS, 'svg')
+  iconSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  iconSvg.setAttribute('viewBox', '0 0 512 512')
+  iconSvg.setAttribute('icon-id', icon.id)
 
-  iconSvg.setAttribute("width", size.toString());
-  iconSvg.setAttribute("height", size.toString());
+  iconSvg.setAttribute('width', size.toString())
+  iconSvg.setAttribute('height', size.toString())
 
   // use tags don't work with createElement
-  const iconUse = document.createElementNS(svgNS, 'use');
-  iconUse.setAttribute("href", `#${icon.id}`);
-  iconUse.setAttribute("xlink:href", `#${icon.id}`);
+  const iconUse = document.createElementNS(svgNS, 'use')
+  iconUse.setAttribute('href', `#${icon.id}`)
+  iconUse.setAttribute('xlink:href', `#${icon.id}`)
 
-  iconSvg.appendChild(iconUse);
+  iconSvg.appendChild(iconUse)
 
-  return iconSvg;
+  return iconSvg
 }
 
-function createFaviconSprite(icon, siteConfig, theme = null) {
-  fpLogger.debug("createFaviconSprite()");
+function createFaviconSprite (icon, siteConfig, theme = null) {
+  fpLogger.debug('createFaviconSprite()')
 
-  const svgSprite = buildSvgSprite(icon, 1000);
-  svgSprite.innerHTML += icon.symbol;
+  const svgSprite = buildSvgSprite(icon, 1000)
+  svgSprite.innerHTML += icon.symbol
 
-  const styleElement = document.createElement('style');
+  const styleElement = document.createElement('style')
 
   switch (icon.iconPackName) {
     case 'Ionicons':
-      styleElement.textContent = `.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }`;
-      break;
+      styleElement.textContent = '.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }'
+      break
     case 'Font_Awesome':
-      styleElement.textContent = `.Font_Awesome { fill: currentColor; stroke: currentColor; }`;
-      break;
+      styleElement.textContent = '.Font_Awesome { fill: currentColor; stroke: currentColor; }'
+      break
     case 'Lucide':
-      styleElement.textContent = `.Lucide { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }`;
-      break;
+      styleElement.textContent = '.Lucide { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }'
+      break
   }
 
-  svgSprite.insertBefore(styleElement, svgSprite.firstChild);
+  svgSprite.insertBefore(styleElement, svgSprite.firstChild)
 
-  if (theme === "dark") {
-    svgSprite.style.setProperty("color", siteConfig.darkThemeColor);
-  } else if (theme === "any") {
-    svgSprite.style.setProperty("color", siteConfig.anyThemeColor);
+  if (theme === 'dark') {
+    svgSprite.style.setProperty('color', siteConfig.darkThemeColor)
+  } else if (theme === 'any') {
+    svgSprite.style.setProperty('color', siteConfig.anyThemeColor)
   } else if (theme !== null) {
-    svgSprite.style.setProperty("color", siteConfig.lightThemeColor);
+    svgSprite.style.setProperty('color', siteConfig.lightThemeColor)
   }
 
-  const serializer = new XMLSerializer();
-  const updatedSvgString = serializer.serializeToString(svgSprite);
-  fpLogger.debug("updatedSvgString", updatedSvgString);
+  const serializer = new window.XMLSerializer()
+  const updatedSvgString = serializer.serializeToString(svgSprite)
+  fpLogger.debug('updatedSvgString', updatedSvgString)
 
-  return updatedSvgString;
+  return updatedSvgString
 }
 
-function buildIconPackVariant(iconStyle, iconPackName, iconPackVersion) {
-  fpLogger.trace("buildIconPackVariant()");
-  return `icon-pack-variant-${iconStyle}-${iconPackName}-${iconPackVersion.replaceAll('.', '_')}`;
+function buildIconPackVariant (iconStyle, iconPackName, iconPackVersion) {
+  fpLogger.trace('buildIconPackVariant()')
+  return `icon-pack-variant-${iconStyle}-${iconPackName}-${iconPackVersion.replaceAll('.', '_')}`
 }
 
-async function populateDrawerIcons() {
-  fpLogger.debug("populateDrawerIcons()");
+async function populateDrawerIcons () {
+  fpLogger.debug('populateDrawerIcons()')
 
-  const icons = await window.extensionStore.getIcons();
-  fpLogger.debug("icons", icons);
+  const icons = await window.extensionStore.getIcons()
+  fpLogger.debug('icons', icons)
 
-  const iconListFragment = document.createDocumentFragment();
-  const iconSymbols = {};
+  const iconListFragment = document.createDocumentFragment()
+  const iconSymbols = {}
 
-  const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name));
+  const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name))
   for (const icon of sortedIcons) {
-    const tooltip = document.createElement('sl-tooltip');
-    const tooltipContent = `${icon.name} ${icon.iconPackName.replaceAll('_', ' ')} ${icon.iconPackVersion}`;
-    tooltip.setAttribute('content', tooltipContent);
+    const tooltip = document.createElement('sl-tooltip')
+    const tooltipContent = `${icon.name} ${icon.iconPackName.replaceAll('_', ' ')} ${icon.iconPackVersion}`
+    tooltip.setAttribute('content', tooltipContent)
 
-    if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '));
+    if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '))
 
     tooltip.classList.add(
       buildIconPackVariant(icon.style, icon.iconPackName, icon.iconPackVersion)
-    );
+    )
 
-    const iconDiv = document.createElement('div');
-    iconDiv.classList.add('icon-list-item');
+    const iconDiv = document.createElement('div')
+    iconDiv.classList.add('icon-list-item')
 
-    const svgSprite = buildSvgSprite(icon);
+    const svgSprite = buildSvgSprite(icon)
 
     tooltip.onclick = () => {
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none');
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
 
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden');
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(svgSprite.cloneNode(true));
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(svgSprite.cloneNode(true))
     }
 
-    iconDiv.appendChild(svgSprite);
-    tooltip.appendChild(iconDiv);
-    iconListFragment.appendChild(tooltip);
+    iconDiv.appendChild(svgSprite)
+    tooltip.appendChild(iconDiv)
+    iconListFragment.appendChild(tooltip)
 
-    const iconPackSvgSelector = `svg[icon-pack-name="${icon.iconPackName}"][icon-pack-version="${icon.iconPackVersion}"]`;
-    fpLogger.verbose("iconPackSvgSelector", iconPackSvgSelector);
+    const iconPackSvgSelector = `svg[icon-pack-name="${icon.iconPackName}"][icon-pack-version="${icon.iconPackVersion}"]`
+    fpLogger.verbose('iconPackSvgSelector', iconPackSvgSelector)
 
     if (iconSymbols[iconPackSvgSelector]) {
-      iconSymbols[iconPackSvgSelector].push(icon.symbol);
+      iconSymbols[iconPackSvgSelector].push(icon.symbol)
     } else {
-      iconSymbols[iconPackSvgSelector] = [icon.symbol];
+      iconSymbols[iconPackSvgSelector] = [icon.symbol]
     }
   };
 
-  updateCurrentIconCount(sortedIcons.length);
+  updateCurrentIconCount(sortedIcons.length)
 
-  const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list');
-  iconList.replaceChildren(iconListFragment);
+  const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list')
+  iconList.replaceChildren(iconListFragment)
 
-  fpLogger.debug("iconSymbols", iconSymbols);
-  for (let [selector, symbols] of Object.entries(iconSymbols)) {
-    const iconPackSvg = document.querySelector(selector);
+  fpLogger.debug('iconSymbols', iconSymbols)
+  for (const [selector, symbols] of Object.entries(iconSymbols)) {
+    const iconPackSvg = document.querySelector(selector)
 
     if (!iconPackSvg) {
-      fpLogger.error(`Icon pack SVG not found: ${selector}`);
-      continue;
+      fpLogger.error(`Icon pack SVG not found: ${selector}`)
+      continue
     }
 
-    iconPackSvg.innerHTML = symbols.join('');
+    iconPackSvg.innerHTML = symbols.join('')
   };
 }
 
-async function getSiteConfigsByUpload(uploadId) {
-  fpLogger.debug("getSiteConfigsByUpload()");
+async function getSiteConfigsByUpload (uploadId) {
+  fpLogger.debug('getSiteConfigsByUpload()')
 
-  const siteConfigs = await window.extensionStore.getSiteConfigs();
-  return siteConfigs.filter(siteConfig => siteConfig.uploadId?.toString() === uploadId?.toString());
+  const siteConfigs = await window.extensionStore.getSiteConfigs()
+  return siteConfigs.filter(siteConfig => siteConfig.uploadId?.toString() === uploadId?.toString())
 }
 
-async function populateDrawerUploads() {
-  fpLogger.debug("populateDrawerUploads()");
+async function populateDrawerUploads () {
+  fpLogger.debug('populateDrawerUploads()')
 
-  const uploads = await window.extensionStore.getUploads();
-  const uploadListFragment = document.createDocumentFragment();
+  const uploads = await window.extensionStore.getUploads()
+  const uploadListFragment = document.createDocumentFragment()
 
-  const headerDiv = document.createElement('div');
-  headerDiv.slot = 'header';
+  const headerDiv = document.createElement('div')
+  headerDiv.slot = 'header'
 
-  const footerDiv = document.createElement('div');
-  footerDiv.slot = 'footer';
+  const footerDiv = document.createElement('div')
+  footerDiv.slot = 'footer'
 
-  const deleteButton = document.createElement('sl-icon-button');
-  deleteButton.setAttribute('name', 'trash');
-  deleteButton.setAttribute('label', 'Delete');
-  deleteButton.classList.add('delete-upload');
+  const deleteButton = document.createElement('sl-icon-button')
+  deleteButton.setAttribute('name', 'trash')
+  deleteButton.setAttribute('label', 'Delete')
+  deleteButton.classList.add('delete-upload')
 
-  const selectRadio = document.createElement('sl-radio');
-  selectRadio.setAttribute('size', 'large');
+  const selectRadio = document.createElement('sl-radio')
+  selectRadio.setAttribute('size', 'large')
 
   for (const upload of uploads) {
-    const cardElement = document.createElement('sl-card');
-    cardElement.classList.add('upload-list-item');
+    const cardElement = document.createElement('sl-card')
+    cardElement.classList.add('upload-list-item')
 
-    const uploadHeaderDiv = headerDiv.cloneNode();
-    uploadHeaderDiv.textContent = upload.name;
-    cardElement.appendChild(uploadHeaderDiv);
+    const uploadHeaderDiv = headerDiv.cloneNode()
+    uploadHeaderDiv.textContent = upload.name
+    cardElement.appendChild(uploadHeaderDiv)
 
-    const iconImage = buildUploadImg(upload);
-    cardElement.appendChild(iconImage);
+    const iconImage = buildUploadImg(upload)
+    cardElement.appendChild(iconImage)
 
-    const uploadFooterDiv = footerDiv.cloneNode(true);
+    const uploadFooterDiv = footerDiv.cloneNode(true)
 
-    const deleteTooltip = document.createElement('sl-tooltip');
-    deleteTooltip.setAttribute('content', 'Delete');
+    const deleteTooltip = document.createElement('sl-tooltip')
+    deleteTooltip.setAttribute('content', 'Delete')
 
-    const uploadDeleteButton = deleteButton.cloneNode(true);
+    const uploadDeleteButton = deleteButton.cloneNode(true)
     uploadDeleteButton.addEventListener('click', async () => {
-      fpLogger.info("Upload delete button clicked");
+      fpLogger.info('Upload delete button clicked')
 
-      const relatedSiteConfigs = await getSiteConfigsByUpload(upload.id);
-      fpLogger.debug("relatedSiteConfigs", relatedSiteConfigs);
+      const relatedSiteConfigs = await getSiteConfigsByUpload(upload.id)
+      fpLogger.debug('relatedSiteConfigs', relatedSiteConfigs)
 
-      const usageCount = relatedSiteConfigs.length;
-      const uploadDate = new Date(parseInt(upload.id, 10));
-      const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} at ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
+      const usageCount = relatedSiteConfigs.length
+      const uploadDate = new Date(parseInt(upload.id, 10))
+      const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} at ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`
 
       let confirmationText = `Are you sure you want to delete this file?
 
       Name: ${upload.name}
 
-      Uploaded: ${formattedDate}`;
+      Uploaded: ${formattedDate}`
 
       if (usageCount) {
-        const rowText = usageCount === 1 ? 'row' : 'rows';
+        const rowText = usageCount === 1 ? 'row' : 'rows'
         confirmationText += `
 
-        It's used by ${usageCount} ${rowText} as their icon, which will be impacted.`;
+        It's used by ${usageCount} ${rowText} as their icon, which will be impacted.`
       }
 
       showDeleteConfirmationDialog(
         async () => {
-          await window.extensionStore.deleteUpload(upload.id);
+          await window.extensionStore.deleteUpload(upload.id)
 
-          const siteConfigs = await window.extensionStore.getSiteConfigs();
+          const siteConfigs = await window.extensionStore.getSiteConfigs()
           for (const config of siteConfigs) {
             if (config.uploadId === upload.id) {
               await updateSiteConfig({
                 id: config.id,
                 uploadId: null
-              });
+              })
             }
           }
 
-          ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = '';
-          ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none');
-          ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden');
-          ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = '';
-          await populateDrawerUploads();
+          ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+          ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
+          ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
+          ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
+
+          await populateDrawerUploads()
         },
-        confirmationText,
-      );
-    });
+        confirmationText
+      )
+    })
 
-    deleteTooltip.appendChild(uploadDeleteButton);
-    uploadFooterDiv.appendChild(deleteTooltip);
+    deleteTooltip.appendChild(uploadDeleteButton)
+    uploadFooterDiv.appendChild(deleteTooltip)
 
-    const selectTooltip = document.createElement('sl-tooltip');
-    selectTooltip.setAttribute('content', 'Select');
+    const selectTooltip = document.createElement('sl-tooltip')
+    selectTooltip.setAttribute('content', 'Select')
 
-    const uploadSelectRadio = selectRadio.cloneNode(true);
+    const uploadSelectRadio = selectRadio.cloneNode(true)
 
-    const updatedIconUploadId = ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute('upload-id');
-    fpLogger.debug("updatedIconUploadId", updatedIconUploadId);
+    const updatedIconUploadId = ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute('upload-id')
+    fpLogger.debug('updatedIconUploadId', updatedIconUploadId)
 
-    if (updatedIconUploadId?.toString() === upload.id.toString()) uploadSelectRadio.checked = true;
+    if (updatedIconUploadId?.toString() === upload.id.toString()) uploadSelectRadio.checked = true
 
     uploadSelectRadio.addEventListener('click', async () => {
-      fpLogger.debug("Upload selected");
+      fpLogger.debug('Upload selected')
 
       ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-        if (radio !== uploadSelectRadio) radio.checked = false;
-      });
-      uploadSelectRadio.checked = true;
+        if (radio !== uploadSelectRadio) radio.checked = false
+      })
+      uploadSelectRadio.checked = true
 
-      const imagePreview = buildUploadImg(upload);
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview);
+      const imagePreview = buildUploadImg(upload)
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview)
 
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name;
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none');
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden');
-    });
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
+    })
 
-    selectTooltip.appendChild(uploadSelectRadio);
-    uploadFooterDiv.appendChild(selectTooltip);
+    selectTooltip.appendChild(uploadSelectRadio)
+    uploadFooterDiv.appendChild(selectTooltip)
 
-    cardElement.appendChild(uploadFooterDiv);
-    uploadListFragment.appendChild(cardElement);
+    cardElement.appendChild(uploadFooterDiv)
+    uploadListFragment.appendChild(cardElement)
   }
 
-  const uploadList = ICON_SELECTOR_DRAWER.querySelector('.upload-list');
-  uploadList.replaceChildren(uploadListFragment);
+  const uploadList = ICON_SELECTOR_DRAWER.querySelector('.upload-list')
+  uploadList.replaceChildren(uploadListFragment)
 }
 
-function updatePriorityOrder(siteConfigsOrder) {
-  fpLogger.verbose("updatePriorityOrder()");
-  return localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder));
+function updatePriorityOrder (siteConfigsOrder) {
+  fpLogger.verbose('updatePriorityOrder()')
+  return window.localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder))
 }
 
-function getSiteConfigsOrder() {
-  fpLogger.trace("getSiteConfigsOrder()");
-  return JSON.parse(localStorage.getItem('siteConfigsOrder')) || [];
+function getSiteConfigsOrder () {
+  fpLogger.trace('getSiteConfigsOrder()')
+  return JSON.parse(window.localStorage.getItem('siteConfigsOrder')) || []
 }
 
-function getPriority(id) {
-  fpLogger.debug("getPriority()");
+function getPriority (id) {
+  fpLogger.debug('getPriority()')
 
-  const siteConfigsOrder = getSiteConfigsOrder();
-  return siteConfigsOrder.indexOf(id);
+  const siteConfigsOrder = getSiteConfigsOrder()
+  return siteConfigsOrder.indexOf(id)
 }
 
-async function filterByIconPackVariant(filterIconPackVariant) {
-  fpLogger.debug("filterByIconPackVariant()");
+async function filterByIconPackVariant (filterIconPackVariant) {
+  fpLogger.debug('filterByIconPackVariant()')
 
-  const iconPackVariants = [];
+  const iconPackVariants = []
 
-  const iconPacks = await window.extensionStore.getIconPacks();
+  const iconPacks = await window.extensionStore.getIconPacks()
   iconPacks.forEach(iconPack => {
     iconPack.versions.forEach(version => {
       iconPack.styles.forEach(style => {
-        const variant = buildIconPackVariant(style.name, iconPack.name, version.name);
-        iconPackVariants.push(variant);
-      });
-    });
-  });
+        const variant = buildIconPackVariant(style.name, iconPack.name, version.name)
+        iconPackVariants.push(variant)
+      })
+    })
+  })
 
   for (const iconPackVariant of iconPackVariants) {
     document.documentElement.style.setProperty(
       `--icon-pack-variant-${iconPackVariant}`,
       ['All packs', iconPackVariant].includes(filterIconPackVariant) ? 'block' : 'none'
-    );
+    )
   }
 
-  let iconPackVariantSelector = `.icon-list sl-tooltip`;
+  let iconPackVariantSelector = '.icon-list sl-tooltip'
 
   if (filterIconPackVariant !== 'All packs') {
-    iconPackVariantSelector += `.${filterIconPackVariant}`;
+    iconPackVariantSelector += `.${filterIconPackVariant}`
   }
 
-  const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(iconPackVariantSelector).length;
-  updateCurrentIconCount(currentIconCount);
+  const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(iconPackVariantSelector).length
+  updateCurrentIconCount(currentIconCount)
 }
 
-function updateCurrentIconCount(iconCount) {
-  fpLogger.debug("updateCurrentIconCount()");
-  document.querySelector('#current-icon-count').textContent = iconCount.toLocaleString();
+function updateCurrentIconCount (iconCount) {
+  fpLogger.debug('updateCurrentIconCount()')
+  document.querySelector('#current-icon-count').textContent = iconCount.toLocaleString()
 }
 
-function filterDrawerIcons(filter) {
-  fpLogger.debug("filterDrawerIcons()");
+function filterDrawerIcons (filter) {
+  fpLogger.debug('filterDrawerIcons()')
 
-  let currentIconCount = 0;
+  let currentIconCount = 0
 
   ICON_SELECTOR_DRAWER.querySelectorAll('sl-tooltip').forEach((icon) => {
-    let passes = false;
+    let passes = false
 
     if (filter) {
-      const name = icon.getAttribute('content');
-      const tags = icon.getAttribute('tags');
+      const name = icon.getAttribute('content')
+      const tags = icon.getAttribute('tags')
 
       if (filter instanceof RegExp) {
-        if (filter.test(name)) passes = true;
+        if (filter.test(name)) passes = true
       } else {
-        if (name.includes(filter) || tags.includes(filter)) passes = true;
+        if (name.includes(filter) || tags.includes(filter)) passes = true
       }
     } else {
-      passes = true;
+      passes = true
     }
 
     if (passes) {
-      currentIconCount++;
-      icon.classList.remove('display-none');
+      currentIconCount++
+      icon.classList.remove('display-none')
     } else {
-      icon.classList.add('display-none');
+      icon.classList.add('display-none')
     }
-  });
+  })
 
-  updateCurrentIconCount(currentIconCount);
+  updateCurrentIconCount(currentIconCount)
 }
 
-async function updateSiteConfig({
+async function updateSiteConfig ({
   id,
   patternType,
   websitePattern,
@@ -422,12 +423,12 @@ async function updateSiteConfig({
   lightThemeColor,
   darkThemeColor,
   anyThemeColor,
-  active,
+  active
 }) {
-  fpLogger.debug("updateSiteConfig()");
+  fpLogger.debug('updateSiteConfig()')
 
-  const existingSiteConfig = await window.extensionStore.getSiteConfigById(id);
-  const activeDefined = active !== undefined;
+  const existingSiteConfig = await window.extensionStore.getSiteConfigById(id)
+  const activeDefined = active !== undefined
 
   const newSiteConfig = {
     id,
@@ -441,1195 +442,1190 @@ async function updateSiteConfig({
     lightPngUrl: existingSiteConfig.lightPngUrl,
     darkPngUrl: existingSiteConfig.darkPngUrl,
     anyPngUrl: existingSiteConfig.anyPngUrl,
-    active: activeDefined ? active : existingSiteConfig.active,
-  };
+    active: activeDefined ? active : existingSiteConfig.active
+  }
 
   if (iconId || lightThemeColor || darkThemeColor || anyThemeColor) {
-    if (!newSiteConfig.iconId) return;
+    if (!newSiteConfig.iconId) return
 
-    const icon = await window.extensionStore.getIconById(newSiteConfig.iconId);
-    if (!icon) fpLogger.error('Icon not found', iconId);
+    const icon = await window.extensionStore.getIconById(newSiteConfig.iconId)
+    if (!icon) fpLogger.error('Icon not found', iconId)
 
     if (iconId || lightThemeColor) {
-      const faviconSpriteLight = createFaviconSprite(icon, newSiteConfig, 'light');
-      const lightPngUrl = await svgToPngBase64(faviconSpriteLight);
-      newSiteConfig.lightPngUrl = lightPngUrl;
+      const faviconSpriteLight = createFaviconSprite(icon, newSiteConfig, 'light')
+      const lightPngUrl = await svgToPngBase64(faviconSpriteLight)
+      newSiteConfig.lightPngUrl = lightPngUrl
     }
 
     if (iconId || darkThemeColor) {
-      const faviconSpriteDark = createFaviconSprite(icon, newSiteConfig, 'dark');
-      const darkPngUrl = await svgToPngBase64(faviconSpriteDark);
-      newSiteConfig.darkPngUrl = darkPngUrl;
+      const faviconSpriteDark = createFaviconSprite(icon, newSiteConfig, 'dark')
+      const darkPngUrl = await svgToPngBase64(faviconSpriteDark)
+      newSiteConfig.darkPngUrl = darkPngUrl
     }
 
     if (iconId || anyThemeColor) {
-      const faviconSprite = createFaviconSprite(icon, newSiteConfig, 'any');
-      const anyPngUrl = await svgToPngBase64(faviconSprite);
-      newSiteConfig.anyPngUrl = anyPngUrl;
+      const faviconSprite = createFaviconSprite(icon, newSiteConfig, 'any')
+      const anyPngUrl = await svgToPngBase64(faviconSprite)
+      newSiteConfig.anyPngUrl = anyPngUrl
     }
 
-    delete newSiteConfig.uploadId;
+    delete newSiteConfig.uploadId
   } else if (uploadId) {
-    delete newSiteConfig.iconId;
-    delete newSiteConfig.lightPngUrl;
-    delete newSiteConfig.darkPngUrl;
+    delete newSiteConfig.iconId
+    delete newSiteConfig.lightPngUrl
+    delete newSiteConfig.darkPngUrl
   }
 
-  fpLogger.debug("newSiteConfig", newSiteConfig);
-  const updatedSiteConfig = await window.extensionStore.updateSiteConfig(newSiteConfig);
-  fpLogger.debug("updatedSiteConfig", updatedSiteConfig);
+  fpLogger.debug('newSiteConfig', newSiteConfig)
+  const updatedSiteConfig = await window.extensionStore.updateSiteConfig(newSiteConfig)
+  fpLogger.debug('updatedSiteConfig', updatedSiteConfig)
 
   if (activeDefined) {
-    const siteConfigs = await window.extensionStore.getSiteConfigs();
-    updateRecordsSummary(siteConfigs);
+    const siteConfigs = await window.extensionStore.getSiteConfigs()
+    updateRecordsSummary(siteConfigs)
   } else {
-    void populateTableRow(updatedSiteConfig, false);
+    await populateTableRow(updatedSiteConfig, false)
   }
 }
 
-function updateRecordsSummary(siteConfigs) {
-  fpLogger.debug("updateRecordsSummary()");
+function updateRecordsSummary (siteConfigs) {
+  fpLogger.debug('updateRecordsSummary()')
 
-  document.querySelector('#siteConfigs-length').innerText = siteConfigs.length;
+  document.querySelector('#siteConfigs-length').innerText = siteConfigs.length
   document.querySelector('#active-siteConfigs-length').innerText =
-    siteConfigs.filter(siteConfig => siteConfig.active)?.length || 0;
+    siteConfigs.filter(siteConfig => siteConfig.active)?.length || 0
 }
 
-async function swapPriorities(record1Id, direction) {
-  fpLogger.debug("swapPriorities()");
+async function swapPriorities (record1Id, direction) {
+  fpLogger.debug('swapPriorities()')
 
-  const siteConfigsOrder = getSiteConfigsOrder();
-  const currentIndex = siteConfigsOrder.indexOf(record1Id);
+  const siteConfigsOrder = getSiteConfigsOrder()
+  const currentIndex = siteConfigsOrder.indexOf(record1Id)
 
   if (currentIndex === -1 ||
     (direction === 'increment' && currentIndex === 0) ||
     (direction === 'decrement' && currentIndex === siteConfigsOrder.length - 1)) {
-    return;
+    return
   }
 
-  const targetIndex = direction === 'increment' ? currentIndex - 1 : currentIndex + 1;
-  const record2Id = siteConfigsOrder[targetIndex];
+  const targetIndex = direction === 'increment' ? currentIndex - 1 : currentIndex + 1
+  const record2Id = siteConfigsOrder[targetIndex]
   const record2 = await window.extensionStore.getSiteConfigById(record2Id);
 
   [siteConfigsOrder[currentIndex], siteConfigsOrder[targetIndex]] =
-    [siteConfigsOrder[targetIndex], siteConfigsOrder[currentIndex]];
-  localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder));
+    [siteConfigsOrder[targetIndex], siteConfigsOrder[currentIndex]]
+  window.localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder))
 
-  const tr1 = document.querySelector(`#row-${record1Id}`);
-  const tr2 = document.querySelector(`#row-${record2.id}`);
-  if (!tr1 || !tr2) return;
+  const tr1 = document.querySelector(`#row-${record1Id}`)
+  const tr2 = document.querySelector(`#row-${record2.id}`)
+  if (!tr1 || !tr2) return
 
   if (direction === 'increment') {
-    tr2.parentNode.insertBefore(tr1, tr2);
+    tr2.parentNode.insertBefore(tr1, tr2)
   } else {
-    tr2.parentNode.insertBefore(tr2, tr1);
+    tr2.parentNode.insertBefore(tr2, tr1)
   }
 
-  await setPriorityButtonVisibility(tr1, targetIndex);
-  await setPriorityButtonVisibility(tr2, currentIndex);
+  await setPriorityButtonVisibility(tr1, targetIndex)
+  await setPriorityButtonVisibility(tr2, currentIndex)
 }
 
-async function setPriorityButtonVisibility(row, priority) {
-  fpLogger.debug("setPriorityButtonVisibility()");
+async function setPriorityButtonVisibility (row, priority) {
+  fpLogger.debug('setPriorityButtonVisibility()')
 
-  const siteConfigs = await window.extensionStore.getSiteConfigs();
-  const incrementButton = row.querySelector('.increment');
-  const decrementButton = row.querySelector('.decrement');
+  const siteConfigs = await window.extensionStore.getSiteConfigs()
+  const incrementButton = row.querySelector('.increment')
+  const decrementButton = row.querySelector('.decrement')
 
   if (priority === 0) {
-    incrementButton.classList.add('hidden');
+    incrementButton.classList.add('hidden')
 
     if (siteConfigs.length > 1) {
-      decrementButton.classList.remove('hidden');
+      decrementButton.classList.remove('hidden')
     } else {
-      decrementButton.classList.add('hidden');
+      decrementButton.classList.add('hidden')
     }
   } else if (priority === (siteConfigs.length - 1)) {
-    incrementButton.classList.remove('hidden');
-    decrementButton.classList.add('hidden');
+    incrementButton.classList.remove('hidden')
+    decrementButton.classList.add('hidden')
   } else {
-    incrementButton.classList.remove('hidden');
-    decrementButton.classList.remove('hidden');
+    incrementButton.classList.remove('hidden')
+    decrementButton.classList.remove('hidden')
   }
 }
 
-async function populateTableRow(siteConfig, insertion) {
-  fpLogger.debug("populateTableRow()");
+async function populateTableRow (siteConfig, insertion) {
+  fpLogger.debug('populateTableRow()')
 
-  const id = siteConfig.id;
-  const rowId = `row-${id}`;
-  const templateRow = document.querySelector('#template-row');
-  let newRow;
+  const id = siteConfig.id
+  const rowId = `row-${id}`
+  const templateRow = document.querySelector('#template-row')
+  let newRow
 
   if (insertion) {
-    newRow = templateRow.cloneNode(true);
-    newRow.id = rowId;
-    newRow.classList.remove('display-none');
-    newRow.classList.add('siteConfig-row');
+    newRow = templateRow.cloneNode(true)
+    newRow.id = rowId
+    newRow.classList.remove('display-none')
+    newRow.classList.add('siteConfig-row')
   } else {
-    newRow = document.querySelector(`#${rowId}`);
+    newRow = document.querySelector(`#${rowId}`)
   }
 
   // Priority column
-  const incrementButton = newRow.querySelector('.increment');
-  const decrementButton = newRow.querySelector('.decrement');
+  const incrementButton = newRow.querySelector('.increment')
+  const decrementButton = newRow.querySelector('.decrement')
 
-  const priority = getPriority(id);
-  await setPriorityButtonVisibility(newRow, priority);
+  const priority = getPriority(id)
+  await setPriorityButtonVisibility(newRow, priority)
 
-  incrementButton.addEventListener('click', () => {
-    fpLogger.debug("Increment button clicked");
-    void swapPriorities(siteConfig.id, 'increment');
-  });
-  decrementButton.addEventListener('click', () => {
-    fpLogger.debug("Decrement button clicked");
-    void swapPriorities(siteConfig.id, 'decrement');
-  });
+  incrementButton.addEventListener('click', async () => {
+    fpLogger.debug('Increment button clicked')
+    await swapPriorities(siteConfig.id, 'increment')
+  })
+  decrementButton.addEventListener('click', async () => {
+    fpLogger.debug('Decrement button clicked')
+    await swapPriorities(siteConfig.id, 'decrement')
+  })
 
   // Pattern Type column
-  const patternTypeTag = newRow.querySelector('.type-cell sl-tag');
-  patternTypeTag.innerText = siteConfig.patternType;
+  const patternTypeTag = newRow.querySelector('.type-cell sl-tag')
+  patternTypeTag.innerText = siteConfig.patternType
 
-  const variantValue = siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary';
-  patternTypeTag.setAttribute('variant', variantValue);
+  const variantValue = siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary'
+  patternTypeTag.setAttribute('variant', variantValue)
 
-  const toggleTypeButton = newRow.querySelector('.toggle-type');
+  const toggleTypeButton = newRow.querySelector('.toggle-type')
   toggleTypeButton.addEventListener('click', () => {
-    fpLogger.debug("Toggle type button clicked");
-    const patternType = siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match';
-    updateSiteConfig({ id, patternType });
-  });
+    fpLogger.debug('Toggle type button clicked')
+    const patternType = siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match'
+    updateSiteConfig({ id, patternType })
+  })
 
   // Site Match column
-  newRow.querySelector('.site-match-value').innerText = siteConfig.websitePattern;
-  newRow.querySelector('.site-match-value-copy').setAttribute('value', siteConfig.websitePattern);
+  newRow.querySelector('.site-match-value').innerText = siteConfig.websitePattern
+  newRow.querySelector('.site-match-value-copy').setAttribute('value', siteConfig.websitePattern)
 
-  const siteRead = newRow.querySelector('.site-cell.read');
-  const siteEdit = newRow.querySelector('.site-cell.edit');
-  const siteMatchInput = newRow.querySelector('.site-cell sl-input');
+  const siteRead = newRow.querySelector('.site-cell.read')
+  const siteEdit = newRow.querySelector('.site-cell.edit')
+  const siteMatchInput = newRow.querySelector('.site-cell sl-input')
 
   if (siteConfig.websitePattern) {
-    siteMatchInput.value = siteConfig.websitePattern;
+    siteMatchInput.value = siteConfig.websitePattern
 
-    siteRead.classList.remove('display-none');
-    siteEdit.classList.add('display-none');
+    siteRead.classList.remove('display-none')
+    siteEdit.classList.add('display-none')
   } else {
-    siteRead.classList.add('display-none');
-    siteEdit.classList.remove('display-none');
+    siteRead.classList.add('display-none')
+    siteEdit.classList.remove('display-none')
   }
 
-  const editSiteButton = newRow.querySelector('.site-cell .edit-site');
+  const editSiteButton = newRow.querySelector('.site-cell .edit-site')
 
   // addEventListener does not allow editing multiple times
   editSiteButton.onclick = () => {
-    fpLogger.debug("editSiteButton clicked");
+    fpLogger.debug('editSiteButton clicked')
 
-    siteRead.classList.toggle('display-none');
-    siteEdit.classList.toggle('display-none');
+    siteRead.classList.toggle('display-none')
+    siteEdit.classList.toggle('display-none')
 
-    siteEdit.querySelector('sl-input').focus();
-  };
+    siteEdit.querySelector('sl-input').focus()
+  }
 
-  const form = newRow.querySelector('.site-cell.edit');
+  const form = newRow.querySelector('.site-cell.edit')
 
-  Promise.all([
-    customElements.whenDefined('sl-input'),
-  ]).then(() => {
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      fpLogger.info("Save button clicked");
+  form.addEventListener('submit', (event) => {
+    event.preventDefault()
+    fpLogger.info('Save button clicked')
 
-      const websitePattern = siteMatchInput.value;
-      updateSiteConfig({ id, websitePattern });
-    });
+    const websitePattern = siteMatchInput.value
+    updateSiteConfig({ id, websitePattern })
+  })
 
-    form.addEventListener('reset', () => {
-      fpLogger.debug("Reset button clicked");
-      const siteMatchInput = newRow.querySelector('.site-cell sl-input');
+  form.addEventListener('reset', () => {
+    fpLogger.debug('Reset button clicked')
+    const siteMatchInput = newRow.querySelector('.site-cell sl-input')
 
-      siteMatchInput.updateComplete.then(() => {
-        siteMatchInput.value = siteConfig.websitePattern || '';
-        siteMatchInput.focus();
-      });
-    });
-  });
+    siteMatchInput.updateComplete.then(() => {
+      siteMatchInput.value = siteConfig.websitePattern || ''
+      siteMatchInput.focus()
+    })
+  })
 
   // Icon column
-  let icon;
+  let icon
 
   if (siteConfig.iconId) {
-    icon = await window.extensionStore.getIconById(siteConfig.iconId);
+    icon = await window.extensionStore.getIconById(siteConfig.iconId)
 
     if (icon) {
-      const svgSprite = buildSvgSprite(icon);
+      const svgSprite = buildSvgSprite(icon)
 
-      newRow.querySelector('#icon-value').replaceChildren(svgSprite.cloneNode(true));
-      newRow.querySelector('#icon-value').classList.remove('display-none');
-      newRow.querySelector('#icon-vale-not-found').classList.add('display-none');
+      newRow.querySelector('#icon-value').replaceChildren(svgSprite.cloneNode(true))
+      newRow.querySelector('#icon-value').classList.remove('display-none')
+      newRow.querySelector('#icon-vale-not-found').classList.add('display-none')
     } else {
-      fpLogger.quiet(`Icon not found, likely due to icon pack deletion: ${siteConfig.iconId}`);
+      fpLogger.quiet(`Icon not found, likely due to icon pack deletion: ${siteConfig.iconId}`)
 
-      newRow.querySelector('#icon-value').replaceChildren();
-      newRow.querySelector('#icon-value').classList.add('display-none');
-      newRow.querySelector('#icon-vale-not-found').classList.remove('display-none');
+      newRow.querySelector('#icon-value').replaceChildren()
+      newRow.querySelector('#icon-value').classList.add('display-none')
+      newRow.querySelector('#icon-vale-not-found').classList.remove('display-none')
     }
 
-    newRow.querySelector('.icon-cell .add').classList.add('display-none');
-    newRow.querySelector('.icon-cell .edit').classList.remove('display-none');
+    newRow.querySelector('.icon-cell .add').classList.add('display-none')
+    newRow.querySelector('.icon-cell .edit').classList.remove('display-none')
 
     if (siteConfig.lightPngUrl) {
-      const imageElementLight = document.createElement("img");
-      imageElementLight.src = siteConfig.lightPngUrl;
+      const imageElementLight = document.createElement('img')
+      imageElementLight.src = siteConfig.lightPngUrl
 
-      const lightThemeFavicon = newRow.querySelector(".favicon-value.light-theme-color-style");
-      lightThemeFavicon.replaceChildren(imageElementLight);
-      lightThemeFavicon.classList.remove('display-none');
+      const lightThemeFavicon = newRow.querySelector('.favicon-value.light-theme-color-style')
+      lightThemeFavicon.replaceChildren(imageElementLight)
+      lightThemeFavicon.classList.remove('display-none')
     }
 
     if (siteConfig.darkPngUrl) {
-      const imageElementDark = document.createElement("img");
-      imageElementDark.src = siteConfig.darkPngUrl;
+      const imageElementDark = document.createElement('img')
+      imageElementDark.src = siteConfig.darkPngUrl
 
-      const darkThemeFavicon = newRow.querySelector(".favicon-value.dark-theme-color-style");
-      darkThemeFavicon.replaceChildren(imageElementDark);
-      darkThemeFavicon.classList.remove('display-none');
+      const darkThemeFavicon = newRow.querySelector('.favicon-value.dark-theme-color-style')
+      darkThemeFavicon.replaceChildren(imageElementDark)
+      darkThemeFavicon.classList.remove('display-none')
     }
 
     if (siteConfig.anyPngUrl) {
-      const imageElementNo = document.createElement("img");
-      imageElementNo.src = siteConfig.anyPngUrl;
+      const imageElementNo = document.createElement('img')
+      imageElementNo.src = siteConfig.anyPngUrl
 
-      const anyThemeFavicon = newRow.querySelector(".favicon-value.any-theme-color-style");
-      anyThemeFavicon.replaceChildren(imageElementNo);
-      anyThemeFavicon.classList.remove('display-none');
+      const anyThemeFavicon = newRow.querySelector('.favicon-value.any-theme-color-style')
+      anyThemeFavicon.replaceChildren(imageElementNo)
+      anyThemeFavicon.classList.remove('display-none')
     }
 
-    const settingsMetadata = window.extensionStore.getSettingsMetadata();
-    const anyThemeDisplayElement = newRow.querySelector(".favicon-value.any-theme-display");
+    const settingsMetadata = window.extensionStore.getSettingsMetadata()
+    const anyThemeDisplayElement = newRow.querySelector('.favicon-value.any-theme-display')
 
     if (!settingsMetadata.lightThemeEnabled.getValue() && !settingsMetadata.darkThemeEnabled.getValue()) {
-      anyThemeDisplayElement.classList.remove('display-none');
+      anyThemeDisplayElement.classList.remove('display-none')
     }
 
-    newRow.querySelector(".favicon-value.image-display").classList.add('display-none');
+    newRow.querySelector('.favicon-value.image-display').classList.add('display-none')
   } else if (siteConfig.uploadId) {
-    fpLogger.quiet("siteConfig.uploadId", siteConfig.uploadId);
+    fpLogger.quiet('siteConfig.uploadId', siteConfig.uploadId)
 
-    const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
-    fpLogger.quiet("upload", upload);
+    const upload = await window.extensionStore.getUploadById(siteConfig.uploadId)
+    fpLogger.quiet('upload', upload)
 
-    const imageElement = buildUploadImg(upload);
+    const imageElement = buildUploadImg(upload)
 
     newRow.querySelectorAll('.icon-value').forEach((iconValueElement) => {
-      iconValueElement.replaceChildren(imageElement.cloneNode(true));
-    });
+      iconValueElement.replaceChildren(imageElement.cloneNode(true))
+    })
 
-    newRow.querySelector('.icon-cell .add').classList.add('display-none');
-    newRow.querySelector('.icon-cell .edit').classList.remove('display-none');
+    newRow.querySelector('.icon-cell .add').classList.add('display-none')
+    newRow.querySelector('.icon-cell .edit').classList.remove('display-none')
 
-    newRow.querySelectorAll(".favicon-value.icon").forEach((iconElement) => {
-      iconElement.classList.add('display-none');
-    });
+    newRow.querySelectorAll('.favicon-value.icon').forEach((iconElement) => {
+      iconElement.classList.add('display-none')
+    })
 
-    const imageDisplayElement = newRow.querySelector(".favicon-value.image-display");
-    imageDisplayElement.replaceChildren(imageElement.cloneNode(true));
-    imageDisplayElement.classList.remove('display-none');
+    const imageDisplayElement = newRow.querySelector('.favicon-value.image-display')
+    imageDisplayElement.replaceChildren(imageElement.cloneNode(true))
+    imageDisplayElement.classList.remove('display-none')
   } else {
-    newRow.querySelector('.icon-cell .add').classList.remove('display-none');
-    newRow.querySelector('.icon-cell .edit').classList.add('display-none');
+    newRow.querySelector('.icon-cell .add').classList.remove('display-none')
+    newRow.querySelector('.icon-cell .edit').classList.add('display-none')
   }
 
-  const addIconButton = newRow.querySelector('.icon-cell .add sl-button');
+  const addIconButton = newRow.querySelector('.icon-cell .add sl-button')
   addIconButton.addEventListener('click', () => {
-    fpLogger.debug("Add icon button clicked");
+    fpLogger.debug('Add icon button clicked')
 
-    ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id);
+    ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id)
 
-    ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click();
+    ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click()
 
     ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-      radio.checked = false;
-    });
+      radio.checked = false
+    })
 
-    ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren();
-    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren();
+    ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
+    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
 
-    ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = '';
-    ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = '';
+    ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = ''
+    ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
 
-    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden');
+    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
 
-    ICON_SELECTOR_DRAWER.show();
-  });
+    ICON_SELECTOR_DRAWER.show()
+  })
 
   ICON_SELECTOR_DRAWER.querySelector('.drawer__overlay').addEventListener('click', () => {
-    ICON_SELECTOR_DRAWER.hide();
-  });
+    ICON_SELECTOR_DRAWER.hide()
+  })
 
   ICON_SELECTOR_DRAWER.querySelector('.drawer__close').addEventListener('click', () => {
-    ICON_SELECTOR_DRAWER.hide();
-  });
+    ICON_SELECTOR_DRAWER.hide()
+  })
 
   const updateIcon = async () => {
-    fpLogger.debug("Opening icon selector drawer");
+    fpLogger.debug('Opening icon selector drawer')
 
     if (siteConfig.uploadId) {
-      ICON_SELECTOR_DRAWER.querySelector('[panel="upload"]').click();
+      ICON_SELECTOR_DRAWER.querySelector('[panel="upload"]').click()
 
       ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-        radio.checked = false;
-      });
+        radio.checked = false
+      })
 
-      const upload = await window.extensionStore.getUploadById(siteConfig.uploadId);
-      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildUploadImg(upload));
+      const upload = await window.extensionStore.getUploadById(siteConfig.uploadId)
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildUploadImg(upload))
 
       ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = upload.name
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = '';
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
     } else {
-      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren();
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren();
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
 
-      ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click();
-      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = '';
+      ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click()
+      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = ''
 
       if (siteConfig.iconId && icon) {
-        ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon));
+        ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon))
       }
     }
 
-    ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id);
+    ICON_SELECTOR_DRAWER.setAttribute('data-siteConfig-id', id)
 
-    ICON_SELECTOR_DRAWER.show();
-  };
+    ICON_SELECTOR_DRAWER.show()
+  }
   newRow.querySelectorAll('.icon-cell .edit sl-button').forEach((selectIconButton) => {
-    selectIconButton.addEventListener('click', updateIcon);
-  });
+    selectIconButton.addEventListener('click', updateIcon)
+  })
 
   // Light Theme column
-  const lightThemeColorPicker = newRow.querySelector('.light-theme-color-picker');
+  const lightThemeColorPicker = newRow.querySelector('.light-theme-color-picker')
 
   if (siteConfig.uploadId || !siteConfig.iconId) {
-    lightThemeColorPicker.parentNode.classList.add('display-none');
+    lightThemeColorPicker.parentNode.classList.add('display-none')
   } else {
-    lightThemeColorPicker.parentNode.classList.remove('display-none');
+    lightThemeColorPicker.parentNode.classList.remove('display-none')
     lightThemeColorPicker.addEventListener('sl-blur', (event) => {
-      fpLogger.info("Updating light theme color");
+      fpLogger.info('Updating light theme color')
 
       event.target.updateComplete.then(() => {
-        const lightThemeColor = event.target.input.value;
-        updateSiteConfig({ id, lightThemeColor });
-      });
-    });
+        const lightThemeColor = event.target.input.value
+        updateSiteConfig({ id, lightThemeColor })
+      })
+    })
     newRow.querySelectorAll('.light-theme-color-value').forEach((lightThemeColorValueElement) => {
-      lightThemeColorValueElement.value = siteConfig.lightThemeColor;
-    });
+      lightThemeColorValueElement.value = siteConfig.lightThemeColor
+    })
   }
 
   // Dark Theme column
-  const darkThemeColorPicker = newRow.querySelector('.dark-theme-color-picker');
+  const darkThemeColorPicker = newRow.querySelector('.dark-theme-color-picker')
 
   if (siteConfig.uploadId || !siteConfig.iconId) {
-    darkThemeColorPicker.parentNode.classList.add('display-none');
+    darkThemeColorPicker.parentNode.classList.add('display-none')
   } else {
-    darkThemeColorPicker.parentNode.classList.remove('display-none');
+    darkThemeColorPicker.parentNode.classList.remove('display-none')
     darkThemeColorPicker.addEventListener('sl-blur', (event) => {
-      fpLogger.info("Updating dark theme color");
+      fpLogger.info('Updating dark theme color')
 
       event.target.updateComplete.then(() => {
-        const darkThemeColor = event.target.input.value;
-        updateSiteConfig({ id, darkThemeColor });
-      });
-    });
+        const darkThemeColor = event.target.input.value
+        updateSiteConfig({ id, darkThemeColor })
+      })
+    })
     newRow.querySelectorAll('.dark-theme-color-value').forEach((darkThemeColorValueElement) => {
-      darkThemeColorValueElement.value = siteConfig.darkThemeColor;
-    });
+      darkThemeColorValueElement.value = siteConfig.darkThemeColor
+    })
   }
 
   // Any Theme column
-  const anyThemeColorPicker = newRow.querySelector('.any-theme-color-picker');
+  const anyThemeColorPicker = newRow.querySelector('.any-theme-color-picker')
 
   if (siteConfig.uploadId || !siteConfig.iconId) {
-    anyThemeColorPicker.parentNode.classList.add('display-none');
+    anyThemeColorPicker.parentNode.classList.add('display-none')
   } else {
-    anyThemeColorPicker.parentNode.classList.remove('display-none');
+    anyThemeColorPicker.parentNode.classList.remove('display-none')
     anyThemeColorPicker.addEventListener('sl-blur', (event) => {
-      fpLogger.info("Updating icon color");
+      fpLogger.info('Updating icon color')
 
       event.target.updateComplete.then(() => {
-        const anyThemeColor = event.target.input.value;
-        updateSiteConfig({ id, anyThemeColor });
-      });
-    });
+        const anyThemeColor = event.target.input.value
+        updateSiteConfig({ id, anyThemeColor })
+      })
+    })
     newRow.querySelectorAll('.any-theme-color-value').forEach((anyThemeColorValueElement) => {
-      anyThemeColorValueElement.value = siteConfig.anyThemeColor;
-    });
+      anyThemeColorValueElement.value = siteConfig.anyThemeColor
+    })
   }
 
   // Favicon column
   if (siteConfig.iconId) {
-    newRow.querySelector('.light-theme-color-style').style.setProperty('color', siteConfig.lightThemeColor);
-    newRow.querySelector('.dark-theme-color-style').style.setProperty('color', siteConfig.darkThemeColor);
-    newRow.querySelector('.any-theme-color-style').style.setProperty('color', siteConfig.anyThemeColor);
+    newRow.querySelector('.light-theme-color-style').style.setProperty('color', siteConfig.lightThemeColor)
+    newRow.querySelector('.dark-theme-color-style').style.setProperty('color', siteConfig.darkThemeColor)
+    newRow.querySelector('.any-theme-color-style').style.setProperty('color', siteConfig.anyThemeColor)
   }
 
   // Active column
-  const switchElement = newRow.querySelector('.active-cell sl-switch');
-  if (siteConfig.active) switchElement.setAttribute('checked', '');
+  const switchElement = newRow.querySelector('.active-cell sl-switch')
+  if (siteConfig.active) switchElement.setAttribute('checked', '')
 
   switchElement.addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
-      fpLogger.info("Updating active");
-      const checked = event.target.checked;
-      const active = checked ? 1: 0;
-      updateSiteConfig({ id, active });
-    });
-  });
+      fpLogger.info('Updating active')
+      const checked = event.target.checked
+      const active = checked ? 1 : 0
+      updateSiteConfig({ id, active })
+    })
+  })
 
   if (insertion) {
-    fpLogger.debug("insertion");
-    const tableBody = document.querySelector('#siteConfigs tbody');
-    tableBody.appendChild(newRow);
+    fpLogger.debug('insertion')
+    const tableBody = document.querySelector('#siteConfigs tbody')
+    tableBody.appendChild(newRow)
   }
 }
 
-async function populateTable(siteConfigs) {
-  fpLogger.debug("populateTable()");
+async function populateTable (siteConfigs) {
+  fpLogger.debug('populateTable()')
 
-  const tableBody = document.querySelector('#siteConfigs tbody');
-  tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove());
+  const tableBody = document.querySelector('#siteConfigs tbody')
+  tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove())
 
-  let siteConfigsOrder = getSiteConfigsOrder();
+  let siteConfigsOrder = getSiteConfigsOrder()
 
   // Remove any siteConfigs that no longer exist
   if (siteConfigsOrder.length > siteConfigs.length) {
     siteConfigsOrder = siteConfigs
       .filter(siteConfig => siteConfigsOrder.includes(siteConfig.id))
-      .map(siteConfig => siteConfig.id);
+      .map(siteConfig => siteConfig.id)
 
-    updatePriorityOrder(siteConfigsOrder);
+    updatePriorityOrder(siteConfigsOrder)
   }
 
-  fpLogger.debug("siteConfigsOrder", siteConfigsOrder);
+  fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
   const sortedSiteConfigs = siteConfigsOrder
     .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
-    .filter(Boolean);
+    .filter(Boolean)
 
-  const noDataRow = document.querySelector('.no-data-row');
+  const noDataRow = document.querySelector('.no-data-row')
   if (sortedSiteConfigs.length === 0) {
-    noDataRow.classList.remove('display-none');
-    return;
+    noDataRow.classList.remove('display-none')
+    return
   } else {
-    noDataRow.classList.add('display-none');
+    noDataRow.classList.add('display-none')
   }
 
   for await (const siteConfig of sortedSiteConfigs) {
-    await populateTableRow(siteConfig, true);
+    await populateTableRow(siteConfig, true)
   }
 }
 
-function openTabPanels(tabPanelName) {
-  fpLogger.debug("openTabPanels()");
+function openTabPanels (tabPanelName) {
+  fpLogger.debug('openTabPanels()')
 
-  const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="icon-packs"]');
-  const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="upload"]');
+  const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="icon-packs"]')
+  const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="upload"]')
 
   switch (tabPanelName) {
     case 'icon-packs':
-      uploadTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'));
-      iconPacksTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''));
-      break;
+      uploadTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'))
+      iconPacksTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''))
+      break
     case 'upload':
-      iconPacksTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'));
-      uploadTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''));
-      break;
+      iconPacksTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'))
+      uploadTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''))
+      break
   }
 }
 
-function showDeleteConfirmationDialog(deleteFunction, confirmationText) {
-  fpLogger.debug("showDeleteConfirmationDialog()");
+function showDeleteConfirmationDialog (deleteFunction, confirmationText) {
+  fpLogger.debug('showDeleteConfirmationDialog()')
 
-  const deleteConfirmationDialog = document.querySelector('sl-dialog#delete-confirmation');
+  const deleteConfirmationDialog = document.querySelector('sl-dialog#delete-confirmation')
 
   deleteConfirmationDialog.querySelector('#delete-cancel-button').addEventListener('click', async () => {
-    fpLogger.debug("Delete cancel button clicked");
-    deleteConfirmationDialog.hide();
-  });
+    fpLogger.debug('Delete cancel button clicked')
+    deleteConfirmationDialog.hide()
+  })
 
   deleteConfirmationDialog.querySelector('#delete-confirmation-button').addEventListener('click', async () => {
-    fpLogger.info("Delete confirmation button clicked");
-    await deleteFunction();
-    deleteConfirmationDialog.hide();
-  });
+    fpLogger.info('Delete confirmation button clicked')
+    await deleteFunction()
+    deleteConfirmationDialog.hide()
+  })
 
-  deleteConfirmationDialog.querySelector('#delete-confirmation-text').innerText = confirmationText;
+  deleteConfirmationDialog.querySelector('#delete-confirmation-text').innerText = confirmationText
 
-  deleteConfirmationDialog.show();
+  deleteConfirmationDialog.show()
 }
 
-async function createVersionRow(iconPack, versionMetadata) {
-  fpLogger.verbose("createVersionRow()");
+async function createVersionRow (iconPack, versionMetadata) {
+  fpLogger.verbose('createVersionRow()')
 
-  const versionRow = document.createElement('tr');
+  const versionRow = document.createElement('tr')
 
-  const versionCell = document.createElement('td');
-  versionCell.classList.add('center');
+  const versionCell = document.createElement('td')
+  versionCell.classList.add('center')
 
-  const code = document.createElement('code');
-  code.textContent = versionMetadata.name;
-  versionCell.appendChild(code);
+  const code = document.createElement('code')
+  code.textContent = versionMetadata.name
+  versionCell.appendChild(code)
 
-  versionRow.appendChild(versionCell);
+  versionRow.appendChild(versionCell)
 
-  const statusCell = document.createElement('td');
-  statusCell.classList.add('center');
+  const statusCell = document.createElement('td')
+  statusCell.classList.add('center')
 
   // Check if the version is downloaded
-  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
-  const isDownloaded = iconCount > 0;
+  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name)
+  const isDownloaded = iconCount > 0
 
-  const downloadedTag = document.createElement('sl-tag');
-  downloadedTag.setAttribute('variant', 'success');
-  downloadedTag.textContent = 'Downloaded';
-  statusCell.appendChild(downloadedTag);
+  const downloadedTag = document.createElement('sl-tag')
+  downloadedTag.setAttribute('variant', 'success')
+  downloadedTag.textContent = 'Downloaded'
+  statusCell.appendChild(downloadedTag)
 
-  const notDownloadedTag = document.createElement('sl-tag');
-  notDownloadedTag.setAttribute('variant', 'neutral');
-  notDownloadedTag.textContent = 'Not Downloaded';
-  statusCell.appendChild(notDownloadedTag);
+  const notDownloadedTag = document.createElement('sl-tag')
+  notDownloadedTag.setAttribute('variant', 'neutral')
+  notDownloadedTag.textContent = 'Not Downloaded'
+  statusCell.appendChild(notDownloadedTag)
 
-  versionRow.appendChild(statusCell);
+  versionRow.appendChild(statusCell)
 
-  const countCell = document.createElement('td');
-  countCell.classList.add('center');
+  const countCell = document.createElement('td')
+  countCell.classList.add('center')
 
-  const downloadedCountBadge = document.createElement('sl-badge');
-  downloadedCountBadge.setAttribute('variant', isDownloaded ? 'success' : 'neutral');
-  downloadedCountBadge.setAttribute('pill', '');
+  const downloadedCountBadge = document.createElement('sl-badge')
+  downloadedCountBadge.setAttribute('variant', isDownloaded ? 'success' : 'neutral')
+  downloadedCountBadge.setAttribute('pill', '')
 
-  downloadedCountBadge.textContent = iconCount;
-  countCell.appendChild(downloadedCountBadge);
+  downloadedCountBadge.textContent = iconCount
+  countCell.appendChild(downloadedCountBadge)
 
-  versionRow.appendChild(countCell);
+  versionRow.appendChild(countCell)
 
-  const actionCell = document.createElement('td');
-  actionCell.classList.add('center');
+  const actionCell = document.createElement('td')
+  actionCell.classList.add('center')
 
-  const removeButton = document.createElement('sl-button');
-  removeButton.setAttribute('variant', 'danger');
-  removeButton.setAttribute('outline', '');
-  removeButton.textContent = 'Remove';
+  const removeButton = document.createElement('sl-button')
+  removeButton.setAttribute('variant', 'danger')
+  removeButton.setAttribute('outline', '')
+  removeButton.textContent = 'Remove'
 
-  const downloadButton = document.createElement('sl-button');
-  downloadButton.setAttribute('variant', 'primary');
-  downloadButton.setAttribute('outline', '');
-  downloadButton.textContent = 'Download';
+  const downloadButton = document.createElement('sl-button')
+  downloadButton.setAttribute('variant', 'primary')
+  downloadButton.setAttribute('outline', '')
+  downloadButton.textContent = 'Download'
 
   if (isDownloaded) {
-    downloadButton.classList.add('display-none');
-    notDownloadedTag.classList.add('display-none');
+    downloadButton.classList.add('display-none')
+    notDownloadedTag.classList.add('display-none')
   } else {
-    removeButton.classList.add('display-none');
-    downloadedTag.classList.add('display-none');
+    removeButton.classList.add('display-none')
+    downloadedTag.classList.add('display-none')
   }
 
   downloadButton.addEventListener('click', async () => {
-    fpLogger.info("Downloading icon pack version");
-    toggleLoadingSpinner();
+    fpLogger.info('Downloading icon pack version')
+    toggleLoadingSpinner()
 
-    const iconCount = await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata);
-    downloadedCountBadge.textContent = iconCount;
+    const iconCount = await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata)
+    downloadedCountBadge.textContent = iconCount
 
-    downloadedCountBadge.setAttribute('variant', 'success');
-    downloadedTag.classList.remove('display-none');
+    downloadedCountBadge.setAttribute('variant', 'success')
+    downloadedTag.classList.remove('display-none')
 
-    notDownloadedTag.classList.add('display-none');
+    notDownloadedTag.classList.add('display-none')
 
-    downloadButton.classList.add('display-none');
-    removeButton.classList.remove('display-none');
+    downloadButton.classList.add('display-none')
+    removeButton.classList.remove('display-none')
 
     for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
-      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'block');
+      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
+      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'block')
     }
 
-    await populateIconPackVariantSelector();
-    await populateDrawerIcons();
+    await populateIconPackVariantSelector()
+    await populateDrawerIcons()
 
-    toggleLoadingSpinner();
-  });
+    toggleLoadingSpinner()
+  })
 
   removeButton.addEventListener('click', async () => {
-    fpLogger.info("Removing icon pack version");
-    toggleLoadingSpinner();
+    fpLogger.info('Removing icon pack version')
+    toggleLoadingSpinner()
 
-    await window.extensionStore.deleteIconsByIconPackVersion(iconPack.name, versionMetadata.name);
-    downloadedCountBadge.textContent = 0;
+    await window.extensionStore.deleteIconsByIconPackVersion(iconPack.name, versionMetadata.name)
+    downloadedCountBadge.textContent = 0
 
-    downloadedCountBadge.setAttribute('variant', 'neutral');
-    downloadedTag.classList.add('display-none');
+    downloadedCountBadge.setAttribute('variant', 'neutral')
+    downloadedTag.classList.add('display-none')
 
-    notDownloadedTag.classList.remove('display-none');
+    notDownloadedTag.classList.remove('display-none')
 
-    downloadButton.classList.remove('display-none');
-    removeButton.classList.add('display-none');
+    downloadButton.classList.remove('display-none')
+    removeButton.classList.add('display-none')
 
     for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
-      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'none');
+      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
+      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'none')
     }
 
-    await populateIconPackVariantSelector();
-    await populateDrawerIcons();
+    await populateIconPackVariantSelector()
+    await populateDrawerIcons()
 
-    toggleLoadingSpinner();
-  });
+    toggleLoadingSpinner()
+  })
 
-  actionCell.appendChild(downloadButton);
-  actionCell.appendChild(removeButton);
+  actionCell.appendChild(downloadButton)
+  actionCell.appendChild(removeButton)
 
-  versionRow.appendChild(actionCell);
-  return versionRow;
+  versionRow.appendChild(actionCell)
+  return versionRow
 }
 
-async function createIconPackTable(iconPack) {
-  fpLogger.verbose("createIconPackTable()");
+async function createIconPackTable (iconPack) {
+  fpLogger.verbose('createIconPackTable()')
 
-  const iconPackDiv = document.createElement('div');
-  iconPackDiv.classList.add('center');
+  const iconPackDiv = document.createElement('div')
+  iconPackDiv.classList.add('center')
 
-  const iconPackLink = document.createElement('a');
-  iconPackLink.href = iconPack.homepageUrl;
-  iconPackLink.target = '_blank';
-  iconPackLink.rel = 'noopener noreferrer';
+  const iconPackLink = document.createElement('a')
+  iconPackLink.href = iconPack.homepageUrl
+  iconPackLink.target = '_blank'
+  iconPackLink.rel = 'noopener noreferrer'
 
-  const iconPackTitle = document.createElement('h3');
-  iconPackTitle.textContent = iconPack.name.replaceAll('_', ' ');
+  const iconPackTitle = document.createElement('h3')
+  iconPackTitle.textContent = iconPack.name.replaceAll('_', ' ')
 
-  iconPackLink.appendChild(iconPackTitle);
-  iconPackDiv.appendChild(iconPackLink);
+  iconPackLink.appendChild(iconPackTitle)
+  iconPackDiv.appendChild(iconPackLink)
 
-  const headerRow = document.createElement('tr');
-  headerRow.classList.add('icon-pack-header');
+  const headerRow = document.createElement('tr')
+  headerRow.classList.add('icon-pack-header')
 
-  const versionHeader = document.createElement('th');
-  versionHeader.classList.add('center', 'width-auto');
+  const versionHeader = document.createElement('th')
+  versionHeader.classList.add('center', 'width-auto')
 
-  const versionDiv = document.createElement('div');
-  versionDiv.classList.add('version');
+  const versionDiv = document.createElement('div')
+  versionDiv.classList.add('version')
 
-  const versionSpan = document.createElement('span');
-  versionSpan.textContent = 'Version';
-  versionDiv.appendChild(versionSpan);
+  const versionSpan = document.createElement('span')
+  versionSpan.textContent = 'Version'
+  versionDiv.appendChild(versionSpan)
 
-  const changelogLink = document.createElement('a');
-  changelogLink.href = iconPack.changelogUrl;
-  changelogLink.target = '_blank';
-  changelogLink.rel = 'noopener noreferrer';
+  const changelogLink = document.createElement('a')
+  changelogLink.href = iconPack.changelogUrl
+  changelogLink.target = '_blank'
+  changelogLink.rel = 'noopener noreferrer'
 
-  const changelogIconButton = document.createElement('sl-icon-button');
-  changelogIconButton.setAttribute('name', 'file-earmark-diff');
+  const changelogIconButton = document.createElement('sl-icon-button')
+  changelogIconButton.setAttribute('name', 'file-earmark-diff')
 
-  changelogLink.appendChild(changelogIconButton);
-  versionDiv.appendChild(changelogLink);
+  changelogLink.appendChild(changelogIconButton)
+  versionDiv.appendChild(changelogLink)
 
-  versionHeader.appendChild(versionDiv);
-  headerRow.appendChild(versionHeader);
+  versionHeader.appendChild(versionDiv)
+  headerRow.appendChild(versionHeader)
 
-  const statusHeader = document.createElement('th');
-  statusHeader.classList.add('center', 'width-auto');
-  statusHeader.textContent = 'Status';
-  headerRow.appendChild(statusHeader);
+  const statusHeader = document.createElement('th')
+  statusHeader.classList.add('center', 'width-auto')
+  statusHeader.textContent = 'Status'
+  headerRow.appendChild(statusHeader)
 
-  const countHeader = document.createElement('th');
-  countHeader.classList.add('center', 'width-content');
-  countHeader.textContent = 'Icon Count';
-  headerRow.appendChild(countHeader);
+  const countHeader = document.createElement('th')
+  countHeader.classList.add('center', 'width-content')
+  countHeader.textContent = 'Icon Count'
+  headerRow.appendChild(countHeader)
 
-  const actionSubheader = document.createElement('th');
-  actionSubheader.classList.add('center', 'width-auto');
-  actionSubheader.textContent = 'Action';
-  headerRow.appendChild(actionSubheader);
+  const actionSubheader = document.createElement('th')
+  actionSubheader.classList.add('center', 'width-auto')
+  actionSubheader.textContent = 'Action'
+  headerRow.appendChild(actionSubheader)
 
-  const tableHeader = document.createElement('thead');
-  tableHeader.appendChild(headerRow);
+  const tableHeader = document.createElement('thead')
+  tableHeader.appendChild(headerRow)
 
-  const tableBody = document.createElement('tbody');
+  const tableBody = document.createElement('tbody')
 
   for await (const versionMetadata of iconPack.versions) {
-    const versionRow = await createVersionRow(iconPack, versionMetadata);
-    tableBody.appendChild(versionRow);
+    const versionRow = await createVersionRow(iconPack, versionMetadata)
+    tableBody.appendChild(versionRow)
   }
 
-  const iconPackTable = document.createElement('table');
-  iconPackTable.classList.add('icon-pack-table');
-  iconPackTable.appendChild(tableHeader);
-  iconPackTable.appendChild(tableBody);
+  const iconPackTable = document.createElement('table')
+  iconPackTable.classList.add('icon-pack-table')
+  iconPackTable.appendChild(tableHeader)
+  iconPackTable.appendChild(tableBody)
 
-  iconPackDiv.appendChild(iconPackTable);
-  return iconPackDiv;
+  iconPackDiv.appendChild(iconPackTable)
+  return iconPackDiv
 }
 
-function toggleLoadingSpinner() {
-  fpLogger.debug("toggleLoadingSpinner()");
+function toggleLoadingSpinner () {
+  fpLogger.debug('toggleLoadingSpinner()')
 
   // Add small delay to avoid race conditions
   setTimeout(() => {
-    document.querySelector('div > #loading-overlay').classList.toggle('display-none');
-  }, 100);
+    document.querySelector('div > #loading-overlay').classList.toggle('display-none')
+  }, 100)
 }
 
-async function populateIconPackVariantSelector() {
-  fpLogger.debug("populateIconPackVariantSelector()");
+async function populateIconPackVariantSelector () {
+  fpLogger.debug('populateIconPackVariantSelector()')
 
-  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
-  iconPacksSelect.replaceChildren();
+  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+  iconPacksSelect.replaceChildren()
 
-  const selectAllOption = document.createElement('sl-option');
-  selectAllOption.setAttribute('value', 'all');
-  selectAllOption.textContent = 'All packs';
-  selectAllOption.addEventListener('click', async () => await filterByIconPackVariant('All packs'));
-  iconPacksSelect.appendChild(selectAllOption);
+  const selectAllOption = document.createElement('sl-option')
+  selectAllOption.setAttribute('value', 'all')
+  selectAllOption.textContent = 'All packs'
+  selectAllOption.addEventListener('click', async () => await filterByIconPackVariant('All packs'))
+  iconPacksSelect.appendChild(selectAllOption)
 
-  const iconPacks = window.extensionStore.getIconPacks();
+  const iconPacks = window.extensionStore.getIconPacks()
   for (const iconPack of iconPacks) {
     for await (const versionMetadata of iconPack.versions) {
       if (!document.querySelector(`svg[icon-pack-name="${iconPack.name}"][icon-pack-version="${versionMetadata.name}"]`)) {
         // svg tags don't work with createElement
-        const iconPackSvg = document.createElementNS(svgNS, "svg");
+        const iconPackSvg = document.createElementNS(svgNS, 'svg')
 
-        iconPackSvg.setAttribute("icon-pack-name", iconPack.name);
-        iconPackSvg.setAttribute("icon-pack-version", versionMetadata.name);
-        iconPackSvg.style.display = "none";
+        iconPackSvg.setAttribute('icon-pack-name', iconPack.name)
+        iconPackSvg.setAttribute('icon-pack-version', versionMetadata.name)
+        iconPackSvg.style.display = 'none'
 
-        document.body.appendChild(iconPackSvg);
+        document.body.appendChild(iconPackSvg)
       }
 
-      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name);
-      if (iconCount === 0) continue;
+      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name)
+      if (iconCount === 0) continue
 
       // Add icon pack styles to the select element
       for (const style of iconPack.styles) {
-        const selectOption = document.createElement('sl-option');
-        const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name);
+        const selectOption = document.createElement('sl-option')
+        const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
 
-        const cssVariableName = `--icon-pack-variant-${iconPackVariant}`;
-        document.documentElement.style.setProperty(cssVariableName, 'block');
+        const cssVariableName = `--icon-pack-variant-${iconPackVariant}`
+        document.documentElement.style.setProperty(cssVariableName, 'block')
 
-        let styleElement = document.getElementById('icon-pack-variant-styles');
+        let styleElement = document.getElementById('icon-pack-variant-styles')
         if (!styleElement) {
-          styleElement = document.createElement('style');
-          styleElement.id = 'icon-pack-variant-styles';
-          document.head.appendChild(styleElement);
+          styleElement = document.createElement('style')
+          styleElement.id = 'icon-pack-variant-styles'
+          document.head.appendChild(styleElement)
         }
 
-        styleElement.textContent += `.${iconPackVariant} { display: var(${cssVariableName}); }`;
+        styleElement.textContent += `.${iconPackVariant} { display: var(${cssVariableName}); }`
 
-        selectOption.setAttribute('value', iconPackVariant);
-        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${style.name} (<code>${versionMetadata.name}</code>)`;
+        selectOption.setAttribute('value', iconPackVariant)
+        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${style.name} (<code>${versionMetadata.name}</code>)`
 
-        iconPacksSelect.appendChild(selectOption);
+        iconPacksSelect.appendChild(selectOption)
       };
     }
   };
 }
 
-document.addEventListener("DOMContentLoaded", async function() {
-  fpLogger.trace("DOMContentLoaded");
-  await window.extensionStore.initialize();
+document.addEventListener('DOMContentLoaded', async function () {
+  fpLogger.trace('DOMContentLoaded')
+  await window.extensionStore.initialize()
 
-  const settingsMetadata = window.extensionStore.getSettingsMetadata();
-  for (let setting of Object.values(settingsMetadata)) {
-    setting.initialize();
+  const settingsMetadata = window.extensionStore.getSettingsMetadata()
+  for (const setting of Object.values(settingsMetadata)) {
+    setting.initialize()
   }
 
   // Icon selector drawer
-  ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector');
+  ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector')
 
-  await populateIconPackVariantSelector();
+  await populateIconPackVariantSelector()
 
-  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select');
+  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
   iconPacksSelect.addEventListener('sl-change', (event) => {
     event.target.updateComplete.then(async () => {
-      fpLogger.info("Filtering by icon pack variant");
-      await filterByIconPackVariant(event.target.value);
-    });
-  });
+      fpLogger.info('Filtering by icon pack variant')
+      await filterByIconPackVariant(event.target.value)
+    })
+  })
 
-  const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group');
+  const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group')
   iconDrawerTabGroup.addEventListener('sl-tab-show', (event) => {
-    fpLogger.debug("Switching tab un icon selector drawer");
-    openTabPanels(event.detail.name);
-  });
+    fpLogger.debug('Switching tab un icon selector drawer')
+    openTabPanels(event.detail.name)
+  })
 
-  await populateDrawerIcons();
-  await populateDrawerUploads();
+  await populateDrawerIcons()
+  await populateDrawerUploads()
 
   ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener('click', () => {
-    fpLogger.info("Clear icon button clicked");
+    fpLogger.info('Clear icon button clicked')
 
     ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-      radio.checked = false;
-    });
+      radio.checked = false
+    })
 
-    ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = '';
-    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = '';
-    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none');
-    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden');
-  });
+    ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
+    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
+    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
+  })
 
   ICON_SELECTOR_DRAWER.querySelector('#save-icon-button').addEventListener('click', async () => {
-    fpLogger.info("Saving icon");
+    fpLogger.info('Saving icon')
 
-    const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon');
-    const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id');
+    const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon')
+    const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id')
 
     if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="icon-packs"][active]')) {
-      const iconId = selectedCell.querySelector('[icon-id]').getAttribute('icon-id');
-      updateSiteConfig({ id, iconId });
+      const iconId = selectedCell.querySelector('[icon-id]').getAttribute('icon-id')
+      updateSiteConfig({ id, iconId })
     } else if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="upload"][active]')) {
-      iconId = null;
-      const uploadId = selectedCell.querySelector('[upload-id]').getAttribute('upload-id');
-      updateSiteConfig({ id, uploadId });
+      const uploadId = selectedCell.querySelector('[upload-id]').getAttribute('upload-id')
+      updateSiteConfig({ id, uploadId })
     }
 
-    ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML = selectedCell.innerHTML;
-    selectedCell.innerHTML = '';
+    ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML = selectedCell.innerHTML
+    selectedCell.innerHTML = ''
 
-    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none');
-    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden');
+    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
+    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
 
-    ICON_SELECTOR_DRAWER.hide();
-  });
+    ICON_SELECTOR_DRAWER.hide()
+  })
 
   ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener('sl-input', (event) => {
     event.target.updateComplete.then(() => {
-      fpLogger.debug("Search input event fired");
-      const searchQuery = event.target.input.value;
-      filterDrawerIcons(searchQuery);
-    });
-  });
+      fpLogger.debug('Search input event fired')
+      const searchQuery = event.target.input.value
+      filterDrawerIcons(searchQuery)
+    })
+  })
 
   ICON_SELECTOR_DRAWER.querySelector('#upload > button').addEventListener('click', async (event) => {
-    event.preventDefault();
-    fpLogger.debug("Upload button clicked");
+    event.preventDefault()
+    fpLogger.debug('Upload button clicked')
 
-    const fileInput = ICON_SELECTOR_DRAWER.querySelector('#icon-upload-input');
-    const file = fileInput.files[0];
+    const fileInput = ICON_SELECTOR_DRAWER.querySelector('#icon-upload-input')
+    const file = fileInput.files[0]
 
-    if (!file) return;
+    if (!file) return
 
-    async function fileToDataUri(file) {
+    async function fileToDataUri (file) {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-      });
+        const reader = new window.FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
+      })
     }
 
     try {
-      const name = file.name;
-      const dataUri = await fileToDataUri(file);
-      const upload = await window.extensionStore.addUpload({ name, dataUri });
+      const name = file.name
+      const dataUri = await fileToDataUri(file)
+      const upload = await window.extensionStore.addUpload({ name, dataUri })
 
-      const imagePreview = document.createElement('img');
-      imagePreview.src = upload.dataUri;
-      imagePreview.setAttribute('upload-id', upload.id);
+      const imagePreview = document.createElement('img')
+      imagePreview.src = upload.dataUri
+      imagePreview.setAttribute('upload-id', upload.id)
 
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview);
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name;
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview)
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name
 
       // Show unsaved changes UI
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none');
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden');
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
 
       // Clear the file input
-      fileInput.value = '';
+      fileInput.value = ''
 
-      await populateDrawerUploads();
+      await populateDrawerUploads()
     } catch (error) {
-      fpLogger.error("Failed to convert file to data URI", error);
-      fileInput.value = '';
+      fpLogger.error('Failed to convert file to data URI', error)
+      fileInput.value = ''
     }
-  });
+  })
 
   document.querySelector('#pattern-type-header sl-icon-button').addEventListener('click', () => {
-    fpLogger.debug("Opening pattern type drawer");
-    document.querySelector('#pattern-types').show();
-  });
+    fpLogger.debug('Opening pattern type drawer')
+    document.querySelector('#pattern-types').show()
+  })
 
-  const siteConfigs = await window.extensionStore.getSiteConfigs();
+  const siteConfigs = await window.extensionStore.getSiteConfigs()
 
-  await populateTable(siteConfigs);
-  updateRecordsSummary(siteConfigs);
+  await populateTable(siteConfigs)
+  updateRecordsSummary(siteConfigs)
 
-  const selectAllButton = document.querySelector('#select-all');
+  const selectAllButton = document.querySelector('#select-all')
   selectAllButton.addEventListener('sl-change', (event) => {
-    fpLogger.debug("Select all button clicked");
-    const isChecked = event.target.checked;
+    fpLogger.debug('Select all button clicked')
+    const isChecked = event.target.checked
 
     document.querySelectorAll('sl-checkbox.select-all-target').forEach((checkbox) => {
       if (isChecked) {
-        checkbox.setAttribute('checked', '');
+        checkbox.setAttribute('checked', '')
       } else {
-        checkbox.removeAttribute('checked');
+        checkbox.removeAttribute('checked')
       }
-    });
-  });
+    })
+  })
 
-  const checkboxObserver = new MutationObserver(() => {
-    let checkedCount = 0;
-    const checkboxes = document.querySelectorAll('tr:not(#template-row) sl-checkbox.select-all-target');
-    const totalCheckboxes = checkboxes.length;
+  const checkboxObserver = new window.MutationObserver(() => {
+    let checkedCount = 0
+    const checkboxes = document.querySelectorAll('tr:not(#template-row) sl-checkbox.select-all-target')
+    const totalCheckboxes = checkboxes.length
 
     for (const checkbox of checkboxes) {
-      if (checkbox.hasAttribute('checked')) checkedCount++;
+      if (checkbox.hasAttribute('checked')) checkedCount++
     }
 
     if (checkedCount === 0) {
-      selectAllButton.removeAttribute('checked');
-      selectAllButton.removeAttribute('indeterminate');
-      document.querySelector('#selected-actions').classList.add('display-none');
+      selectAllButton.removeAttribute('checked')
+      selectAllButton.removeAttribute('indeterminate')
+      document.querySelector('#selected-actions').classList.add('display-none')
     } else if (checkedCount === totalCheckboxes) {
-      selectAllButton.setAttribute('checked', '');
-      selectAllButton.removeAttribute('indeterminate');
-      document.querySelector('#selected-actions').classList.remove('display-none');
+      selectAllButton.setAttribute('checked', '')
+      selectAllButton.removeAttribute('indeterminate')
+      document.querySelector('#selected-actions').classList.remove('display-none')
     } else {
-      selectAllButton.removeAttribute('checked');
-      selectAllButton.setAttribute('indeterminate', '');
-      document.querySelector('#selected-actions').classList.remove('display-none');
+      selectAllButton.removeAttribute('checked')
+      selectAllButton.setAttribute('indeterminate', '')
+      document.querySelector('#selected-actions').classList.remove('display-none')
     }
 
     // Hide buttons that require a single selection
     document.querySelectorAll('.single-limited-action').forEach(element => {
       if (checkedCount > 1) {
-        element.classList.add('display-none');
+        element.classList.add('display-none')
       } else {
-        element.classList.remove('display-none');
+        element.classList.remove('display-none')
       }
-    });
-  });
+    })
+  })
 
   const observeCheckboxes = () => {
     document.querySelectorAll('sl-checkbox.select-all-target').forEach(checkbox => {
       checkboxObserver.observe(checkbox, {
         attributes: true,
-        attributeFilter: ['checked'],
-      });
-    });
-  };
+        attributeFilter: ['checked']
+      })
+    })
+  }
 
   // Initial observation
-  observeCheckboxes();
+  observeCheckboxes()
 
-  const tableObserver = new MutationObserver((mutations) => {
+  const tableObserver = new window.MutationObserver((mutations) => {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
         if (node.nodeType === 1) {
-          const checkboxes = node.querySelectorAll('sl-checkbox.select-all-target');
-          if (checkboxes.length) observeCheckboxes();
+          const checkboxes = node.querySelectorAll('sl-checkbox.select-all-target')
+          if (checkboxes.length) observeCheckboxes()
         }
-      });
-    });
-  });
+      })
+    })
+  })
 
   // Start observing the table for added rows
   tableObserver.observe(document.querySelector('#siteConfigs tbody'), {
     childList: true,
     subtree: true
-  });
+  })
 
   // Action buttons
-  const createDropdown = document.querySelector('#create-dropdown');
+  const createDropdown = document.querySelector('#create-dropdown')
   createDropdown.addEventListener('sl-select', async (event) => {
-    fpLogger.info("Create button clicked");
+    fpLogger.info('Create button clicked')
 
-    const settingsMetadata = window.extensionStore.getSettingsMetadata();
-    const defaultLightThemeColor = settingsMetadata.lightThemeDefaultColor.getValue();
-    const defaultDarkThemeColor = settingsMetadata.darkThemeDefaultColor.getValue();
-    const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue();
+    const settingsMetadata = window.extensionStore.getSettingsMetadata()
+    const defaultLightThemeColor = settingsMetadata.lightThemeDefaultColor.getValue()
+    const defaultDarkThemeColor = settingsMetadata.darkThemeDefaultColor.getValue()
+    const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue()
 
     const siteConfig = await window.extensionStore.addSiteConfig({
       patternType: 'Simple Match',
       active: 1, // Default to active
       lightThemeColor: defaultLightThemeColor,
       darkThemeColor: defaultDarkThemeColor,
-      anyThemeColor: defaultNoThemeColor,
-    });
+      anyThemeColor: defaultNoThemeColor
+    })
 
-    const priority = event.detail.item.value;
-    const siteConfigsOrder = getSiteConfigsOrder();
+    const priority = event.detail.item.value
+    const siteConfigsOrder = getSiteConfigsOrder()
 
     if (priority === 'highest-priority') {
-      siteConfigsOrder.unshift(siteConfig.id);
+      siteConfigsOrder.unshift(siteConfig.id)
     } else {
-      siteConfigsOrder.push(siteConfig.id);
+      siteConfigsOrder.push(siteConfig.id)
     }
 
-    updatePriorityOrder(siteConfigsOrder);
+    updatePriorityOrder(siteConfigsOrder)
 
-    const siteConfigs = await window.extensionStore.getSiteConfigs();
-    void populateTable(siteConfigs);
-    updateRecordsSummary(siteConfigs);
-  });
+    const siteConfigs = await window.extensionStore.getSiteConfigs()
+    await populateTable(siteConfigs)
+    updateRecordsSummary(siteConfigs)
+  })
 
-  function getRowsChecked() {
+  function getRowsChecked () {
     const rowsChecked = Array.from(
       document.querySelectorAll('tr:not(#template-row):has(sl-checkbox.select-all-target[checked])')
-    );
+    )
 
-    const ids = rowsChecked.map(element => element.id.split('row-')[1]);
+    const ids = rowsChecked.map(element => element.id.split('row-')[1])
 
-    return { rowsChecked, ids };
+    return { rowsChecked, ids }
   }
 
-  async function deleteSiteConfigRows(rows, ids) {
-    const siteConfigsOrder = getSiteConfigsOrder();
-    updatePriorityOrder(siteConfigsOrder.filter(id => !ids.includes(id)));
+  async function deleteSiteConfigRows (rows, ids) {
+    const siteConfigsOrder = getSiteConfigsOrder()
+    updatePriorityOrder(siteConfigsOrder.filter(id => !ids.includes(id)))
 
-    await window.extensionStore.deleteSiteConfigs(ids);
-    rows.forEach(row => row.remove());
+    await window.extensionStore.deleteSiteConfigs(ids)
+    rows.forEach(row => row.remove())
 
-    selectAllButton.removeAttribute('checked');
-    selectAllButton.removeAttribute('indeterminate');
+    selectAllButton.removeAttribute('checked')
+    selectAllButton.removeAttribute('indeterminate')
 
-    const siteConfigs = await window.extensionStore.getSiteConfigs();
-    await populateTable(siteConfigs);
+    const siteConfigs = await window.extensionStore.getSiteConfigs()
+    await populateTable(siteConfigs)
   }
 
   document.querySelector('#delete-action-button').addEventListener('click', async () => {
-    fpLogger.debug("Delete button clicked");
-    const { rowsChecked, ids } = getRowsChecked();
+    fpLogger.debug('Delete button clicked')
+    const { rowsChecked, ids } = getRowsChecked()
 
-    const deleteCount = ids.length;
+    const deleteCount = ids.length
     if (deleteCount > 2) {
       showDeleteConfirmationDialog(
         () => deleteSiteConfigRows(rowsChecked, ids),
         `Are you sure you want to delete ${deleteCount} rows?`
-      );
+      )
     } else {
-      await deleteSiteConfigRows(rowsChecked, ids);
+      await deleteSiteConfigRows(rowsChecked, ids)
     }
 
-    document.querySelector('#selected-actions').classList.add('display-none');
-  });
+    document.querySelector('#selected-actions').classList.add('display-none')
+  })
 
   document.querySelector('#activate-action-button').addEventListener('click', async () => {
-    fpLogger.debug("Activate button clicked");
-    const { rowsChecked } = getRowsChecked();
+    fpLogger.debug('Activate button clicked')
+    const { rowsChecked } = getRowsChecked()
 
     rowsChecked.forEach(row => {
-      row.querySelector('.active-cell sl-switch:not([checked])')?.click();
-      row.querySelector('sl-checkbox').removeAttribute('checked');
-    });
-  });
+      row.querySelector('.active-cell sl-switch:not([checked])')?.click()
+      row.querySelector('sl-checkbox').removeAttribute('checked')
+    })
+  })
 
   document.querySelector('#deactivate-action-button').addEventListener('click', async () => {
-    fpLogger.debug("Deactivate button clicked");
-    const { rowsChecked } = getRowsChecked();
+    fpLogger.debug('Deactivate button clicked')
+    const { rowsChecked } = getRowsChecked()
 
     for (const row of rowsChecked) {
-      row.querySelector('.active-cell sl-switch[checked]')?.click();
-      row.querySelector('sl-checkbox').removeAttribute('checked');
+      row.querySelector('.active-cell sl-switch[checked]')?.click()
+      row.querySelector('sl-checkbox').removeAttribute('checked')
     };
-  });
+  })
 
   document.querySelector('#duplicate-action-button').addEventListener('click', async () => {
-    fpLogger.debug("Duplicate button clicked");
-    const { rowsChecked, ids } = getRowsChecked();
+    fpLogger.debug('Duplicate button clicked')
+    const { rowsChecked, ids } = getRowsChecked()
 
-    if (rowsChecked.length !== 1) return;
-    const id = ids[0];
+    if (rowsChecked.length !== 1) return
+    const id = ids[0]
 
-    const siteConfig = await window.extensionStore.getSiteConfigById(id);
-    delete siteConfig.id;
+    const siteConfig = await window.extensionStore.getSiteConfigById(id)
+    delete siteConfig.id
 
-    const newSiteConfig = await window.extensionStore.addSiteConfig(siteConfig);
-    const siteConfigsOrder = getSiteConfigsOrder();
+    const newSiteConfig = await window.extensionStore.addSiteConfig(siteConfig)
+    const siteConfigsOrder = getSiteConfigsOrder()
 
-    const siteConfigsOrderPriority = getPriority(id);
-    siteConfigsOrder.splice(siteConfigsOrderPriority + 1, 0, newSiteConfig.id);
-    updatePriorityOrder(siteConfigsOrder);
+    const siteConfigsOrderPriority = getPriority(id)
+    siteConfigsOrder.splice(siteConfigsOrderPriority + 1, 0, newSiteConfig.id)
+    updatePriorityOrder(siteConfigsOrder)
 
-    const row = rowsChecked[0];
-    row.querySelector('.active-cell sl-switch[checked]')?.click();
+    const row = rowsChecked[0]
+    row.querySelector('.active-cell sl-switch[checked]')?.click()
 
-    const siteConfigs = await window.extensionStore.getSiteConfigs();
-    await populateTable(siteConfigs);
+    const siteConfigs = await window.extensionStore.getSiteConfigs()
+    await populateTable(siteConfigs)
 
-    selectAllButton.removeAttribute('checked');
-    selectAllButton.removeAttribute('indeterminate');
-  });
+    selectAllButton.removeAttribute('checked')
+    selectAllButton.removeAttribute('indeterminate')
+  })
 
-  const settingsDialog = document.querySelector('#settings-dialog');
+  const settingsDialog = document.querySelector('#settings-dialog')
   document.querySelector('#open-settings-button').addEventListener('click', async () => {
-    fpLogger.debug("Open settings button clicked");
-    settingsDialog.show();
-  });
+    fpLogger.debug('Open settings button clicked')
+    settingsDialog.show()
+  })
 
-  const iconPacksDiv = document.querySelector('#icon-packs-tables');
-  fpLogger.debug("iconPacksDiv", iconPacksDiv);
+  const iconPacksDiv = document.querySelector('#icon-packs-tables')
+  fpLogger.debug('iconPacksDiv', iconPacksDiv)
 
-  const iconPacks = window.extensionStore.getIconPacks();
+  const iconPacks = window.extensionStore.getIconPacks()
   for await (const iconPack of iconPacks) {
-    const iconPackTable = await createIconPackTable(iconPack);
-    iconPacksDiv.appendChild(iconPackTable);
+    const iconPackTable = await createIconPackTable(iconPack)
+    iconPacksDiv.appendChild(iconPackTable)
   }
 
   // Lastly, remove loading indicators
-  document.querySelector('.skeleton-row').classList.toggle('display-none');
-  toggleLoadingSpinner();
+  document.querySelector('.skeleton-row').classList.toggle('display-none')
+  toggleLoadingSpinner()
 });
 
 // Theme selector
 (() => {
-  function getTheme() {
-    return localStorage.getItem('theme') || 'auto';
+  function getTheme () {
+    return window.localStorage.getItem('theme') || 'auto'
   }
 
-  function isDark() {
+  function isDark () {
     if (theme === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
     }
-    return theme === 'dark';
+    return theme === 'dark'
   }
 
-  function setTheme(newTheme) {
-    theme = newTheme;
-    localStorage.setItem('theme', theme);
+  function setTheme (newTheme) {
+    theme = newTheme
+    window.localStorage.setItem('theme', theme)
 
     // Update the UI
-    updateSelection();
+    updateSelection()
 
     // Toggle the dark mode class
-    document.documentElement.classList.toggle('sl-theme-dark', isDark());
+    document.documentElement.classList.toggle('sl-theme-dark', isDark())
   }
 
-  function updateSelection() {
-    const menu = document.querySelector('#theme-selector sl-menu');
+  function updateSelection () {
+    const menu = document.querySelector('#theme-selector sl-menu')
     if (!menu) return;
-    [...menu.querySelectorAll('sl-menu-item')].map(item => (item.checked = item.getAttribute('value') === theme));
+    [...menu.querySelectorAll('sl-menu-item')].map(item => (item.checked = item.getAttribute('value') === theme))
   }
 
-  let theme = getTheme();
+  let theme = getTheme()
 
   // Selection is not preserved when changing page, so update when opening dropdown
   document.addEventListener('sl-show', event => {
-    const themeSelector = event.target.closest('#theme-selector');
-    if (!themeSelector) return;
-    updateSelection();
-  });
+    const themeSelector = event.target.closest('#theme-selector')
+    if (!themeSelector) return
+    updateSelection()
+  })
 
   // Listen for selections
   document.addEventListener('sl-select', event => {
-    const menu = event.target.closest('#theme-selector sl-menu');
-    if (!menu) return;
-    setTheme(event.detail.item.value);
-  });
+    const menu = event.target.closest('#theme-selector sl-menu')
+    if (!menu) return
+    setTheme(event.detail.item.value)
+  })
 
   // Update the theme when the preference changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTheme(theme));
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTheme(theme))
 
   // Toggle with backslash
   document.addEventListener('keydown', event => {
@@ -1637,11 +1633,11 @@ document.addEventListener("DOMContentLoaded", async function() {
       event.key === '\\' &&
       !event.composedPath().some(el => ['input', 'textarea'].includes(el?.tagName?.toLowerCase()))
     ) {
-      event.preventDefault();
-      setTheme(isDark() ? 'light' : 'dark');
+      event.preventDefault()
+      setTheme(isDark() ? 'light' : 'dark')
     }
-  });
+  })
 
   // Set the initial theme and sync the UI
-  setTheme(theme);
-})();
+  setTheme(theme)
+})()
