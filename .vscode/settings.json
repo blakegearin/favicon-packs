@@ -1,13 +1,43 @@
 {
-  "cSpell.words": [
-    "Ionicons"
+  "attrsSorter.order": [
+    "id",
+    "class",
+    "name",
+    "data-.+",
+    "ng-.+",
+    "\\[.+",
+    "\\(.+",
+    "\\*ng.+",
+    "src",
+    "for",
+    "type",
+    "href",
+    "value",
+    "title",
+    "alt",
+    "role",
+    "aria-.+",
+    "slot",
+    "variant",
+    "$unknown$"
   ],
-  "editor.formatOnSave": true,
-  "notebook.defaultFormatter": "standard.vscode-standard",
   "bookmarks.useWorkaroundForFormatters": true,
-  "files.autoSave": "afterDelay",
+  "cSpell.words": [
+    "ionicon",
+    "Ionicons",
+    "xlink"
+  ],
   "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "files.autoSave": "afterDelay",
   "html.format.wrapAttributes": "force-expand-multiline",
   "html.format.indentInnerHtml": true,
-  "html.format.extraLiners": ""
+  "html.format.extraLiners": "",
+  "[html]": {
+    "editor.defaultFormatter": "Jota0222.multi-formatter",
+    "multiFormatter.formatterList": [
+      "rbalet.vscode-sorting-attrs",
+      "vscode.html-language-features"
+    ]
+  }
 }

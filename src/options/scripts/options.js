@@ -591,14 +591,14 @@ async function swapPriorities (record1Id, direction) {
   const tr2 = document.querySelector(`#row-${record2.id}`)
   if (!tr1 || !tr2) return
 
+  await setPriorityButtonVisibility(tr1, targetIndex)
+  await setPriorityButtonVisibility(tr2, currentIndex)
+
   if (direction === 'increment') {
     tr2.parentNode.insertBefore(tr1, tr2)
   } else {
     tr2.parentNode.insertBefore(tr2, tr1)
   }
-
-  await setPriorityButtonVisibility(tr1, targetIndex)
-  await setPriorityButtonVisibility(tr2, currentIndex)
 }
 
 async function setPriorityButtonVisibility (row, priority) {

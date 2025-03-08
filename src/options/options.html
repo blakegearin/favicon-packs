@@ -21,37 +21,38 @@
 
     <title>Favicon Packs</title>
     <link
-      rel="icon"
       type="image/svg+xml"
       href="../../img/logo.svg"
-    />
+      rel="icon"
+    >
 
     <script src="scripts/theme.js"></script>
 
     <!-- Shoelace: https://shoelace.style -->
     <link
-      rel="stylesheet"
       href="styles/light.css"
-    />
-    <link
       rel="stylesheet"
+    >
+    <link
       href="styles/dark.css"
-    />
+      rel="stylesheet"
+    >
     <script
-      type="module"
       src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js"
+      type="module"
     ></script>
 
     <link
-      rel="stylesheet"
       href="styles/options.css"
-    />
+      rel="stylesheet"
+    >
   </head>
 
   <body>
     <div>
       <div id="loading-overlay">
-        <sl-spinner class="sl-spinner" />
+        <sl-spinner class="sl-spinner">
+        </sl-spinner>
       </div>
     </div>
 
@@ -77,10 +78,10 @@
         distance="3"
       >
         <sl-button
-          slot="trigger"
-          size="small"
-          variant="text"
           title="Press \ to toggle"
+          slot="trigger"
+          variant="text"
+          size="small"
           caret
         >
           <sl-icon
@@ -120,7 +121,7 @@
         <img
           src="../../img/logo.svg"
           height="30"
-        />
+        >
 
         <h1>
           Favicon Packs
@@ -129,11 +130,13 @@
 
       <div class="helper-row">
         <div id="button-column">
-          <sl-dropdown id="create-dropdown">
+          <sl-dropdown
+            id="create-dropdown"
+            checked
+          >
             <sl-button
               slot="trigger"
               variant="primary"
-              caret
             >
               Create
             </sl-button>
@@ -143,7 +146,7 @@
                 Highest priority
               </sl-menu-item>
 
-              <sl-menu-item value="lowews-priority">
+              <sl-menu-item value="lowest-priority">
                 Lowest priority
               </sl-menu-item>
             </sl-menu>
@@ -201,7 +204,8 @@
               <sl-checkbox
                 id="select-all"
                 size="large"
-              />
+              >
+              </sl-checkbox>
             </th>
 
             <th class="center">
@@ -348,21 +352,22 @@
               <sl-checkbox
                 class="select-all-target"
                 size="large"
-              />
+              >
+              </sl-checkbox>
             </td>
 
             <td class="center center-priority">
               <div class="priority-icons center-cell">
                 <sl-icon-button
                   class="increment"
-                  label="Increase priority"
                   name="arrow-up-circle"
+                  label="Increase priority"
                 ></sl-icon-button>
 
                 <sl-icon-button
                   class="decrement"
-                  label="Decrease priority"
                   name="arrow-down-circle"
+                  label="Decrease priority"
                 ></sl-icon-button>
               </div>
             </td>
@@ -385,16 +390,16 @@
 
                 <sl-copy-button
                   class="site-match-value-copy"
+                  value="{{ site }}"
                   copy-label="Click to copy"
                   error-label="Whoops, your browser doesn't support this!"
                   success-label="Copied"
-                  value="{{ site }}"
                 ></sl-copy-button>
 
                 <sl-icon-button
                   class="edit-site"
-                  label="Edit"
                   name="pencil"
+                  label="Edit"
                 ></sl-icon-button>
               </div>
 
@@ -514,7 +519,7 @@
         </tbody>
       </table>
 
-      <div class="helper-row display-none">
+      <div class="helper-row">
         <span></span>
 
         <div>
@@ -526,6 +531,7 @@
           </sl-button>
 
           <sl-button
+            id="export-button"
             variant="neutral"
             outline
           >
@@ -537,38 +543,38 @@
 
     <sl-drawer
       id="icon-selector"
-      placement="start"
       class="drawer-placement-start"
+      placement="start"
       no-header
     >
       <div
-        part="base"
         class="drawer drawer--start drawer--fixed drawer--has-footer drawer--open"
+        part="base"
       >
         <div
-          part="overlay"
           class="drawer__overlay"
+          part="overlay"
           tabindex="-1"
         ></div>
 
         <div
-          part="panel"
           class="drawer__panel"
           role="dialog"
-          aria-modal="true"
-          tabindex="0"
           aria-hidden="false"
           aria-labelledby="title"
+          aria-modal="true"
+          part="panel"
+          tabindex="0"
         >
           <header
-            part="header"
             class="drawer__header"
+            part="header"
           >
             <div class="header_div">
               <h2
                 id="icon-selector-title"
-                part="title"
                 class="drawer__title"
+                part="title"
               >
                 <slot name="label">
                   Icon Selector
@@ -585,15 +591,15 @@
               </h2>
 
               <div
-                part="header-actions"
                 class="drawer__header-actions"
+                part="header-actions"
               >
                 <slot name="header-actions"></slot>
                 <sl-icon-button
-                  part="close-button"
-                  exportparts="base:close-button__base"
                   class="drawer__close"
                   name="x-lg"
+                  part="close-button"
+                  exportparts="base:close-button__base"
                   library="system"
                   label="Close"
                 ></sl-icon-button>
@@ -647,8 +653,8 @@
                     clearable
                   >
                     <sl-icon
-                      slot="prefix"
                       name="search"
+                      slot="prefix"
                     ></sl-icon>
                   </sl-input>
 
@@ -666,8 +672,8 @@
             </sl-tab-panel>
 
             <sl-tab-panel
-              name="upload"
               class="icon-upload"
+              name="upload"
             >
               <div>
                 <span>
@@ -690,10 +696,10 @@
                   <button>Upload</button>
 
                   <input
-                    type="file"
                     id="icon-upload-input"
+                    type="file"
                     accept=".svg, .png, .jpg, .jpeg, .ico"
-                  />
+                  >
                 </form>
 
                 <div>
@@ -714,8 +720,8 @@
           </header>
 
           <slot
-            part="body"
             class="drawer__body"
+            part="body"
           >
             <sl-tab-panel
               name="icon-packs"
@@ -736,8 +742,8 @@
           </slot>
 
           <footer
-            part="footer"
             class="drawer__footer"
+            part="footer"
           >
             <slot name="footer">
               <div slot="footer">
@@ -846,7 +852,7 @@
               src="../../img/parts-of-a-url.png"
               alt="Parts of a URL"
               style="width: 100%"
-            />
+            >
           </div>
         </sl-card>
       </div>
@@ -863,10 +869,10 @@
         open
       >
         <sl-icon
-          slot="icon"
           name="exclamation-triangle"
+          slot="icon"
         ></sl-icon>
-        <strong>This cannot be undone.</strong><br />
+        <strong>This cannot be undone.</strong><br>
       </sl-alert>
 
       <div

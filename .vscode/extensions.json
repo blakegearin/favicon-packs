@@ -1,5 +1,7 @@
 {
   "recommendations": [
-    "standard.vscode-standard"
+    "standard.vscode-standard",
+    "rbalet.vscode-sorting-attrs",
+    "jota0222.multi-formatter"
   ]
 }
