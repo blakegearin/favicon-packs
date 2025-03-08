@@ -7,7 +7,7 @@ const logLevels = {
   trace: 5
 }
 
-const getLogLevelKeyByValue = (value) => {
+const getLogLevelKeyByValue = value => {
   return Object.keys(logLevels).find(key => logLevels[key] === value) || null
 }
 

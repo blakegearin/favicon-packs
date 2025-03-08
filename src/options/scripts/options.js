@@ -21,7 +21,11 @@ function svgToPngBase64 (svgString) {
 
       if (canvas.width === 0 || canvas.height === 0) {
         URL.revokeObjectURL(url)
-        reject(new Error('Invalid SVG dimensions - width and height must be greater than 0'))
+        reject(
+          new Error(
+            'Invalid SVG dimensions - width and height must be greater than 0'
+          )
+        )
         return
       }
 
@@ -30,20 +34,17 @@ function svgToPngBase64 (svgString) {
 
       URL.revokeObjectURL(url)
 
-      canvas.toBlob(
-        blob => {
-          if (!blob) {
-            reject(new Error('Failed to generate PNG blob'))
-            return
-          }
+      canvas.toBlob(blob => {
+        if (!blob) {
+          reject(new Error('Failed to generate PNG blob'))
+          return
+        }
 
-          const reader = new window.FileReader()
-          reader.onloadend = () => resolve(reader.result)
-          reader.onerror = () => reject(reader.error)
-          reader.readAsDataURL(blob)
-        },
-        'image/png'
-      )
+        const reader = new window.FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      }, 'image/png')
     }
 
     img.onerror = function (error) {
@@ -99,13 +100,16 @@ function createFaviconSprite (icon, siteConfig, theme = null) {
 
   switch (icon.iconPackName) {
     case 'Ionicons':
-      styleElement.textContent = '.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }'
+      styleElement.textContent =
+        '.ionicon { fill: currentColor; stroke: currentColor; } .ionicon-fill-none { fill: none; } .ionicon-stroke-width { stroke-width: 32px; }'
       break
     case 'Font_Awesome':
-      styleElement.textContent = '.Font_Awesome { fill: currentColor; stroke: currentColor; }'
+      styleElement.textContent =
+        '.Font_Awesome { fill: currentColor; stroke: currentColor; }'
       break
     case 'Lucide':
-      styleElement.textContent = '.Lucide { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }'
+      styleElement.textContent =
+        '.Lucide { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }'
       break
   }
 
@@ -128,7 +132,9 @@ function createFaviconSprite (icon, siteConfig, theme = null) {
 
 function buildIconPackVariant (iconStyle, iconPackName, iconPackVersion) {
   fpLogger.trace('buildIconPackVariant()')
-  return `icon-pack-variant-${iconStyle}-${iconPackName}-${iconPackVersion.replaceAll('.', '_')}`
+
+  const formattedIconPackVersion = iconPackVersion.replaceAll('.', '_')
+  return `icon-pack-variant-${iconStyle}-${iconPackName}-${formattedIconPackVersion}`
 }
 
 async function populateDrawerIcons () {
@@ -143,7 +149,8 @@ async function populateDrawerIcons () {
   const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name))
   for (const icon of sortedIcons) {
     const tooltip = document.createElement('sl-tooltip')
-    const tooltipContent = `${icon.name} ${icon.iconPackName.replaceAll('_', ' ')} ${icon.iconPackVersion}`
+    const formattedIconPackName = icon.iconPackName.replaceAll('_', ' ')
+    const tooltipContent = `${icon.name} ${formattedIconPackName} ${icon.iconPackVersion}`
     tooltip.setAttribute('content', tooltipContent)
 
     if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '))
@@ -158,10 +165,16 @@ async function populateDrawerIcons () {
     const svgSprite = buildSvgSprite(icon)
 
     tooltip.onclick = () => {
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+        'display-none'
+      )
 
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(svgSprite.cloneNode(true))
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+        'hidden'
+      )
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        svgSprite.cloneNode(true)
+      )
     }
 
     iconDiv.appendChild(svgSprite)
@@ -176,7 +189,7 @@ async function populateDrawerIcons () {
     } else {
       iconSymbols[iconPackSvgSelector] = [icon.symbol]
     }
-  };
+  }
 
   updateCurrentIconCount(sortedIcons.length)
 
@@ -193,14 +206,16 @@ async function populateDrawerIcons () {
     }
 
     iconPackSvg.innerHTML = symbols.join('')
-  };
+  }
 }
 
 async function getSiteConfigsByUpload (uploadId) {
   fpLogger.debug('getSiteConfigsByUpload()')
 
   const siteConfigs = await window.extensionStore.getSiteConfigs()
-  return siteConfigs.filter(siteConfig => siteConfig.uploadId?.toString() === uploadId?.toString())
+  return siteConfigs.filter(
+    siteConfig => siteConfig.uploadId?.toString() === uploadId?.toString()
+  )
 }
 
 async function populateDrawerUploads () {
@@ -248,13 +263,23 @@ async function populateDrawerUploads () {
 
       const usageCount = relatedSiteConfigs.length
       const uploadDate = new Date(parseInt(upload.id, 10))
-      const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} at ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`
+      const formattedDate = uploadDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      const formattedTime = uploadDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      const formattedDateTime = `${formattedDate} at ${formattedTime}`
 
       let confirmationText = `Are you sure you want to delete this file?
 
       Name: ${upload.name}
 
-      Uploaded: ${formattedDate}`
+      Uploaded: ${formattedDateTime}`
 
       if (usageCount) {
         const rowText = usageCount === 1 ? 'row' : 'rows'
@@ -263,29 +288,31 @@ async function populateDrawerUploads () {
         It's used by ${usageCount} ${rowText} as their icon, which will be impacted.`
       }
 
-      showDeleteConfirmationDialog(
-        async () => {
-          await window.extensionStore.deleteUpload(upload.id)
+      showDeleteConfirmationDialog(async () => {
+        await window.extensionStore.deleteUpload(upload.id)
 
-          const siteConfigs = await window.extensionStore.getSiteConfigs()
-          for (const config of siteConfigs) {
-            if (config.uploadId === upload.id) {
-              await updateSiteConfig({
-                id: config.id,
-                uploadId: null
-              })
-            }
+        const siteConfigs = await window.extensionStore.getSiteConfigs()
+        for (const config of siteConfigs) {
+          if (config.uploadId === upload.id) {
+            await updateSiteConfig({
+              id: config.id,
+              uploadId: null
+            })
           }
+        }
 
-          ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
-          ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
-          ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
-          ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
+        ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+        ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
+          'display-none'
+        )
+        ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add(
+          'hidden'
+        )
+        ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+          ''
 
-          await populateDrawerUploads()
-        },
-        confirmationText
-      )
+        await populateDrawerUploads()
+      }, confirmationText)
     })
 
     deleteTooltip.appendChild(uploadDeleteButton)
@@ -296,25 +323,39 @@ async function populateDrawerUploads () {
 
     const uploadSelectRadio = selectRadio.cloneNode(true)
 
-    const updatedIconUploadId = ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute('upload-id')
+    const updatedIconUploadId =
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute(
+        'upload-id'
+      )
     fpLogger.debug('updatedIconUploadId', updatedIconUploadId)
 
-    if (updatedIconUploadId?.toString() === upload.id.toString()) uploadSelectRadio.checked = true
+    if (updatedIconUploadId?.toString() === upload.id.toString()) {
+      uploadSelectRadio.checked = true
+    }
 
     uploadSelectRadio.addEventListener('click', async () => {
       fpLogger.debug('Upload selected')
 
-      ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
+      ICON_SELECTOR_DRAWER.querySelectorAll(
+        '.upload-list-item sl-radio'
+      ).forEach(radio => {
         if (radio !== uploadSelectRadio) radio.checked = false
       })
       uploadSelectRadio.checked = true
 
       const imagePreview = buildUploadImg(upload)
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview)
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        imagePreview
+      )
 
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+        upload.name
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+        'display-none'
+      )
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+        'hidden'
+      )
     })
 
     selectTooltip.appendChild(uploadSelectRadio)
@@ -330,11 +371,16 @@ async function populateDrawerUploads () {
 
 function updatePriorityOrder (siteConfigsOrder) {
   fpLogger.verbose('updatePriorityOrder()')
-  return window.localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder))
+
+  return window.localStorage.setItem(
+    'siteConfigsOrder',
+    JSON.stringify(siteConfigsOrder)
+  )
 }
 
 function getSiteConfigsOrder () {
   fpLogger.trace('getSiteConfigsOrder()')
+
   return JSON.parse(window.localStorage.getItem('siteConfigsOrder')) || []
 }
 
@@ -354,16 +400,24 @@ async function filterByIconPackVariant (filterIconPackVariant) {
   iconPacks.forEach(iconPack => {
     iconPack.versions.forEach(version => {
       iconPack.styles.forEach(style => {
-        const variant = buildIconPackVariant(style.name, iconPack.name, version.name)
+        const variant = buildIconPackVariant(
+          style.name,
+          iconPack.name,
+          version.name
+        )
         iconPackVariants.push(variant)
       })
     })
   })
 
   for (const iconPackVariant of iconPackVariants) {
+    const variantActive = ['All packs', iconPackVariant].includes(
+      filterIconPackVariant
+    )
+
     document.documentElement.style.setProperty(
       `--icon-pack-variant-${iconPackVariant}`,
-      ['All packs', iconPackVariant].includes(filterIconPackVariant) ? 'block' : 'none'
+      variantActive ? 'block' : 'none'
     )
   }
 
@@ -373,13 +427,16 @@ async function filterByIconPackVariant (filterIconPackVariant) {
     iconPackVariantSelector += `.${filterIconPackVariant}`
   }
 
-  const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(iconPackVariantSelector).length
+  const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(
+    iconPackVariantSelector
+  ).length
   updateCurrentIconCount(currentIconCount)
 }
 
 function updateCurrentIconCount (iconCount) {
   fpLogger.debug('updateCurrentIconCount()')
-  document.querySelector('#current-icon-count').textContent = iconCount.toLocaleString()
+  document.querySelector('#current-icon-count').textContent =
+    iconCount.toLocaleString()
 }
 
 function filterDrawerIcons (filter) {
@@ -387,7 +444,7 @@ function filterDrawerIcons (filter) {
 
   let currentIconCount = 0
 
-  ICON_SELECTOR_DRAWER.querySelectorAll('sl-tooltip').forEach((icon) => {
+  ICON_SELECTOR_DRAWER.querySelectorAll('sl-tooltip').forEach(icon => {
     let passes = false
 
     if (filter) {
@@ -452,7 +509,11 @@ async function updateSiteConfig ({
     if (!icon) fpLogger.error('Icon not found', iconId)
 
     if (iconId || lightThemeColor) {
-      const faviconSpriteLight = createFaviconSprite(icon, newSiteConfig, 'light')
+      const faviconSpriteLight = createFaviconSprite(
+        icon,
+        newSiteConfig,
+        'light'
+      )
       const lightPngUrl = await svgToPngBase64(faviconSpriteLight)
       newSiteConfig.lightPngUrl = lightPngUrl
     }
@@ -477,7 +538,9 @@ async function updateSiteConfig ({
   }
 
   fpLogger.debug('newSiteConfig', newSiteConfig)
-  const updatedSiteConfig = await window.extensionStore.updateSiteConfig(newSiteConfig)
+  const updatedSiteConfig = await window.extensionStore.updateSiteConfig(
+    newSiteConfig
+  )
   fpLogger.debug('updatedSiteConfig', updatedSiteConfig)
 
   if (activeDefined) {
@@ -502,19 +565,27 @@ async function swapPriorities (record1Id, direction) {
   const siteConfigsOrder = getSiteConfigsOrder()
   const currentIndex = siteConfigsOrder.indexOf(record1Id)
 
-  if (currentIndex === -1 ||
+  if (
+    currentIndex === -1 ||
     (direction === 'increment' && currentIndex === 0) ||
-    (direction === 'decrement' && currentIndex === siteConfigsOrder.length - 1)) {
+    (direction === 'decrement' && currentIndex === siteConfigsOrder.length - 1)
+  ) {
     return
   }
 
-  const targetIndex = direction === 'increment' ? currentIndex - 1 : currentIndex + 1
+  const targetIndex =
+    direction === 'increment' ? currentIndex - 1 : currentIndex + 1
   const record2Id = siteConfigsOrder[targetIndex]
-  const record2 = await window.extensionStore.getSiteConfigById(record2Id);
+  const record2 = await window.extensionStore.getSiteConfigById(record2Id)
 
-  [siteConfigsOrder[currentIndex], siteConfigsOrder[targetIndex]] =
-    [siteConfigsOrder[targetIndex], siteConfigsOrder[currentIndex]]
-  window.localStorage.setItem('siteConfigsOrder', JSON.stringify(siteConfigsOrder))
+  ;[siteConfigsOrder[currentIndex], siteConfigsOrder[targetIndex]] = [
+    siteConfigsOrder[targetIndex],
+    siteConfigsOrder[currentIndex]
+  ]
+  window.localStorage.setItem(
+    'siteConfigsOrder',
+    JSON.stringify(siteConfigsOrder)
+  )
 
   const tr1 = document.querySelector(`#row-${record1Id}`)
   const tr2 = document.querySelector(`#row-${record2.id}`)
@@ -545,7 +616,7 @@ async function setPriorityButtonVisibility (row, priority) {
     } else {
       decrementButton.classList.add('hidden')
     }
-  } else if (priority === (siteConfigs.length - 1)) {
+  } else if (priority === siteConfigs.length - 1) {
     incrementButton.classList.remove('hidden')
     decrementButton.classList.add('hidden')
   } else {
@@ -591,19 +662,24 @@ async function populateTableRow (siteConfig, insertion) {
   const patternTypeTag = newRow.querySelector('.type-cell sl-tag')
   patternTypeTag.innerText = siteConfig.patternType
 
-  const variantValue = siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary'
+  const variantValue =
+    siteConfig.patternType === 'Regex Match' ? 'warning' : 'primary'
   patternTypeTag.setAttribute('variant', variantValue)
 
   const toggleTypeButton = newRow.querySelector('.toggle-type')
   toggleTypeButton.addEventListener('click', () => {
     fpLogger.debug('Toggle type button clicked')
-    const patternType = siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match'
+    const patternType =
+      siteConfig.patternType === 'Simple Match' ? 'Regex Match' : 'Simple Match'
     updateSiteConfig({ id, patternType })
   })
 
   // Site Match column
-  newRow.querySelector('.site-match-value').innerText = siteConfig.websitePattern
-  newRow.querySelector('.site-match-value-copy').setAttribute('value', siteConfig.websitePattern)
+  newRow.querySelector('.site-match-value').innerText =
+    siteConfig.websitePattern
+  newRow
+    .querySelector('.site-match-value-copy')
+    .setAttribute('value', siteConfig.websitePattern)
 
   const siteRead = newRow.querySelector('.site-cell.read')
   const siteEdit = newRow.querySelector('.site-cell.edit')
@@ -633,7 +709,7 @@ async function populateTableRow (siteConfig, insertion) {
 
   const form = newRow.querySelector('.site-cell.edit')
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', event => {
     event.preventDefault()
     fpLogger.info('Save button clicked')
 
@@ -660,15 +736,21 @@ async function populateTableRow (siteConfig, insertion) {
     if (icon) {
       const svgSprite = buildSvgSprite(icon)
 
-      newRow.querySelector('#icon-value').replaceChildren(svgSprite.cloneNode(true))
+      newRow
+        .querySelector('#icon-value')
+        .replaceChildren(svgSprite.cloneNode(true))
       newRow.querySelector('#icon-value').classList.remove('display-none')
       newRow.querySelector('#icon-vale-not-found').classList.add('display-none')
     } else {
-      fpLogger.quiet(`Icon not found, likely due to icon pack deletion: ${siteConfig.iconId}`)
+      fpLogger.quiet(
+        `Icon not found, likely due to icon pack deletion: ${siteConfig.iconId}`
+      )
 
       newRow.querySelector('#icon-value').replaceChildren()
       newRow.querySelector('#icon-value').classList.add('display-none')
-      newRow.querySelector('#icon-vale-not-found').classList.remove('display-none')
+      newRow
+        .querySelector('#icon-vale-not-found')
+        .classList.remove('display-none')
     }
 
     newRow.querySelector('.icon-cell .add').classList.add('display-none')
@@ -678,7 +760,9 @@ async function populateTableRow (siteConfig, insertion) {
       const imageElementLight = document.createElement('img')
       imageElementLight.src = siteConfig.lightPngUrl
 
-      const lightThemeFavicon = newRow.querySelector('.favicon-value.light-theme-color-style')
+      const lightThemeFavicon = newRow.querySelector(
+        '.favicon-value.light-theme-color-style'
+      )
       lightThemeFavicon.replaceChildren(imageElementLight)
       lightThemeFavicon.classList.remove('display-none')
     }
@@ -687,7 +771,9 @@ async function populateTableRow (siteConfig, insertion) {
       const imageElementDark = document.createElement('img')
       imageElementDark.src = siteConfig.darkPngUrl
 
-      const darkThemeFavicon = newRow.querySelector('.favicon-value.dark-theme-color-style')
+      const darkThemeFavicon = newRow.querySelector(
+        '.favicon-value.dark-theme-color-style'
+      )
       darkThemeFavicon.replaceChildren(imageElementDark)
       darkThemeFavicon.classList.remove('display-none')
     }
@@ -696,39 +782,52 @@ async function populateTableRow (siteConfig, insertion) {
       const imageElementNo = document.createElement('img')
       imageElementNo.src = siteConfig.anyPngUrl
 
-      const anyThemeFavicon = newRow.querySelector('.favicon-value.any-theme-color-style')
+      const anyThemeFavicon = newRow.querySelector(
+        '.favicon-value.any-theme-color-style'
+      )
       anyThemeFavicon.replaceChildren(imageElementNo)
       anyThemeFavicon.classList.remove('display-none')
     }
 
     const settingsMetadata = window.extensionStore.getSettingsMetadata()
-    const anyThemeDisplayElement = newRow.querySelector('.favicon-value.any-theme-display')
+    const anyThemeDisplayElement = newRow.querySelector(
+      '.favicon-value.any-theme-display'
+    )
 
-    if (!settingsMetadata.lightThemeEnabled.getValue() && !settingsMetadata.darkThemeEnabled.getValue()) {
+    if (
+      !settingsMetadata.lightThemeEnabled.getValue() &&
+      !settingsMetadata.darkThemeEnabled.getValue()
+    ) {
       anyThemeDisplayElement.classList.remove('display-none')
     }
 
-    newRow.querySelector('.favicon-value.image-display').classList.add('display-none')
+    newRow
+      .querySelector('.favicon-value.image-display')
+      .classList.add('display-none')
   } else if (siteConfig.uploadId) {
     fpLogger.quiet('siteConfig.uploadId', siteConfig.uploadId)
 
-    const upload = await window.extensionStore.getUploadById(siteConfig.uploadId)
+    const upload = await window.extensionStore.getUploadById(
+      siteConfig.uploadId
+    )
     fpLogger.quiet('upload', upload)
 
     const imageElement = buildUploadImg(upload)
 
-    newRow.querySelectorAll('.icon-value').forEach((iconValueElement) => {
+    newRow.querySelectorAll('.icon-value').forEach(iconValueElement => {
       iconValueElement.replaceChildren(imageElement.cloneNode(true))
     })
 
     newRow.querySelector('.icon-cell .add').classList.add('display-none')
     newRow.querySelector('.icon-cell .edit').classList.remove('display-none')
 
-    newRow.querySelectorAll('.favicon-value.icon').forEach((iconElement) => {
+    newRow.querySelectorAll('.favicon-value.icon').forEach(iconElement => {
       iconElement.classList.add('display-none')
     })
 
-    const imageDisplayElement = newRow.querySelector('.favicon-value.image-display')
+    const imageDisplayElement = newRow.querySelector(
+      '.favicon-value.image-display'
+    )
     imageDisplayElement.replaceChildren(imageElement.cloneNode(true))
     imageDisplayElement.classList.remove('display-none')
   } else {
@@ -744,9 +843,11 @@ async function populateTableRow (siteConfig, insertion) {
 
     ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click()
 
-    ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-      radio.checked = false
-    })
+    ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(
+      radio => {
+        radio.checked = false
+      }
+    )
 
     ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
     ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
@@ -759,13 +860,19 @@ async function populateTableRow (siteConfig, insertion) {
     ICON_SELECTOR_DRAWER.show()
   })
 
-  ICON_SELECTOR_DRAWER.querySelector('.drawer__overlay').addEventListener('click', () => {
-    ICON_SELECTOR_DRAWER.hide()
-  })
+  ICON_SELECTOR_DRAWER.querySelector('.drawer__overlay').addEventListener(
+    'click',
+    () => {
+      ICON_SELECTOR_DRAWER.hide()
+    }
+  )
 
-  ICON_SELECTOR_DRAWER.querySelector('.drawer__close').addEventListener('click', () => {
-    ICON_SELECTOR_DRAWER.hide()
-  })
+  ICON_SELECTOR_DRAWER.querySelector('.drawer__close').addEventListener(
+    'click',
+    () => {
+      ICON_SELECTOR_DRAWER.hide()
+    }
+  )
 
   const updateIcon = async () => {
     fpLogger.debug('Opening icon selector drawer')
@@ -773,24 +880,35 @@ async function populateTableRow (siteConfig, insertion) {
     if (siteConfig.uploadId) {
       ICON_SELECTOR_DRAWER.querySelector('[panel="upload"]').click()
 
-      ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
+      ICON_SELECTOR_DRAWER.querySelectorAll(
+        '.upload-list-item sl-radio'
+      ).forEach(radio => {
         radio.checked = false
       })
 
-      const upload = await window.extensionStore.getUploadById(siteConfig.uploadId)
-      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildUploadImg(upload))
+      const upload = await window.extensionStore.getUploadById(
+        siteConfig.uploadId
+      )
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
+        buildUploadImg(upload)
+      )
 
-      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = upload.name
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
+      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent =
+        upload.name
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+        ''
     } else {
       ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
       ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
 
       ICON_SELECTOR_DRAWER.querySelector('[panel="icon-packs"]').click()
-      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent = ''
+      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent =
+        ''
 
       if (siteConfig.iconId && icon) {
-        ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(buildSvgSprite(icon))
+        ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
+          buildSvgSprite(icon)
+        )
       }
     }
 
@@ -798,18 +916,22 @@ async function populateTableRow (siteConfig, insertion) {
 
     ICON_SELECTOR_DRAWER.show()
   }
-  newRow.querySelectorAll('.icon-cell .edit sl-button').forEach((selectIconButton) => {
-    selectIconButton.addEventListener('click', updateIcon)
-  })
+  newRow
+    .querySelectorAll('.icon-cell .edit sl-button')
+    .forEach(selectIconButton => {
+      selectIconButton.addEventListener('click', updateIcon)
+    })
 
   // Light Theme column
-  const lightThemeColorPicker = newRow.querySelector('.light-theme-color-picker')
+  const lightThemeColorPicker = newRow.querySelector(
+    '.light-theme-color-picker'
+  )
 
   if (siteConfig.uploadId || !siteConfig.iconId) {
     lightThemeColorPicker.parentNode.classList.add('display-none')
   } else {
     lightThemeColorPicker.parentNode.classList.remove('display-none')
-    lightThemeColorPicker.addEventListener('sl-blur', (event) => {
+    lightThemeColorPicker.addEventListener('sl-blur', event => {
       fpLogger.info('Updating light theme color')
 
       event.target.updateComplete.then(() => {
@@ -817,9 +939,11 @@ async function populateTableRow (siteConfig, insertion) {
         updateSiteConfig({ id, lightThemeColor })
       })
     })
-    newRow.querySelectorAll('.light-theme-color-value').forEach((lightThemeColorValueElement) => {
-      lightThemeColorValueElement.value = siteConfig.lightThemeColor
-    })
+    newRow
+      .querySelectorAll('.light-theme-color-value')
+      .forEach(lightThemeColorValueElement => {
+        lightThemeColorValueElement.value = siteConfig.lightThemeColor
+      })
   }
 
   // Dark Theme column
@@ -829,7 +953,7 @@ async function populateTableRow (siteConfig, insertion) {
     darkThemeColorPicker.parentNode.classList.add('display-none')
   } else {
     darkThemeColorPicker.parentNode.classList.remove('display-none')
-    darkThemeColorPicker.addEventListener('sl-blur', (event) => {
+    darkThemeColorPicker.addEventListener('sl-blur', event => {
       fpLogger.info('Updating dark theme color')
 
       event.target.updateComplete.then(() => {
@@ -837,9 +961,11 @@ async function populateTableRow (siteConfig, insertion) {
         updateSiteConfig({ id, darkThemeColor })
       })
     })
-    newRow.querySelectorAll('.dark-theme-color-value').forEach((darkThemeColorValueElement) => {
-      darkThemeColorValueElement.value = siteConfig.darkThemeColor
-    })
+    newRow
+      .querySelectorAll('.dark-theme-color-value')
+      .forEach(darkThemeColorValueElement => {
+        darkThemeColorValueElement.value = siteConfig.darkThemeColor
+      })
   }
 
   // Any Theme column
@@ -849,7 +975,7 @@ async function populateTableRow (siteConfig, insertion) {
     anyThemeColorPicker.parentNode.classList.add('display-none')
   } else {
     anyThemeColorPicker.parentNode.classList.remove('display-none')
-    anyThemeColorPicker.addEventListener('sl-blur', (event) => {
+    anyThemeColorPicker.addEventListener('sl-blur', event => {
       fpLogger.info('Updating icon color')
 
       event.target.updateComplete.then(() => {
@@ -857,23 +983,31 @@ async function populateTableRow (siteConfig, insertion) {
         updateSiteConfig({ id, anyThemeColor })
       })
     })
-    newRow.querySelectorAll('.any-theme-color-value').forEach((anyThemeColorValueElement) => {
-      anyThemeColorValueElement.value = siteConfig.anyThemeColor
-    })
+    newRow
+      .querySelectorAll('.any-theme-color-value')
+      .forEach(anyThemeColorValueElement => {
+        anyThemeColorValueElement.value = siteConfig.anyThemeColor
+      })
   }
 
   // Favicon column
   if (siteConfig.iconId) {
-    newRow.querySelector('.light-theme-color-style').style.setProperty('color', siteConfig.lightThemeColor)
-    newRow.querySelector('.dark-theme-color-style').style.setProperty('color', siteConfig.darkThemeColor)
-    newRow.querySelector('.any-theme-color-style').style.setProperty('color', siteConfig.anyThemeColor)
+    newRow
+      .querySelector('.light-theme-color-style')
+      .style.setProperty('color', siteConfig.lightThemeColor)
+    newRow
+      .querySelector('.dark-theme-color-style')
+      .style.setProperty('color', siteConfig.darkThemeColor)
+    newRow
+      .querySelector('.any-theme-color-style')
+      .style.setProperty('color', siteConfig.anyThemeColor)
   }
 
   // Active column
   const switchElement = newRow.querySelector('.active-cell sl-switch')
   if (siteConfig.active) switchElement.setAttribute('checked', '')
 
-  switchElement.addEventListener('sl-input', (event) => {
+  switchElement.addEventListener('sl-input', event => {
     event.target.updateComplete.then(() => {
       fpLogger.info('Updating active')
       const checked = event.target.checked
@@ -928,17 +1062,23 @@ async function populateTable (siteConfigs) {
 function openTabPanels (tabPanelName) {
   fpLogger.debug('openTabPanels()')
 
-  const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="icon-packs"]')
-  const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll('sl-tab-panel[name="upload"]')
+  const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
+    'sl-tab-panel[name="icon-packs"]'
+  )
+  const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
+    'sl-tab-panel[name="upload"]'
+  )
 
   switch (tabPanelName) {
     case 'icon-packs':
-      uploadTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'))
-      iconPacksTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''))
+      uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      iconPacksTabPanels.forEach(tabPanel =>
+        tabPanel.setAttribute('active', '')
+      )
       break
     case 'upload':
-      iconPacksTabPanels.forEach((tabPanel) => tabPanel.removeAttribute('active'))
-      uploadTabPanels.forEach((tabPanel) => tabPanel.setAttribute('active', ''))
+      iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      uploadTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       break
   }
 }
@@ -946,20 +1086,28 @@ function openTabPanels (tabPanelName) {
 function showDeleteConfirmationDialog (deleteFunction, confirmationText) {
   fpLogger.debug('showDeleteConfirmationDialog()')
 
-  const deleteConfirmationDialog = document.querySelector('sl-dialog#delete-confirmation')
+  const deleteConfirmationDialog = document.querySelector(
+    'sl-dialog#delete-confirmation'
+  )
 
-  deleteConfirmationDialog.querySelector('#delete-cancel-button').addEventListener('click', async () => {
-    fpLogger.debug('Delete cancel button clicked')
-    deleteConfirmationDialog.hide()
-  })
+  deleteConfirmationDialog
+    .querySelector('#delete-cancel-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Delete cancel button clicked')
+      deleteConfirmationDialog.hide()
+    })
 
-  deleteConfirmationDialog.querySelector('#delete-confirmation-button').addEventListener('click', async () => {
-    fpLogger.info('Delete confirmation button clicked')
-    await deleteFunction()
-    deleteConfirmationDialog.hide()
-  })
+  deleteConfirmationDialog
+    .querySelector('#delete-confirmation-button')
+    .addEventListener('click', async () => {
+      fpLogger.info('Delete confirmation button clicked')
+      await deleteFunction()
+      deleteConfirmationDialog.hide()
+    })
 
-  deleteConfirmationDialog.querySelector('#delete-confirmation-text').innerText = confirmationText
+  deleteConfirmationDialog.querySelector(
+    '#delete-confirmation-text'
+  ).innerText = confirmationText
 
   deleteConfirmationDialog.show()
 }
@@ -982,7 +1130,10 @@ async function createVersionRow (iconPack, versionMetadata) {
   statusCell.classList.add('center')
 
   // Check if the version is downloaded
-  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name)
+  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(
+    iconPack.name,
+    versionMetadata.name
+  )
   const isDownloaded = iconCount > 0
 
   const downloadedTag = document.createElement('sl-tag')
@@ -1001,7 +1152,10 @@ async function createVersionRow (iconPack, versionMetadata) {
   countCell.classList.add('center')
 
   const downloadedCountBadge = document.createElement('sl-badge')
-  downloadedCountBadge.setAttribute('variant', isDownloaded ? 'success' : 'neutral')
+  downloadedCountBadge.setAttribute(
+    'variant',
+    isDownloaded ? 'success' : 'neutral'
+  )
   downloadedCountBadge.setAttribute('pill', '')
 
   downloadedCountBadge.textContent = iconCount
@@ -1034,7 +1188,10 @@ async function createVersionRow (iconPack, versionMetadata) {
     fpLogger.info('Downloading icon pack version')
     toggleLoadingSpinner()
 
-    const iconCount = await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata)
+    const iconCount = await window.extensionStore.downloadIconPackVersion(
+      iconPack,
+      versionMetadata
+    )
     downloadedCountBadge.textContent = iconCount
 
     downloadedCountBadge.setAttribute('variant', 'success')
@@ -1046,8 +1203,15 @@ async function createVersionRow (iconPack, versionMetadata) {
     removeButton.classList.remove('display-none')
 
     for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
-      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'block')
+      const iconPackVariant = buildIconPackVariant(
+        style.name,
+        iconPack.name,
+        versionMetadata.name
+      )
+      document.documentElement.style.setProperty(
+        `--icon-pack-variant-${iconPackVariant}`,
+        'block'
+      )
     }
 
     await populateIconPackVariantSelector()
@@ -1060,7 +1224,10 @@ async function createVersionRow (iconPack, versionMetadata) {
     fpLogger.info('Removing icon pack version')
     toggleLoadingSpinner()
 
-    await window.extensionStore.deleteIconsByIconPackVersion(iconPack.name, versionMetadata.name)
+    await window.extensionStore.deleteIconsByIconPackVersion(
+      iconPack.name,
+      versionMetadata.name
+    )
     downloadedCountBadge.textContent = 0
 
     downloadedCountBadge.setAttribute('variant', 'neutral')
@@ -1072,8 +1239,15 @@ async function createVersionRow (iconPack, versionMetadata) {
     removeButton.classList.add('display-none')
 
     for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
-      document.documentElement.style.setProperty(`--icon-pack-variant-${iconPackVariant}`, 'none')
+      const iconPackVariant = buildIconPackVariant(
+        style.name,
+        iconPack.name,
+        versionMetadata.name
+      )
+      document.documentElement.style.setProperty(
+        `--icon-pack-variant-${iconPackVariant}`,
+        'none'
+      )
     }
 
     await populateIconPackVariantSelector()
@@ -1172,26 +1346,36 @@ function toggleLoadingSpinner () {
 
   // Add small delay to avoid race conditions
   setTimeout(() => {
-    document.querySelector('div > #loading-overlay').classList.toggle('display-none')
+    document
+      .querySelector('div > #loading-overlay')
+      .classList.toggle('display-none')
   }, 100)
 }
 
 async function populateIconPackVariantSelector () {
   fpLogger.debug('populateIconPackVariantSelector()')
 
-  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+  const iconPacksSelect =
+    ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
   iconPacksSelect.replaceChildren()
 
   const selectAllOption = document.createElement('sl-option')
   selectAllOption.setAttribute('value', 'all')
   selectAllOption.textContent = 'All packs'
-  selectAllOption.addEventListener('click', async () => await filterByIconPackVariant('All packs'))
+  selectAllOption.addEventListener(
+    'click',
+    async () => await filterByIconPackVariant('All packs')
+  )
   iconPacksSelect.appendChild(selectAllOption)
 
   const iconPacks = window.extensionStore.getIconPacks()
   for (const iconPack of iconPacks) {
     for await (const versionMetadata of iconPack.versions) {
-      if (!document.querySelector(`svg[icon-pack-name="${iconPack.name}"][icon-pack-version="${versionMetadata.name}"]`)) {
+      if (
+        !document.querySelector(
+          `svg[icon-pack-name="${iconPack.name}"][icon-pack-version="${versionMetadata.name}"]`
+        )
+      ) {
         // svg tags don't work with createElement
         const iconPackSvg = document.createElementNS(svgNS, 'svg')
 
@@ -1202,13 +1386,21 @@ async function populateIconPackVariantSelector () {
         document.body.appendChild(iconPackSvg)
       }
 
-      const iconCount = await window.extensionStore.getIconCountByIconPackVersion(iconPack.name, versionMetadata.name)
+      const iconCount =
+        await window.extensionStore.getIconCountByIconPackVersion(
+          iconPack.name,
+          versionMetadata.name
+        )
       if (iconCount === 0) continue
 
       // Add icon pack styles to the select element
       for (const style of iconPack.styles) {
         const selectOption = document.createElement('sl-option')
-        const iconPackVariant = buildIconPackVariant(style.name, iconPack.name, versionMetadata.name)
+        const iconPackVariant = buildIconPackVariant(
+          style.name,
+          iconPack.name,
+          versionMetadata.name
+        )
 
         const cssVariableName = `--icon-pack-variant-${iconPackVariant}`
         document.documentElement.style.setProperty(cssVariableName, 'block')
@@ -1223,12 +1415,14 @@ async function populateIconPackVariantSelector () {
         styleElement.textContent += `.${iconPackVariant} { display: var(${cssVariableName}); }`
 
         selectOption.setAttribute('value', iconPackVariant)
-        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${style.name} (<code>${versionMetadata.name}</code>)`
+        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${
+          style.name
+        } (<code>${versionMetadata.name}</code>)`
 
         iconPacksSelect.appendChild(selectOption)
-      };
+      }
     }
-  };
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -1245,8 +1439,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   await populateIconPackVariantSelector()
 
-  const iconPacksSelect = ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
-  iconPacksSelect.addEventListener('sl-change', (event) => {
+  const iconPacksSelect =
+    ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+  iconPacksSelect.addEventListener('sl-change', event => {
     event.target.updateComplete.then(async () => {
       fpLogger.info('Filtering by icon pack variant')
       await filterByIconPackVariant(event.target.value)
@@ -1254,7 +1449,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   })
 
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group')
-  iconDrawerTabGroup.addEventListener('sl-tab-show', (event) => {
+  iconDrawerTabGroup.addEventListener('sl-tab-show', event => {
     fpLogger.debug('Switching tab un icon selector drawer')
     openTabPanels(event.detail.name)
   })
@@ -1262,98 +1457,143 @@ document.addEventListener('DOMContentLoaded', async function () {
   await populateDrawerIcons()
   await populateDrawerUploads()
 
-  ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener('click', () => {
-    fpLogger.info('Clear icon button clicked')
+  ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener(
+    'click',
+    () => {
+      fpLogger.info('Clear icon button clicked')
 
-    ICON_SELECTOR_DRAWER.querySelectorAll('.upload-list-item sl-radio').forEach(radio => {
-      radio.checked = false
-    })
+      ICON_SELECTOR_DRAWER.querySelectorAll(
+        '.upload-list-item sl-radio'
+      ).forEach(radio => {
+        radio.checked = false
+      })
 
-    ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = ''
-    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
-    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
-    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
-  })
-
-  ICON_SELECTOR_DRAWER.querySelector('#save-icon-button').addEventListener('click', async () => {
-    fpLogger.info('Saving icon')
-
-    const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon')
-    const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id')
-
-    if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="icon-packs"][active]')) {
-      const iconId = selectedCell.querySelector('[icon-id]').getAttribute('icon-id')
-      updateSiteConfig({ id, iconId })
-    } else if (ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="upload"][active]')) {
-      const uploadId = selectedCell.querySelector('[upload-id]').getAttribute('upload-id')
-      updateSiteConfig({ id, uploadId })
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+        ''
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
+        'display-none'
+      )
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add(
+        'hidden'
+      )
     }
+  )
 
-    ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML = selectedCell.innerHTML
-    selectedCell.innerHTML = ''
+  ICON_SELECTOR_DRAWER.querySelector('#save-icon-button').addEventListener(
+    'click',
+    async () => {
+      fpLogger.info('Saving icon')
 
-    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add('display-none')
-    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add('hidden')
+      const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon')
+      const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id')
 
-    ICON_SELECTOR_DRAWER.hide()
-  })
+      if (
+        ICON_SELECTOR_DRAWER.querySelector(
+          'sl-tab-panel[name="icon-packs"][active]'
+        )
+      ) {
+        const iconId = selectedCell
+          .querySelector('[icon-id]')
+          .getAttribute('icon-id')
+        updateSiteConfig({ id, iconId })
+      } else if (
+        ICON_SELECTOR_DRAWER.querySelector(
+          'sl-tab-panel[name="upload"][active]'
+        )
+      ) {
+        const uploadId = selectedCell
+          .querySelector('[upload-id]')
+          .getAttribute('upload-id')
+        updateSiteConfig({ id, uploadId })
+      }
 
-  ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener('sl-input', (event) => {
-    event.target.updateComplete.then(() => {
-      fpLogger.debug('Search input event fired')
-      const searchQuery = event.target.input.value
-      filterDrawerIcons(searchQuery)
-    })
-  })
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML =
+        selectedCell.innerHTML
+      selectedCell.innerHTML = ''
 
-  ICON_SELECTOR_DRAWER.querySelector('#upload > button').addEventListener('click', async (event) => {
-    event.preventDefault()
-    fpLogger.debug('Upload button clicked')
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
+        'display-none'
+      )
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add(
+        'hidden'
+      )
 
-    const fileInput = ICON_SELECTOR_DRAWER.querySelector('#icon-upload-input')
-    const file = fileInput.files[0]
+      ICON_SELECTOR_DRAWER.hide()
+    }
+  )
 
-    if (!file) return
-
-    async function fileToDataUri (file) {
-      return new Promise((resolve, reject) => {
-        const reader = new window.FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = () => reject(new Error('Failed to read file'))
-        reader.readAsDataURL(file)
+  ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener(
+    'sl-input',
+    event => {
+      event.target.updateComplete.then(() => {
+        fpLogger.debug('Search input event fired')
+        const searchQuery = event.target.input.value
+        filterDrawerIcons(searchQuery)
       })
     }
+  )
 
-    try {
-      const name = file.name
-      const dataUri = await fileToDataUri(file)
-      const upload = await window.extensionStore.addUpload({ name, dataUri })
+  ICON_SELECTOR_DRAWER.querySelector('#upload > button').addEventListener(
+    'click',
+    async event => {
+      event.preventDefault()
+      fpLogger.debug('Upload button clicked')
 
-      const imagePreview = document.createElement('img')
-      imagePreview.src = upload.dataUri
-      imagePreview.setAttribute('upload-id', upload.id)
+      const fileInput = ICON_SELECTOR_DRAWER.querySelector('#icon-upload-input')
+      const file = fileInput.files[0]
 
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(imagePreview)
-      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent = upload.name
+      if (!file) return
 
-      // Show unsaved changes UI
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove('display-none')
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove('hidden')
+      async function fileToDataUri (file) {
+        return new Promise((resolve, reject) => {
+          const reader = new window.FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.onerror = () => reject(new Error('Failed to read file'))
+          reader.readAsDataURL(file)
+        })
+      }
 
-      // Clear the file input
-      fileInput.value = ''
+      try {
+        const name = file.name
+        const dataUri = await fileToDataUri(file)
+        const upload = await window.extensionStore.addUpload({ name, dataUri })
 
-      await populateDrawerUploads()
-    } catch (error) {
-      fpLogger.error('Failed to convert file to data URI', error)
-      fileInput.value = ''
+        const imagePreview = document.createElement('img')
+        imagePreview.src = upload.dataUri
+        imagePreview.setAttribute('upload-id', upload.id)
+
+        ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+          imagePreview
+        )
+        ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+          upload.name
+
+        // Show unsaved changes UI
+        ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+          'display-none'
+        )
+        ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+          'hidden'
+        )
+
+        // Clear the file input
+        fileInput.value = ''
+
+        await populateDrawerUploads()
+      } catch (error) {
+        fpLogger.error('Failed to convert file to data URI', error)
+        fileInput.value = ''
+      }
     }
-  })
+  )
 
-  document.querySelector('#pattern-type-header sl-icon-button').addEventListener('click', () => {
-    fpLogger.debug('Opening pattern type drawer')
-    document.querySelector('#pattern-types').show()
-  })
+  document
+    .querySelector('#pattern-type-header sl-icon-button')
+    .addEventListener('click', () => {
+      fpLogger.debug('Opening pattern type drawer')
+      document.querySelector('#pattern-types').show()
+    })
 
   const siteConfigs = await window.extensionStore.getSiteConfigs()
 
@@ -1361,22 +1601,26 @@ document.addEventListener('DOMContentLoaded', async function () {
   updateRecordsSummary(siteConfigs)
 
   const selectAllButton = document.querySelector('#select-all')
-  selectAllButton.addEventListener('sl-change', (event) => {
+  selectAllButton.addEventListener('sl-change', event => {
     fpLogger.debug('Select all button clicked')
     const isChecked = event.target.checked
 
-    document.querySelectorAll('sl-checkbox.select-all-target').forEach((checkbox) => {
-      if (isChecked) {
-        checkbox.setAttribute('checked', '')
-      } else {
-        checkbox.removeAttribute('checked')
-      }
-    })
+    document
+      .querySelectorAll('sl-checkbox.select-all-target')
+      .forEach(checkbox => {
+        if (isChecked) {
+          checkbox.setAttribute('checked', '')
+        } else {
+          checkbox.removeAttribute('checked')
+        }
+      })
   })
 
   const checkboxObserver = new window.MutationObserver(() => {
     let checkedCount = 0
-    const checkboxes = document.querySelectorAll('tr:not(#template-row) sl-checkbox.select-all-target')
+    const checkboxes = document.querySelectorAll(
+      'tr:not(#template-row) sl-checkbox.select-all-target'
+    )
     const totalCheckboxes = checkboxes.length
 
     for (const checkbox of checkboxes) {
@@ -1390,11 +1634,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     } else if (checkedCount === totalCheckboxes) {
       selectAllButton.setAttribute('checked', '')
       selectAllButton.removeAttribute('indeterminate')
-      document.querySelector('#selected-actions').classList.remove('display-none')
+      document
+        .querySelector('#selected-actions')
+        .classList.remove('display-none')
     } else {
       selectAllButton.removeAttribute('checked')
       selectAllButton.setAttribute('indeterminate', '')
-      document.querySelector('#selected-actions').classList.remove('display-none')
+      document
+        .querySelector('#selected-actions')
+        .classList.remove('display-none')
     }
 
     // Hide buttons that require a single selection
@@ -1408,22 +1656,26 @@ document.addEventListener('DOMContentLoaded', async function () {
   })
 
   const observeCheckboxes = () => {
-    document.querySelectorAll('sl-checkbox.select-all-target').forEach(checkbox => {
-      checkboxObserver.observe(checkbox, {
-        attributes: true,
-        attributeFilter: ['checked']
+    document
+      .querySelectorAll('sl-checkbox.select-all-target')
+      .forEach(checkbox => {
+        checkboxObserver.observe(checkbox, {
+          attributes: true,
+          attributeFilter: ['checked']
+        })
       })
-    })
   }
 
   // Initial observation
   observeCheckboxes()
 
-  const tableObserver = new window.MutationObserver((mutations) => {
+  const tableObserver = new window.MutationObserver(mutations => {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
         if (node.nodeType === 1) {
-          const checkboxes = node.querySelectorAll('sl-checkbox.select-all-target')
+          const checkboxes = node.querySelectorAll(
+            'sl-checkbox.select-all-target'
+          )
           if (checkboxes.length) observeCheckboxes()
         }
       })
@@ -1438,12 +1690,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // Action buttons
   const createDropdown = document.querySelector('#create-dropdown')
-  createDropdown.addEventListener('sl-select', async (event) => {
+  createDropdown.addEventListener('sl-select', async event => {
     fpLogger.info('Create button clicked')
 
     const settingsMetadata = window.extensionStore.getSettingsMetadata()
-    const defaultLightThemeColor = settingsMetadata.lightThemeDefaultColor.getValue()
-    const defaultDarkThemeColor = settingsMetadata.darkThemeDefaultColor.getValue()
+    const defaultLightThemeColor =
+      settingsMetadata.lightThemeDefaultColor.getValue()
+    const defaultDarkThemeColor =
+      settingsMetadata.darkThemeDefaultColor.getValue()
     const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue()
 
     const siteConfig = await window.extensionStore.addSiteConfig({
@@ -1472,7 +1726,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   function getRowsChecked () {
     const rowsChecked = Array.from(
-      document.querySelectorAll('tr:not(#template-row):has(sl-checkbox.select-all-target[checked])')
+      document.querySelectorAll(
+        'tr:not(#template-row):has(sl-checkbox.select-all-target[checked])'
+      )
     )
 
     const ids = rowsChecked.map(element => element.id.split('row-')[1])
@@ -1494,75 +1750,87 @@ document.addEventListener('DOMContentLoaded', async function () {
     await populateTable(siteConfigs)
   }
 
-  document.querySelector('#delete-action-button').addEventListener('click', async () => {
-    fpLogger.debug('Delete button clicked')
-    const { rowsChecked, ids } = getRowsChecked()
+  document
+    .querySelector('#delete-action-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Delete button clicked')
+      const { rowsChecked, ids } = getRowsChecked()
 
-    const deleteCount = ids.length
-    if (deleteCount > 2) {
-      showDeleteConfirmationDialog(
-        () => deleteSiteConfigRows(rowsChecked, ids),
-        `Are you sure you want to delete ${deleteCount} rows?`
-      )
-    } else {
-      await deleteSiteConfigRows(rowsChecked, ids)
-    }
+      const deleteCount = ids.length
+      if (deleteCount > 2) {
+        showDeleteConfirmationDialog(
+          () => deleteSiteConfigRows(rowsChecked, ids),
+          `Are you sure you want to delete ${deleteCount} rows?`
+        )
+      } else {
+        await deleteSiteConfigRows(rowsChecked, ids)
+      }
 
-    document.querySelector('#selected-actions').classList.add('display-none')
-  })
-
-  document.querySelector('#activate-action-button').addEventListener('click', async () => {
-    fpLogger.debug('Activate button clicked')
-    const { rowsChecked } = getRowsChecked()
-
-    rowsChecked.forEach(row => {
-      row.querySelector('.active-cell sl-switch:not([checked])')?.click()
-      row.querySelector('sl-checkbox').removeAttribute('checked')
+      document.querySelector('#selected-actions').classList.add('display-none')
     })
-  })
 
-  document.querySelector('#deactivate-action-button').addEventListener('click', async () => {
-    fpLogger.debug('Deactivate button clicked')
-    const { rowsChecked } = getRowsChecked()
+  document
+    .querySelector('#activate-action-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Activate button clicked')
+      const { rowsChecked } = getRowsChecked()
 
-    for (const row of rowsChecked) {
+      rowsChecked.forEach(row => {
+        row.querySelector('.active-cell sl-switch:not([checked])')?.click()
+        row.querySelector('sl-checkbox').removeAttribute('checked')
+      })
+    })
+
+  document
+    .querySelector('#deactivate-action-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Deactivate button clicked')
+      const { rowsChecked } = getRowsChecked()
+
+      for (const row of rowsChecked) {
+        row.querySelector('.active-cell sl-switch[checked]')?.click()
+        row.querySelector('sl-checkbox').removeAttribute('checked')
+      }
+    })
+
+  document
+    .querySelector('#duplicate-action-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Duplicate button clicked')
+      const { rowsChecked, ids } = getRowsChecked()
+
+      if (rowsChecked.length !== 1) return
+      const id = ids[0]
+
+      const siteConfig = await window.extensionStore.getSiteConfigById(id)
+      delete siteConfig.id
+
+      const newSiteConfig = await window.extensionStore.addSiteConfig(
+        siteConfig
+      )
+      const siteConfigsOrder = getSiteConfigsOrder()
+
+      const siteConfigsOrderPriority = getPriority(id)
+      siteConfigsOrder.splice(siteConfigsOrderPriority + 1, 0, newSiteConfig.id)
+      updatePriorityOrder(siteConfigsOrder)
+
+      const row = rowsChecked[0]
       row.querySelector('.active-cell sl-switch[checked]')?.click()
-      row.querySelector('sl-checkbox').removeAttribute('checked')
-    };
-  })
 
-  document.querySelector('#duplicate-action-button').addEventListener('click', async () => {
-    fpLogger.debug('Duplicate button clicked')
-    const { rowsChecked, ids } = getRowsChecked()
+      const siteConfigs = await window.extensionStore.getSiteConfigs()
+      await populateTable(siteConfigs)
 
-    if (rowsChecked.length !== 1) return
-    const id = ids[0]
-
-    const siteConfig = await window.extensionStore.getSiteConfigById(id)
-    delete siteConfig.id
-
-    const newSiteConfig = await window.extensionStore.addSiteConfig(siteConfig)
-    const siteConfigsOrder = getSiteConfigsOrder()
-
-    const siteConfigsOrderPriority = getPriority(id)
-    siteConfigsOrder.splice(siteConfigsOrderPriority + 1, 0, newSiteConfig.id)
-    updatePriorityOrder(siteConfigsOrder)
-
-    const row = rowsChecked[0]
-    row.querySelector('.active-cell sl-switch[checked]')?.click()
-
-    const siteConfigs = await window.extensionStore.getSiteConfigs()
-    await populateTable(siteConfigs)
-
-    selectAllButton.removeAttribute('checked')
-    selectAllButton.removeAttribute('indeterminate')
-  })
+      selectAllButton.removeAttribute('checked')
+      selectAllButton.removeAttribute('indeterminate')
+    })
 
   const settingsDialog = document.querySelector('#settings-dialog')
-  document.querySelector('#open-settings-button').addEventListener('click', async () => {
-    fpLogger.debug('Open settings button clicked')
-    settingsDialog.show()
-  })
+  document
+    .querySelector('#open-settings-button')
+    .addEventListener('click', async () => {
+      fpLogger.debug('Open settings button clicked')
+      settingsDialog.show()
+    })
 
   const iconPacksDiv = document.querySelector('#icon-packs-tables')
   fpLogger.debug('iconPacksDiv', iconPacksDiv)
@@ -1576,10 +1844,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Lastly, remove loading indicators
   document.querySelector('.skeleton-row').classList.toggle('display-none')
   toggleLoadingSpinner()
-});
+})
 
 // Theme selector
-(() => {
+;(() => {
   function getTheme () {
     return window.localStorage.getItem('theme') || 'auto'
   }
@@ -1604,8 +1872,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   function updateSelection () {
     const menu = document.querySelector('#theme-selector sl-menu')
-    if (!menu) return;
-    [...menu.querySelectorAll('sl-menu-item')].map(item => (item.checked = item.getAttribute('value') === theme))
+    if (!menu) return
+    ;[...menu.querySelectorAll('sl-menu-item')].map(
+      item => (item.checked = item.getAttribute('value') === theme)
+    )
   }
 
   let theme = getTheme()
@@ -1625,13 +1895,17 @@ document.addEventListener('DOMContentLoaded', async function () {
   })
 
   // Update the theme when the preference changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTheme(theme))
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => setTheme(theme))
 
   // Toggle with backslash
   document.addEventListener('keydown', event => {
     if (
       event.key === '\\' &&
-      !event.composedPath().some(el => ['input', 'textarea'].includes(el?.tagName?.toLowerCase()))
+      !event
+        .composedPath()
+        .some(el => ['input', 'textarea'].includes(el?.tagName?.toLowerCase()))
     ) {
       event.preventDefault()
       setTheme(isDark() ? 'light' : 'dark')

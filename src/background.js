@@ -11,7 +11,9 @@ async function initialize () {
   await window.extensionStore.initialize()
 
   browser.browserAction.onClicked.addListener(() => {
-    browser.tabs.create({ url: browser.runtime.getURL('src/options/options.html') })
+    browser.tabs.create({
+      url: browser.runtime.getURL('src/options/options.html')
+    })
   })
 
   const iconPacks = window.extensionStore.getIconPacks()
@@ -20,109 +22,120 @@ async function initialize () {
 
     // Download only the latest version of the icon pack
     const versionMetadata = iconPack.versions[0]
-    await window.extensionStore.downloadIconPackVersion(iconPack, versionMetadata)
-  };
+    await window.extensionStore.downloadIconPackVersion(
+      iconPack,
+      versionMetadata
+    )
+  }
 
-  browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    fpLogger.trace('request', request)
-    fpLogger.trace('sender', sender)
-    fpLogger.trace('sendResponse', sendResponse)
+  browser.runtime.onMessage.addListener(
+    async (request, sender, sendResponse) => {
+      fpLogger.trace('request', request)
+      fpLogger.trace('sender', sender)
+      fpLogger.trace('sendResponse', sendResponse)
 
-    if (request.action === 'replaceFavicon') {
-      fpLogger.debug('replaceFavicon')
+      if (request.action === 'replaceFavicon') {
+        fpLogger.debug('replaceFavicon')
 
-      const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
-      fpLogger.debug('siteConfigs', siteConfigs)
+        const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
+        fpLogger.debug('siteConfigs', siteConfigs)
 
-      const siteConfigsOrder = getSiteConfigsOrder()
-      fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+        const siteConfigsOrder = getSiteConfigsOrder()
+        fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
-      const sortedSiteConfigs = siteConfigsOrder
-        .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
-        .filter(Boolean)
+        const sortedSiteConfigs = siteConfigsOrder
+          .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
+          .filter(Boolean)
 
-      fpLogger.debug('sortedSiteConfigs', sortedSiteConfigs)
+        fpLogger.debug('sortedSiteConfigs', sortedSiteConfigs)
 
-      const siteConfig = sortedSiteConfigs.find((localSiteConfig) => {
-        if (!localSiteConfig.websitePattern) return false
-        if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
+        const siteConfig = sortedSiteConfigs.find(localSiteConfig => {
+          if (!localSiteConfig.websitePattern) return false
+          if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
 
-        let websitePattern = localSiteConfig.websitePattern
-        fpLogger.debug('websitePattern', websitePattern)
-
-        if (localSiteConfig.patternType === 'Simple Match') {
-          const escapedDomain = websitePattern.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
-          websitePattern = `.*${escapedDomain}.*`
+          let websitePattern = localSiteConfig.websitePattern
           fpLogger.debug('websitePattern', websitePattern)
-        }
 
-        try {
-          const regexp = new RegExp(websitePattern, 'i')
-          fpLogger.debug('regexp', websitePattern)
+          if (localSiteConfig.patternType === 'Simple Match') {
+            const escapedDomain = websitePattern.replace(
+              /[-/\\^$*+?.()|[\]{}]/g,
+              '\\$&'
+            )
+            websitePattern = `.*${escapedDomain}.*`
+            fpLogger.debug('websitePattern', websitePattern)
+          }
 
-          const matches = regexp.test(sender.url)
-          fpLogger.debug('matches', matches)
+          try {
+            const regexp = new RegExp(websitePattern, 'i')
+            fpLogger.debug('regexp', websitePattern)
 
-          return matches
-        } catch (error) {
-          fpLogger.error('Error creating RegExp', error)
-          return false
-        }
-      })
+            const matches = regexp.test(sender.url)
+            fpLogger.debug('matches', matches)
 
-      fpLogger.debug('siteConfig', siteConfig)
-
-      if (!siteConfig) {
-        browser.tabs.sendMessage(sender.tab.id, {
-          action: 'setFavicon',
-          imgUrl: null
+            return matches
+          } catch (error) {
+            fpLogger.error('Error creating RegExp', error)
+            return false
+          }
         })
 
-        return
-      }
+        fpLogger.debug('siteConfig', siteConfig)
 
-      let imgUrl = null
+        if (!siteConfig) {
+          browser.tabs.sendMessage(sender.tab.id, {
+            action: 'setFavicon',
+            imgUrl: null
+          })
 
-      if (siteConfig.uploadId) {
-        const upload = await window.extensionStore.getUploadById(siteConfig.uploadId)
-        fpLogger.debug('upload', upload)
-
-        imgUrl = upload.dataUri
-      } else {
-        const settingsMetadata = window.extensionStore.getSettingsMetadata()
-        fpLogger.debug('settingsMetadata', settingsMetadata)
-
-        const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue()
-        fpLogger.debug('darkThemeEnabled', darkThemeEnabled)
-
-        const lightThemeEnabled = settingsMetadata.lightThemeEnabled.getValue()
-        fpLogger.debug('lightThemeEnabled', lightThemeEnabled)
-
-        fpLogger.debug('request.colorScheme', request.colorScheme)
-        switch (request.colorScheme) {
-          case null:
-            break
-          case 'dark':
-            if (darkThemeEnabled) imgUrl = siteConfig.darkPngUrl
-            break
-          default:
-            if (lightThemeEnabled) imgUrl = siteConfig.lightPngUrl
-            break
+          return
         }
 
-        if (!imgUrl && !darkThemeEnabled && !lightThemeEnabled) {
-          fpLogger.debug('!imgUrl && !darkThemeEnabled && !lightThemeEnabled')
-          imgUrl = siteConfig.anyPngUrl
-        }
-      }
+        let imgUrl = null
 
-      fpLogger.debug('imgUrl', imgUrl)
-      browser.tabs.sendMessage(sender.tab.id, {
-        action: 'setFavicon',
-        imgUrl
-      })
+        if (siteConfig.uploadId) {
+          const upload = await window.extensionStore.getUploadById(
+            siteConfig.uploadId
+          )
+          fpLogger.debug('upload', upload)
+
+          imgUrl = upload.dataUri
+        } else {
+          const settingsMetadata = window.extensionStore.getSettingsMetadata()
+          fpLogger.debug('settingsMetadata', settingsMetadata)
+
+          const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue()
+          fpLogger.debug('darkThemeEnabled', darkThemeEnabled)
+
+          const lightThemeEnabled =
+            settingsMetadata.lightThemeEnabled.getValue()
+          fpLogger.debug('lightThemeEnabled', lightThemeEnabled)
+
+          fpLogger.debug('request.colorScheme', request.colorScheme)
+          switch (request.colorScheme) {
+            case null:
+              break
+            case 'dark':
+              if (darkThemeEnabled) imgUrl = siteConfig.darkPngUrl
+              break
+            default:
+              if (lightThemeEnabled) imgUrl = siteConfig.lightPngUrl
+              break
+          }
+
+          if (!imgUrl && !darkThemeEnabled && !lightThemeEnabled) {
+            fpLogger.debug('!imgUrl && !darkThemeEnabled && !lightThemeEnabled')
+            imgUrl = siteConfig.anyPngUrl
+          }
+        }
+
+        fpLogger.debug('imgUrl', imgUrl)
+        browser.tabs.sendMessage(sender.tab.id, {
+          action: 'setFavicon',
+          imgUrl
+        })
+      }
     }
-  })
+  )
 }
 
 initialize()

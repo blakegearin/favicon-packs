@@ -27,7 +27,8 @@ class ExtensionStore {
     randomValues[8] = (randomValues[8] & 0x3f) | 0x80
 
     const hexArray = Array.from(randomValues).map(b =>
-      b.toString(16).padStart(2, '0'))
+      b.toString(16).padStart(2, '0')
+    )
 
     return [
       hexArray.slice(0, 4).join(''),
@@ -48,17 +49,19 @@ class ExtensionStore {
 
       request.onerror = () => reject(request.error)
 
-      request.onsuccess = (event) => {
+      request.onsuccess = event => {
         this.db = event.target.result
         resolve()
       }
 
-      request.onupgradeneeded = async (event) => {
+      request.onupgradeneeded = async event => {
         const database = event.target.result
         const existingStoreNames = Array.from(database.objectStoreNames)
 
         if (!existingStoreNames.includes(STORES.icons)) {
-          const iconsStore = database.createObjectStore(STORES.icons, { keyPath: 'id' })
+          const iconsStore = database.createObjectStore(STORES.icons, {
+            keyPath: 'id'
+          })
 
           iconsStore.createIndex(
             'iconPackNameAndVersion',
@@ -68,7 +71,10 @@ class ExtensionStore {
         }
 
         if (!existingStoreNames.includes(STORES.siteConfigs)) {
-          const siteConfigsStore = database.createObjectStore(STORES.siteConfigs, { keyPath: 'id' })
+          const siteConfigsStore = database.createObjectStore(
+            STORES.siteConfigs,
+            { keyPath: 'id' }
+          )
           siteConfigsStore.createIndex('active', 'active', { unique: false })
         }
 
@@ -121,7 +127,7 @@ class ExtensionStore {
           tagsArray.push(category.toLowerCase())
 
           iconObjects[name] = tagsArray
-        };
+        }
       }
 
       iconsMetadata = iconObjects
@@ -134,7 +140,9 @@ class ExtensionStore {
   async downloadSvgIconsFromUrl (iconPack, versionMetadata, url, iconsMetadata) {
     fpLogger.verbose('downloadSvgIconsFromUrl()')
 
-    const response = await fetch(url.replaceAll('{VERSION}', versionMetadata.name))
+    const response = await fetch(
+      url.replaceAll('{VERSION}', versionMetadata.name)
+    )
     fpLogger.verbose('response', response)
 
     if (!response.ok) throw new Error('Network response was not ok')
@@ -145,7 +153,8 @@ class ExtensionStore {
     const fileType = response.headers.get('content-type').split(';')[0]
     fpLogger.debug('fileType', fileType)
 
-    const buildIconId = (iconPack, iconName) => `${iconPack.name}-${versionMetadata.name}-${iconName}`
+    const buildIconId = (iconPack, iconName) =>
+      `${iconPack.name}-${versionMetadata.name}-${iconName}`
 
     let iconCount = 0
 
@@ -161,7 +170,7 @@ class ExtensionStore {
         const iconTags = iconsMetadata[iconName]
         // symbol.setAttribute("tags", iconTags.join(" "));
 
-        const iconStyle = iconPack.styles.find((style) => {
+        const iconStyle = iconPack.styles.find(style => {
           return style.filter.test(iconName)
         }).name
 
@@ -199,14 +208,15 @@ class ExtensionStore {
 
           const symbol = htmlElement.querySelector(symbolId)
           await saveIconFromSymbol(symbol, iconPack)
-        };
+        }
       } else if (fileType === 'image/svg+xml') {
         const svgDoc = parser.parseFromString(responseString, fileType)
         const symbols = svgDoc.querySelectorAll('symbol')
 
         for await (const symbol of symbols) {
           symbol.classList.add(iconPack.name)
-          if (versionMetadata.symbolViewBox) symbol.setAttribute('viewBox', versionMetadata.symbolViewBox)
+          if (versionMetadata.symbolViewBox)
+            symbol.setAttribute('viewBox', versionMetadata.symbolViewBox)
           await saveIconFromSymbol(symbol, iconPack)
         }
       }
@@ -214,7 +224,8 @@ class ExtensionStore {
       const iconsObject = JSON.parse(responseString)
       fpLogger.debug('iconsObject', iconsObject)
 
-      for (const [originalIconName, iconMetadata] of Object.entries(iconsObject)) {
+      const iconsObjectEntries = Object.entries(iconsObject)
+      for (const [originalIconName, iconMetadata] of iconsObjectEntries) {
         fpLogger.verbose('originalIconName', originalIconName)
 
         const iconTags = iconMetadata?.search?.terms || []
@@ -223,7 +234,8 @@ class ExtensionStore {
         const iconStyles = iconMetadata?.svgs?.classic
         fpLogger.debug('iconStyles', iconStyles)
 
-        for (const [iconStyle, iconStyleMetadata] of Object.entries(iconStyles)) {
+        const iconStylesEntries = Object.entries(iconStyles)
+        for (const [iconStyle, iconStyleMetadata] of iconStylesEntries) {
           const iconName = `${originalIconName}-${iconStyle}`
           const iconId = buildIconId(iconPack, iconName)
 
@@ -256,10 +268,11 @@ class ExtensionStore {
   async downloadIconPackVersion (iconPack, versionMetadata) {
     fpLogger.debug('downloadIconPackVersion()')
 
-    const iconsMetadata =
-      iconPack.metadataUrl
-        ? await this.fetchIconsMetadata(iconPack.metadataUrl.replaceAll('{VERSION}', versionMetadata.name))
-        : null
+    const iconsMetadata = iconPack.metadataUrl
+      ? await this.fetchIconsMetadata(
+          iconPack.metadataUrl.replaceAll('{VERSION}', versionMetadata.name)
+        )
+      : null
 
     fpLogger.verbose('iconsMetadata', iconsMetadata)
 
@@ -267,10 +280,20 @@ class ExtensionStore {
 
     if (Array.isArray(iconPack.svgUrl)) {
       for (const url of iconPack.svgUrl) {
-        iconCount += await this.downloadSvgIconsFromUrl(iconPack, versionMetadata, url, iconsMetadata)
+        iconCount += await this.downloadSvgIconsFromUrl(
+          iconPack,
+          versionMetadata,
+          url,
+          iconsMetadata
+        )
       }
     } else {
-      iconCount = await this.downloadSvgIconsFromUrl(iconPack, versionMetadata, iconPack.svgUrl, iconsMetadata)
+      iconCount = await this.downloadSvgIconsFromUrl(
+        iconPack,
+        versionMetadata,
+        iconPack.svgUrl,
+        iconsMetadata
+      )
     }
 
     return iconCount
@@ -287,11 +310,14 @@ class ExtensionStore {
       // Use a cursor to iterate through all records and delete matching ones
       const request = store.openCursor()
 
-      request.onsuccess = (event) => {
+      request.onsuccess = event => {
         const cursor = event.target.result
         if (cursor) {
           const record = cursor.value
-          if (record.iconPackName === iconPackName && record.iconPackVersion === iconPackVersion) {
+          if (
+            record.iconPackName === iconPackName &&
+            record.iconPackVersion === iconPackVersion
+          ) {
             // Delete this record
             cursor.delete()
             deletedCount++
@@ -305,7 +331,9 @@ class ExtensionStore {
       request.onerror = () => reject(request.error)
 
       transaction.oncomplete = () => {
-        fpLogger.quiet(`Deleted ${deletedCount} icons from ${iconPackName} ${iconPackVersion}`)
+        fpLogger.quiet(
+          `Deleted ${deletedCount} icons from ${iconPackName} ${iconPackVersion}`
+        )
         resolve(deletedCount)
       }
 
@@ -340,9 +368,12 @@ class ExtensionStore {
       {
         name: 'Ionicons',
         homepageUrl: 'https://ionic.io/ionicons',
-        changelogUrl: 'https://github.com/ionic-team/ionicons/blob/main/CHANGELOG.md',
-        svgUrl: 'https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/cheatsheet.html',
-        metadataUrl: 'https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/ionicons.json',
+        changelogUrl:
+          'https://github.com/ionic-team/ionicons/blob/main/CHANGELOG.md',
+        svgUrl:
+          'https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/cheatsheet.html',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/ionicons@{VERSION}/dist/ionicons.json',
         styles: [
           {
             name: 'Outline',
@@ -382,7 +413,8 @@ class ExtensionStore {
         name: 'Font_Awesome',
         homepageUrl: 'https://fontawesome.com',
         changelogUrl: 'https://fontawesome.com/changelog',
-        svgUrl: 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{VERSION}/metadata/icon-families.json',
+        svgUrl:
+          'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@{VERSION}/metadata/icon-families.json',
         styles: [
           {
             name: 'Regular',
@@ -397,16 +429,16 @@ class ExtensionStore {
             filter: /-brand/
           }
         ],
-        versions: [
-          { name: '6.7.2' }
-        ]
+        versions: [{ name: '6.7.2' }]
       },
       {
         name: 'Lucide',
         homepageUrl: 'https://lucide.dev',
         changelogUrl: 'https://github.com/lucide-icons/lucide/releases',
-        svgUrl: 'https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/sprite.svg',
-        metadataUrl: 'https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/tags.json',
+        svgUrl:
+          'https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/sprite.svg',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/lucide-static@{VERSION}/tags.json',
         styles: [
           {
             name: 'Regular',
@@ -429,7 +461,8 @@ class ExtensionStore {
           'https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite.svg',
           'https://cdn.jsdelivr.net/npm/@tabler/icons-sprite@{VERSION}/dist/tabler-sprite-filled.svg'
         ],
-        metadataUrl: 'https://cdn.jsdelivr.net/npm/@tabler/icons@{VERSION}/icons.json',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/@tabler/icons@{VERSION}/icons.json',
         styles: [
           {
             name: 'Outline',
@@ -440,9 +473,7 @@ class ExtensionStore {
             filter: /^filled-/
           }
         ],
-        versions: [
-          { name: '3.30.0' }
-        ]
+        versions: [{ name: '3.30.0' }]
       }
     ]
   }
@@ -450,8 +481,14 @@ class ExtensionStore {
   checkAnyThemeEnabled () {
     fpLogger.debug('checkAnyThemeEnabled()')
 
-    const lightThemeHidden = document.documentElement.style.getPropertyValue('--light-theme-display') === 'none'
-    const darkThemeHidden = document.documentElement.style.getPropertyValue('--dark-theme-display') === 'none'
+    const lightThemeHidden =
+      document.documentElement.style.getPropertyValue(
+        '--light-theme-display'
+      ) === 'none'
+    const darkThemeHidden =
+      document.documentElement.style.getPropertyValue(
+        '--dark-theme-display'
+      ) === 'none'
 
     const anyThemeEnabled = lightThemeHidden && darkThemeHidden
 
@@ -481,7 +518,7 @@ class ExtensionStore {
           const cssVariable = '--light-theme-display'
           const defaultValue = true
 
-          const apply = (value) => {
+          const apply = value => {
             const isEnabled = value.toString() === 'true'
             fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
@@ -504,7 +541,7 @@ class ExtensionStore {
           const inputElement = document.querySelector(inputId)
           if (!inputElement) return
 
-          inputElement.addEventListener('sl-change', (event) => {
+          inputElement.addEventListener('sl-change', event => {
             const isEnabled = event.target.checked
             apply(isEnabled)
           })
@@ -522,7 +559,7 @@ class ExtensionStore {
           const cssVariable = '--dark-theme-display'
           const defaultValue = true
 
-          const apply = (value) => {
+          const apply = value => {
             const isEnabled = value.toString() === 'true'
             fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
@@ -545,7 +582,7 @@ class ExtensionStore {
           const inputElement = document.querySelector(inputId)
           if (!inputElement) return
 
-          inputElement.addEventListener('sl-change', (event) => {
+          inputElement.addEventListener('sl-change', event => {
             const isEnabled = event.target.checked
             apply(isEnabled)
           })
@@ -561,7 +598,7 @@ class ExtensionStore {
           const inputId = '#default-light-theme-color'
           const defaultValue = '#333333'
 
-          const apply = (value) => {
+          const apply = value => {
             fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
             window.localStorage.setItem(storageKey, value)
@@ -576,7 +613,7 @@ class ExtensionStore {
           const inputElement = document.querySelector(inputId)
           if (!inputElement) return
 
-          inputElement.addEventListener('sl-blur', (event) => {
+          inputElement.addEventListener('sl-blur', event => {
             event.target.updateComplete.then(() => {
               const color = event.target.input.value
               apply(color)
@@ -594,7 +631,7 @@ class ExtensionStore {
           const inputId = '#default-dark-theme-color'
           const defaultValue = '#cccccc'
 
-          const apply = (value) => {
+          const apply = value => {
             fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
             window.localStorage.setItem(storageKey, value)
@@ -609,7 +646,7 @@ class ExtensionStore {
           const inputElement = document.querySelector(inputId)
           if (!inputElement) return
 
-          inputElement.addEventListener('sl-blur', (event) => {
+          inputElement.addEventListener('sl-blur', event => {
             event.target.updateComplete.then(() => {
               const color = event.target.input.value
               apply(color)
@@ -627,7 +664,7 @@ class ExtensionStore {
           const inputId = '#default-any-theme-color'
           const defaultValue = '#808080'
 
-          const apply = (value) => {
+          const apply = value => {
             fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
             window.localStorage.setItem(storageKey, value)
@@ -642,7 +679,7 @@ class ExtensionStore {
           const inputElement = document.querySelector(inputId)
           if (!inputElement) return
 
-          inputElement.addEventListener('sl-blur', (event) => {
+          inputElement.addEventListener('sl-blur', event => {
             event.target.updateComplete.then(() => {
               const color = event.target.input.value
               apply(color)
@@ -655,7 +692,7 @@ class ExtensionStore {
           const storageKey = fpLogger.storageKey
           const inputId = '#log-level-select'
 
-          const apply = (value) => {
+          const apply = value => {
             fpLogger.quiet(`Setting ${storageKey} to ${value}`)
             fpLogger.setLogLevel(value)
           }
@@ -667,7 +704,7 @@ class ExtensionStore {
 
           inputElement.value = existingValue
 
-          inputElement.addEventListener('sl-change', (event) => {
+          inputElement.addEventListener('sl-change', event => {
             event.target.updateComplete.then(async () => {
               fpLogger.quiet('Updating log level', event.target.value)
               apply(event.target.value)
@@ -751,7 +788,10 @@ class ExtensionStore {
         return iconRecord
       }
     } catch (error) {
-      if (error.name === 'DOMException' && error.code === DOMException.CONSTRAINT_ERR) {
+      if (
+        error.name === 'DOMException' &&
+        error.code === DOMException.CONSTRAINT_ERR
+      ) {
         fpLogger.error('Error adding icon', error)
         return null
       } else {

@@ -1,811 +1,1080 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-  <style>
-    :not(:defined) { visibility: hidden; }
-  </style>
+  <head>
+    <style>
+      :not(:defined) {
+        visibility: hidden;
+      }
 
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Browser extension to apply icon packs as favicons">
+    </style>
 
-  <title>Favicon Packs</title>
-  <link rel="icon" type="image/svg+xml" href="../../img/logo.svg" />
-
-  <script src="scripts/theme.js"></script>
-
-  <!-- Shoelace: https://shoelace.style -->
-  <link rel="stylesheet" href="styles/light.css" />
-  <link rel="stylesheet" href="styles/dark.css" />
-  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js" ></script>
-
-  <link rel="stylesheet" href="styles/options.css" />
-</head>
-
-<body>
-  <div>
-    <div id="loading-overlay">
-      <sl-spinner class="sl-spinner" />
-    </div>
-  </div>
-
-  <div id="icon-toolbar">
-    <sl-icon-button id="open-settings-button" name="gear-fill" style="font-size: 1.25rem;"></sl-icon-button>
-
-    <a
-      href="https://github.com/blakegearin/favicon-packs"
-      title="View on GitHub"
-      target="_blank"
-      style="padding: 0;"
+    <meta charset="utf-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
     >
-      <sl-icon-button name="github" ></sl-icon-button>
-    </a>
+    <meta
+      name="description"
+      content="Browser extension to apply icon packs as favicons"
+    >
 
-    <sl-dropdown id="theme-selector" placement="bottom-end" distance="3">
-      <sl-button
-        slot="trigger"
-        size="small"
-        variant="text"
-        title="Press \ to toggle"
-        caret
-      >
-        <sl-icon class="only-light" name="sun-fill" aria-display-none="true" library="default"></sl-icon>
-        <sl-icon class="only-dark" name="moon-fill" aria-display-none="true" library="default"></sl-icon>
-      </sl-button>
+    <title>Favicon Packs</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="../../img/logo.svg"
+    />
 
-      <sl-menu>
-        <sl-menu-item type="checkbox" value="light">Light</sl-menu-item>
-        <sl-menu-item type="checkbox" value="dark">Dark</sl-menu-item>
-        <sl-divider></sl-divider>
-        <sl-menu-item type="checkbox" value="auto">System</sl-menu-item>
-      </sl-menu>
-    </sl-dropdown>
-  </div>
+    <script src="scripts/theme.js"></script>
 
-  <div class="content">
-    <div id="options-title">
-      <img src="../../img/logo.svg" height="30" />
+    <!-- Shoelace: https://shoelace.style -->
+    <link
+      rel="stylesheet"
+      href="styles/light.css"
+    />
+    <link
+      rel="stylesheet"
+      href="styles/dark.css"
+    />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js"
+    ></script>
 
-      <h1>
-        Favicon Packs
-      </h1>
+    <link
+      rel="stylesheet"
+      href="styles/options.css"
+    />
+  </head>
+
+  <body>
+    <div>
+      <div id="loading-overlay">
+        <sl-spinner class="sl-spinner" />
+      </div>
     </div>
 
-    <div class="helper-row">
-      <div id="button-column">
-        <sl-dropdown id="create-dropdown">
-          <sl-button slot="trigger" variant="primary" caret>
-            Create
+    <div id="icon-toolbar">
+      <sl-icon-button
+        id="open-settings-button"
+        name="gear-fill"
+        style="font-size: 1.25rem;"
+      ></sl-icon-button>
+
+      <a
+        id="github-link"
+        href="https://github.com/blakegearin/favicon-packs"
+        title="View on GitHub"
+        target="_blank"
+      >
+        <sl-icon-button name="github"></sl-icon-button>
+      </a>
+
+      <sl-dropdown
+        id="theme-selector"
+        placement="bottom-end"
+        distance="3"
+      >
+        <sl-button
+          slot="trigger"
+          size="small"
+          variant="text"
+          title="Press \ to toggle"
+          caret
+        >
+          <sl-icon
+            class="only-light"
+            name="sun-fill"
+            aria-display-none="true"
+            library="default"
+          ></sl-icon>
+          <sl-icon
+            class="only-dark"
+            name="moon-fill"
+            aria-display-none="true"
+            library="default"
+          ></sl-icon>
+        </sl-button>
+
+        <sl-menu>
+          <sl-menu-item
+            type="checkbox"
+            value="light"
+          >Light</sl-menu-item>
+          <sl-menu-item
+            type="checkbox"
+            value="dark"
+          >Dark</sl-menu-item>
+          <sl-divider></sl-divider>
+          <sl-menu-item
+            type="checkbox"
+            value="auto"
+          >System</sl-menu-item>
+        </sl-menu>
+      </sl-dropdown>
+    </div>
+
+    <div class="content">
+      <div id="options-title">
+        <img
+          src="../../img/logo.svg"
+          height="30"
+        />
+
+        <h1>
+          Favicon Packs
+        </h1>
+      </div>
+
+      <div class="helper-row">
+        <div id="button-column">
+          <sl-dropdown id="create-dropdown">
+            <sl-button
+              slot="trigger"
+              variant="primary"
+              caret
+            >
+              Create
+            </sl-button>
+
+            <sl-menu>
+              <sl-menu-item value="highest-priority">
+                Highest priority
+              </sl-menu-item>
+
+              <sl-menu-item value="lowews-priority">
+                Lowest priority
+              </sl-menu-item>
+            </sl-menu>
+          </sl-dropdown>
+
+          <div
+            id="selected-actions"
+            class="display-none"
+          >
+            <sl-button
+              id="activate-action-button"
+              variant="success"
+              outline
+            >
+              Activate
+            </sl-button>
+
+            <sl-button
+              id="deactivate-action-button"
+              variant="warning"
+              outline
+            >
+              Deactivate
+            </sl-button>
+
+            <sl-button
+              id="delete-action-button"
+              variant="danger"
+              outline
+            >
+              Delete
+            </sl-button>
+
+            <sl-button
+              id="duplicate-action-button"
+              class="single-limited-action"
+              variant="neutral"
+              outline
+            >
+              Duplicate
+            </sl-button>
+          </div>
+        </div>
+
+        <span id="counts">
+          Active: <span id="active-siteConfigs-length">0</span>&nbsp; |
+          &nbsp;Total: <span id="siteConfigs-length">0</span>
+        </span>
+      </div>
+
+      <table id="siteConfigs">
+        <thead>
+          <tr>
+            <th class="center">
+              <sl-checkbox
+                id="select-all"
+                size="large"
+              />
+            </th>
+
+            <th class="center">
+              Priority
+            </th>
+
+            <th class="center width-content">
+              <div id="pattern-type-header">
+                Pattern Type
+                <sl-icon-button name="info-circle"></sl-icon-button>
+              </div>
+            </th>
+
+            <th class="width-auto">
+              Website Pattern
+            </th>
+
+            <th class="center">
+              Icon
+            </th>
+
+            <th class="center width-content light-theme-display">
+              Light Theme
+            </th>
+
+            <th class="center width-content dark-theme-display">
+              Dark Theme
+            </th>
+
+            <th class="center width-content any-theme-display">
+              Any Theme
+            </th>
+
+            <th class="center">
+              Favicon
+            </th>
+
+            <th class="center">
+              Active
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr class="skeleton-row">
+            <td class="center">
+              <sl-checkbox
+                size="large"
+                disabled
+              ></sl-checkbox>
+            </td>
+
+            <td class="center center-priority">
+              <div class="priority-icons center-cell">
+                <sl-skeleton
+                  class="circle"
+                  effect="sheen"
+                ></sl-skeleton>
+                <sl-skeleton
+                  class="circle"
+                  effect="sheen"
+                ></sl-skeleton>
+              </div>
+            </td>
+
+            <td class="center">
+              <div class="center-cell type-cell">
+                <sl-tag variant="neutral">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </sl-tag>
+
+                <sl-icon-button
+                  name="arrow-left-right"
+                  label="Toggle type"
+                  disabled
+                ></sl-icon-button>
+              </div>
+            </td>
+
+            <td>
+              <sl-skeleton effect="sheen"></sl-skeleton>
+            </td>
+
+            <td class="center icon-cell">
+              <sl-skeleton
+                class="square"
+                effect="sheen"
+              ></sl-skeleton>
+            </td>
+
+            <td class="center light-theme-display">
+              <div class="center-cell color-cell">
+                <sl-skeleton
+                  class="circle"
+                  effect="sheen"
+                ></sl-skeleton>
+                <sl-copy-button disabled></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center dark-theme-display">
+              <div class="center-cell color-cell">
+                <sl-skeleton
+                  class="circle"
+                  effect="sheen"
+                ></sl-skeleton>
+                <sl-copy-button disabled></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center any-theme-display">
+              <div class="center-cell color-cell">
+                <sl-skeleton
+                  class="circle"
+                  effect="sheen"
+                ></sl-skeleton>
+                <sl-copy-button disabled></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center favicon-cell">
+              <div class="center-cell">
+                <sl-skeleton
+                  class="square"
+                  effect="sheen"
+                ></sl-skeleton>
+                <sl-skeleton
+                  class="square"
+                  effect="sheen"
+                ></sl-skeleton>
+              </div>
+            </td>
+
+            <td class="center">
+              <sl-switch disabled></sl-switch>
+            </td>
+          </tr>
+
+          <tr
+            id="template-row"
+            class="display-none"
+          >
+            <td class="center">
+              <sl-checkbox
+                class="select-all-target"
+                size="large"
+              />
+            </td>
+
+            <td class="center center-priority">
+              <div class="priority-icons center-cell">
+                <sl-icon-button
+                  class="increment"
+                  label="Increase priority"
+                  name="arrow-up-circle"
+                ></sl-icon-button>
+
+                <sl-icon-button
+                  class="decrement"
+                  label="Decrease priority"
+                  name="arrow-down-circle"
+                ></sl-icon-button>
+              </div>
+            </td>
+
+            <td class="center">
+              <div class="center-cell type-cell">
+                <sl-tag></sl-tag>
+
+                <sl-icon-button
+                  class="toggle-type"
+                  name="arrow-left-right"
+                  label="Toggle type"
+                ></sl-icon-button>
+              </div>
+            </td>
+
+            <td>
+              <div class="site-cell read">
+                <code class="site-match-value"></code>
+
+                <sl-copy-button
+                  class="site-match-value-copy"
+                  copy-label="Click to copy"
+                  error-label="Whoops, your browser doesn't support this!"
+                  success-label="Copied"
+                  value="{{ site }}"
+                ></sl-copy-button>
+
+                <sl-icon-button
+                  class="edit-site"
+                  label="Edit"
+                  name="pencil"
+                ></sl-icon-button>
+              </div>
+
+              <form class="site-cell edit">
+                <sl-input
+                  placeholder="wikipedia.org"
+                  required
+                ></sl-input>
+
+                <sl-button type="submit">
+                  Save
+                </sl-button>
+
+                <sl-button type="reset">
+                  Reset
+                </sl-button>
+              </form>
+            </td>
+
+            <td class="center icon-cell">
+              <div class="add">
+                <sl-button class="square">
+                  Add
+                </sl-button>
+              </div>
+
+              <div class="icon edit">
+                <sl-button id="icon-value"></sl-button>
+
+                <sl-tooltip
+                  id="icon-vale-not-found"
+                  class="display-none"
+                  content="Icon not found"
+                  placement="bottom"
+                >
+                  <sl-button></sl-button>
+                </sl-tooltip>
+              </div>
+            </td>
+
+            <td class="center light-theme-display">
+              <div class="center-cell color-cell">
+                <sl-color-picker
+                  class="light-theme-color-picker light-theme-color-value"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+
+                <sl-copy-button
+                  class="light-theme-color-value"
+                  copy-label="Click to copy"
+                  error-label="Whoops, your browser doesn't support this!"
+                  success-label="Copied"
+                ></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center dark-theme-display">
+              <div class="center-cell color-cell">
+                <sl-color-picker
+                  class="dark-theme-color-picker dark-theme-color-value"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+
+                <sl-copy-button
+                  class="dark-theme-color-value"
+                  copy-label="Click to copy"
+                  error-label="Whoops, your browser doesn't support this!"
+                  success-label="Copied"
+                ></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center any-theme-display">
+              <div class="center-cell color-cell">
+                <sl-color-picker
+                  class="any-theme-color-picker any-theme-color-value"
+                  label="Select a color"
+                  swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                ></sl-color-picker>
+
+                <sl-copy-button
+                  class="any-theme-color-value"
+                  copy-label="Click to copy"
+                  error-label="Whoops, your browser doesn't support this!"
+                  success-label="Copied"
+                ></sl-copy-button>
+              </div>
+            </td>
+
+            <td class="center favicon-cell">
+              <div class="center-cell">
+                <div class="favicon-value icon light-theme-display light-theme-color-style"></div>
+
+                <div class="favicon-value icon dark-theme-display dark-theme-color-style"></div>
+
+                <div class="favicon-value icon any-theme-display any-theme-color-style"></div>
+
+                <div class="favicon-value image-display"></div>
+              </div>
+            </td>
+
+            <td class="center active-cell">
+              <sl-switch></sl-switch>
+            </td>
+          </tr>
+
+          <tr class="no-data-row display-none">
+            <td
+              class="center"
+              colspan="9"
+            >
+              No data
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="helper-row display-none">
+        <span></span>
+
+        <div>
+          <sl-button
+            variant="neutral"
+            outline
+          >
+            Import
           </sl-button>
 
-          <sl-menu>
-            <sl-menu-item value="highest-priority">
-              Highest priority
-            </sl-menu-item>
-
-            <sl-menu-item value="lowews-priority">
-              Lowest priority
-            </sl-menu-item>
-          </sl-menu>
-        </sl-dropdown>
-
-        <div id="selected-actions" class="display-none">
-          <sl-button id="activate-action-button" variant="success" outline>
-            Activate
-          </sl-button>
-
-          <sl-button id="deactivate-action-button" variant="warning" outline>
-            Deactivate
-          </sl-button>
-
-          <sl-button id="delete-action-button" variant="danger" outline>
-            Delete
-          </sl-button>
-
-          <sl-button id="duplicate-action-button" class="single-limited-action" variant="neutral" outline>
-            Duplicate
+          <sl-button
+            variant="neutral"
+            outline
+          >
+            Export
           </sl-button>
         </div>
       </div>
-
-      <span id="counts">
-        Active: <span id="active-siteConfigs-length">0</span>&nbsp; | &nbsp;Total: <span id="siteConfigs-length">0</span>
-      </span>
     </div>
 
-    <table id="siteConfigs">
-      <thead>
-        <tr>
-          <th class="center">
-            <sl-checkbox id="select-all"  size="large" />
-          </th>
+    <sl-drawer
+      id="icon-selector"
+      placement="start"
+      class="drawer-placement-start"
+      no-header
+    >
+      <div
+        part="base"
+        class="drawer drawer--start drawer--fixed drawer--has-footer drawer--open"
+      >
+        <div
+          part="overlay"
+          class="drawer__overlay"
+          tabindex="-1"
+        ></div>
 
-          <th class="center">
-            Priority
-          </th>
-
-          <th class="center width-content">
-            <div id="pattern-type-header">
-              Pattern Type
-              <sl-icon-button name="info-circle"></sl-icon-button>
-            </div>
-          </th>
-
-          <th class="width-auto">
-            Website Pattern
-          </th>
-
-          <th class="center">
-            Icon
-          </th>
-
-          <th class="center width-content light-theme-display">
-            Light Theme
-          </th>
-
-          <th class="center width-content dark-theme-display">
-            Dark Theme
-          </th>
-
-          <th class="center width-content any-theme-display">
-            Any Theme
-          </th>
-
-          <th class="center">
-            Favicon
-          </th>
-
-          <th class="center">
-            Active
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr class="skeleton-row">
-          <td class="center">
-            <sl-checkbox size="large" disabled></sl-checkbox>
-          </td>
-
-          <td class="center center-priority">
-            <div class="priority-icons center-cell">
-              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
-              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
-            </div>
-          </td>
-
-          <td class="center">
-            <div class="center-cell type-cell">
-              <sl-tag variant="neutral">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              </sl-tag>
-
-              <sl-icon-button name="arrow-left-right" label="Toggle type" disabled></sl-icon-button>
-            </div>
-          </td>
-
-          <td>
-            <sl-skeleton effect="sheen"></sl-skeleton>
-          </td>
-
-          <td class="center icon-cell">
-            <sl-skeleton class="square" effect="sheen"></sl-skeleton>
-          </td>
-
-          <td class="center light-theme-display">
-            <div class="center-cell color-cell">
-              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
-              <sl-copy-button disabled></sl-copy-button>
-            </div>
-          </td>
-
-          <td class="center dark-theme-display">
-            <div class="center-cell color-cell">
-              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
-              <sl-copy-button disabled></sl-copy-button>
-            </div>
-          </td>
-
-          <td class="center any-theme-display">
-            <div class="center-cell color-cell">
-              <sl-skeleton class="circle" effect="sheen"></sl-skeleton>
-              <sl-copy-button disabled></sl-copy-button>
-            </div>
-          </td>
-
-          <td class="center favicon-cell">
-            <div class="center-cell">
-              <sl-skeleton class="square" effect="sheen"></sl-skeleton>
-              <sl-skeleton class="square" effect="sheen"></sl-skeleton>
-            </div>
-          </td>
-
-          <td class="center">
-            <sl-switch disabled></sl-switch>
-          </td>
-        </tr>
-
-        <tr id="template-row" class="display-none">
-          <td class="center">
-            <sl-checkbox class="select-all-target" size="large" />
-          </td>
-
-          <td class="center center-priority">
-            <div class="priority-icons center-cell">
-              <sl-icon-button class="increment" label="Increase priority" name="arrow-up-circle"></sl-icon-button>
-
-              <sl-icon-button class="decrement" label="Decrease priority" name="arrow-down-circle"></sl-icon-button>
-            </div>
-          </td>
-
-          <td class="center">
-            <div class="center-cell type-cell">
-              <sl-tag></sl-tag>
-
-              <sl-icon-button class="toggle-type" name="arrow-left-right" label="Toggle type"></sl-icon-button>
-            </div>
-          </td>
-
-          <td>
-            <div class="site-cell read">
-              <code class="site-match-value"></code>
-
-              <sl-copy-button
-                class="site-match-value-copy"
-                copy-label="Click to copy"
-                error-label="Whoops, your browser doesn't support this!"
-                success-label="Copied"
-                value="{{ site }}"
-              ></sl-copy-button>
-
-              <sl-icon-button
-                class="edit-site"
-                label="Edit"
-                name="pencil"
-              ></sl-icon-button>
-            </div>
-
-            <form class="site-cell edit">
-              <sl-input placeholder="wikipedia.org" required></sl-input>
-
-              <sl-button type="submit">
-                Save
-              </sl-button>
-
-              <sl-button type="reset">
-                Reset
-              </sl-button>
-            </form>
-          </td>
-
-          <td class="center icon-cell">
-            <div class="add">
-              <sl-button class="square">
-                Add
-              </sl-button>
-            </div>
-
-            <div class="icon edit">
-              <sl-button id="icon-value"></sl-button>
-
-              <sl-tooltip
-                id="icon-vale-not-found"
-                class="display-none"
-                content="Icon not found"
-                placement="bottom"
+        <div
+          part="panel"
+          class="drawer__panel"
+          role="dialog"
+          aria-modal="true"
+          tabindex="0"
+          aria-hidden="false"
+          aria-labelledby="title"
+        >
+          <header
+            part="header"
+            class="drawer__header"
+          >
+            <div class="header_div">
+              <h2
+                id="icon-selector-title"
+                part="title"
+                class="drawer__title"
               >
-                <sl-button></sl-button>
-              </sl-tooltip>
+                <slot name="label">
+                  Icon Selector
+
+                  <sl-badge
+                    id="unsaved"
+                    class="display-none"
+                    variant="warning"
+                    pill
+                  >
+                    Unsaved
+                  </sl-badge>
+                </slot>
+              </h2>
+
+              <div
+                part="header-actions"
+                class="drawer__header-actions"
+              >
+                <slot name="header-actions"></slot>
+                <sl-icon-button
+                  part="close-button"
+                  exportparts="base:close-button__base"
+                  class="drawer__close"
+                  name="x-lg"
+                  library="system"
+                  label="Close"
+                ></sl-icon-button>
+              </div>
             </div>
-          </td>
 
-          <td class="center light-theme-display">
-            <div class="center-cell color-cell">
-              <sl-color-picker
-                class="light-theme-color-picker light-theme-color-value"
-                label="Select a color"
-                swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-              ></sl-color-picker>
+            <table>
+              <thead>
+                <tr>
+                  <th class="center">
+                    Current
+                  </th>
 
-              <sl-copy-button
-                class="light-theme-color-value"
-                copy-label="Click to copy"
-                error-label="Whoops, your browser doesn't support this!"
-                success-label="Copied"
-              ></sl-copy-button>
-            </div>
-          </td>
+                  <th class="center">
+                    Updated
+                  </th>
+                </tr>
+              </thead>
 
-          <td class="center dark-theme-display">
-            <div class="center-cell color-cell">
-              <sl-color-picker
-                class="dark-theme-color-picker dark-theme-color-value"
-                label="Select a color"
-                swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-              ></sl-color-picker>
+              <tbody>
+                <tr>
+                  <td>
+                    <div
+                      id="current-icon"
+                      class="center"
+                    >
+                    </div>
+                  </td>
 
-              <sl-copy-button
-                class="dark-theme-color-value"
-                copy-label="Click to copy"
-                error-label="Whoops, your browser doesn't support this!"
-                success-label="Copied"
-              ></sl-copy-button>
-            </div>
-          </td>
+                  <td>
+                    <div
+                      id="updated-icon"
+                      class="center"
+                    >
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-          <td class="center any-theme-display">
-            <div class="center-cell color-cell">
-              <sl-color-picker
-                class="any-theme-color-picker any-theme-color-value"
-                label="Select a color"
-                swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-              ></sl-color-picker>
+            <sl-tab-panel
+              name="icon-packs"
+              active
+            >
+              <div class="icon-search-controls">
+                <div id="icon-search-row">
+                  <sl-input
+                    id="search-input"
+                    placeholder="Search"
+                    autofocus
+                    clearable
+                  >
+                    <sl-icon
+                      slot="prefix"
+                      name="search"
+                    ></sl-icon>
+                  </sl-input>
 
-              <sl-copy-button
-                class="any-theme-color-value"
-                copy-label="Click to copy"
-                error-label="Whoops, your browser doesn't support this!"
-                success-label="Copied"
-              ></sl-copy-button>
-            </div>
-          </td>
+                  <div>
+                    <span id="current-icon-count">0</span> icons
+                  </div>
+                </div>
 
-          <td class="center favicon-cell">
-            <div class="center-cell">
-              <div class="favicon-value icon light-theme-display light-theme-color-style"></div>
+                <sl-select
+                  id="icon-packs-select"
+                  value="all"
+                >
+                </sl-select>
+              </div>
+            </sl-tab-panel>
 
-              <div class="favicon-value icon dark-theme-display dark-theme-color-style"></div>
+            <sl-tab-panel
+              name="upload"
+              class="icon-upload"
+            >
+              <div>
+                <span>
+                  Upload your own image files.
+                </span>
 
-              <div class="favicon-value icon any-theme-display any-theme-color-style"></div>
+                <br>
+                <br>
 
-              <div class="favicon-value image-display"></div>
-            </div>
-          </td>
+                <span>
+                  Supported files: svg, png, jpg, jpeg, ico
+                </span>
+              </div>
 
-          <td class="center active-cell">
-            <sl-switch></sl-switch>
-          </td>
-        </tr>
+              <div>
+                <form
+                  id="upload"
+                  class="upload-row"
+                >
+                  <button>Upload</button>
 
-        <tr class="no-data-row display-none">
-          <td class="center" colspan="9">
-            No data
-          </td>
-        </tr>
-      </tbody>
-    </table>
+                  <input
+                    type="file"
+                    id="icon-upload-input"
+                    accept=".svg, .png, .jpg, .jpeg, .ico"
+                  />
+                </form>
 
-    <div class="helper-row display-none">
-      <span></span>
+                <div>
+                  <p>
+                    Current File Name:&nbsp;<span id="current-upload-name"></span>
+                  </p>
+                </div>
 
-      <div>
-        <sl-button variant="neutral" outline>
-          Import
-        </sl-button>
+                <br>
 
-        <sl-button variant="neutral" outline>
-          Export
-        </sl-button>
+                <div>
+                  <p>
+                    Updated File Name:&nbsp;<span id="updated-upload-name"></span>
+                  </p>
+                </div>
+              </div>
+            </sl-tab-panel>
+          </header>
+
+          <slot
+            part="body"
+            class="drawer__body"
+          >
+            <sl-tab-panel
+              name="icon-packs"
+              active
+            >
+              <div class="icon-search">
+                <div class="icon-list"></div>
+              </div>
+            </sl-tab-panel>
+
+            <sl-tab-panel name="upload">
+              <div class="icon-upload">
+                <div>
+                  <div class="upload-list"></div>
+                </div>
+              </div>
+            </sl-tab-panel>
+          </slot>
+
+          <footer
+            part="footer"
+            class="drawer__footer"
+          >
+            <slot name="footer">
+              <div slot="footer">
+                <sl-tab-group
+                  id="icon-drawer-tab-group"
+                  placement="bottom"
+                >
+                  <sl-tab
+                    slot="nav"
+                    panel="icon-packs"
+                  >
+                    Icon Packs
+                  </sl-tab>
+
+                  <sl-tab
+                    slot="nav"
+                    panel="upload"
+                  >
+                    Upload
+                  </sl-tab>
+                </sl-tab-group>
+
+                <div class="drawer-footer hidden">
+                  <sl-button
+                    id="clear-icon-button"
+                    variant="danger"
+                  >
+                    Clear
+                  </sl-button>
+
+                  <sl-button
+                    id="save-icon-button"
+                    variant="primary"
+                  >
+                    Save
+                  </sl-button>
+                </div>
+              </div>
+            </slot>
+          </footer>
+        </div>
       </div>
-    </div>
-  </div>
+    </sl-drawer>
 
-  <sl-drawer id="icon-selector" placement="start" class="drawer-placement-start" no-header>
-    <div part="base" class="drawer drawer--start drawer--fixed drawer--has-footer drawer--open">
-      <div part="overlay" class="drawer__overlay" tabindex="-1"></div>
-
-      <div part="panel" class="drawer__panel" role="dialog" aria-modal="true" tabindex="0" aria-hidden="false" aria-labelledby="title">
-        <header part="header" class="drawer__header">
-          <div class="header_div">
-            <h2 id="icon-selector-title" part="title" class="drawer__title" >
-              <slot name="label">
-                Icon Selector
-
-                <sl-badge id="unsaved" class="display-none" variant="warning" pill>
-                  Unsaved
-                </sl-badge>
-              </slot>
-            </h2>
-
-            <div part="header-actions" class="drawer__header-actions">
-              <slot name="header-actions"></slot>
-              <sl-icon-button part="close-button" exportparts="base:close-button__base" class="drawer__close" name="x-lg" library="system" label="Close"></sl-icon-button>
-            </div>
+    <sl-dialog
+      id="pattern-types"
+      label="Pattern Types"
+      style="--width: 50vw;"
+    >
+      <div>
+        <sl-details open>
+          <div slot="summary">
+            <sl-tag variant="primary">
+              Simple Match
+            </sl-tag>
           </div>
 
-          <table>
+          This is an easy way to add a specific domain (e.g.
+          <code>wikipedia.org</code>) or subdomain (e.g.
+          <code>en.wikipedia.org</code>). A scheme is optional because it
+          matches any other values before and after.
+        </sl-details>
+
+        <sl-details>
+          <div slot="summary">
+            <sl-tag variant="warning">
+              Regex Match
+            </sl-tag>
+          </div>
+
+          This is pattern matching via
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions"
+            target="_blank"
+            rel="noopener noreferrer"
+          >regular expressions</a>. Here's a
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
+            target="_blank"
+            rel="noopener noreferrer"
+          >cheatsheet</a>
+          and you can test your pattern at
+          <a
+            href="https://regex101.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >regex101</a>.
+        </sl-details>
+
+        <sl-card id="parts-of-a-url">
+          <div>
+            <div>
+              <strong>
+                Parts of a URL
+                <small>
+                  (<a
+                    href="https://strategylab.ca/parts-of-a-url/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >source</a>)
+                </small>
+              </strong>
+            </div>
+
+            <img
+              src="../../img/parts-of-a-url.png"
+              alt="Parts of a URL"
+              style="width: 100%"
+            />
+          </div>
+        </sl-card>
+      </div>
+    </sl-dialog>
+
+    <sl-dialog
+      id="delete-confirmation"
+      label="Delete Confirmation"
+    >
+      <span id="delete-confirmation-text"></span>
+
+      <sl-alert
+        variant="warning"
+        open
+      >
+        <sl-icon
+          slot="icon"
+          name="exclamation-triangle"
+        ></sl-icon>
+        <strong>This cannot be undone.</strong><br />
+      </sl-alert>
+
+      <div
+        class="dialog-footer"
+        slot="footer"
+      >
+        <sl-button
+          id="delete-cancel-button"
+          outline
+        >
+          Cancel
+        </sl-button>
+
+        <sl-button
+          id="delete-confirmation-button"
+          variant="danger"
+        >
+          Delete
+        </sl-button>
+      </div>
+    </sl-dialog>
+
+    <sl-drawer
+      id="settings-dialog"
+      label="Settings"
+      placement="bottom"
+    >
+      <sl-tab-group>
+        <sl-tab
+          slot="nav"
+          panel="general"
+        >
+          General
+        </sl-tab>
+
+        <sl-tab
+          slot="nav"
+          panel="icon-packs"
+        >
+          Icon Packs
+        </sl-tab>
+
+        <sl-tab-panel name="general">
+          <table id="tableSettings">
             <thead>
               <tr>
-                <th class="center">
-                  Current
-                </th>
-
-                <th class="center">
-                  Updated
-                </th>
+                <th class="minimal-width"></th>
+                <th></th>
+                <th class="minimal-width"></th>
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
               <tr>
                 <td>
-                  <div id="current-icon" class="center">
+                  <div class="right-align">
+                    <sl-switch
+                      id="light-theme-switch"
+                      size="large"
+                    ></sl-switch>
                   </div>
                 </td>
 
                 <td>
-                  <div id="updated-icon" class="center">
+                  <div>
+                    <span>
+                      Light Theme
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="right-align">
+                    <sl-color-picker
+                      id="default-light-theme-color"
+                      label="Select a color"
+                      swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                    ></sl-color-picker>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <span>
+                      Default Color for Light Theme
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="right-align">
+                    <sl-switch
+                      id="dark-theme-switch"
+                      size="large"
+                    ></sl-switch>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <span>
+                      Dark Theme
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="right-align">
+                    <sl-color-picker
+                      id="default-dark-theme-color"
+                      label="Select a color"
+                      swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                    ></sl-color-picker>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <span>
+                      Default Color for Dark Theme
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div style="text-align: right;">
+                    <sl-switch
+                      id="any-theme-switch"
+                      size="large"
+                      disabled
+                    ></sl-switch>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <span>Any Theme (Fallback)</span>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="right-align">
+                    <sl-color-picker
+                      id="default-any-theme-color"
+                      label="Select a color"
+                      swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
+                    ></sl-color-picker>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+
+                    <span>
+                      Default Color for Any Theme (Fallback)
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr></tr>
+
+              <tr>
+                <td>
+                  <div>
+                    <span>
+                      Logging
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <sl-select
+                      id="log-level-select"
+                      size="medium"
+                      placement="bottom"
+                      style="max-width: 150px;"
+                    >
+                      <sl-option value="silent">Silent</sl-option>
+                      <sl-option value="quiet">Quiet</sl-option>
+                      <sl-option value="info">Info</sl-option>
+                      <sl-option value="debug">Debug</sl-option>
+                      <sl-option value="verbose">Verbose</sl-option>
+                      <sl-option value="trace">Trace</sl-option>
+                    </sl-select>
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
+        </sl-tab-panel>
 
-          <sl-tab-panel name="icon-packs" active>
-            <div class="icon-search-controls">
-              <div id="icon-search-row">
-                <sl-input id="search-input" placeholder="Search" autofocus clearable>
-                  <sl-icon slot="prefix" name="search"></sl-icon>
-                </sl-input>
+        <sl-tab-panel name="icon-packs">
+          <div id="icon-packs-tables"></div>
+        </sl-tab-panel>
+      </sl-tab-group>
+    </sl-drawer>
 
-                <div>
-                  <span id="current-icon-count">0</span> icons
-                </div>
-              </div>
-
-              <sl-select id="icon-packs-select" value="all">
-              </sl-select>
-            </div>
-          </sl-tab-panel>
-
-          <sl-tab-panel name="upload" class="icon-upload">
-            <div>
-              <span>
-                Upload your own image files.
-              </span>
-
-              <br>
-              <br>
-
-              <span>
-                Supported files: svg, png, jpg, jpeg, ico
-              </span>
-            </div>
-
-            <div>
-              <form id="upload" class="upload-row">
-                <button>Upload</button>
-
-                <input type="file" id="icon-upload-input" accept=".svg, .png, .jpg, .jpeg, .ico" />
-              </form>
-
-              <div>
-                <p>
-                  Current File Name:&nbsp;<span id="current-upload-name"></span>
-                </p>
-              </div>
-
-              <br>
-
-              <div>
-                <p>
-                  Updated File Name:&nbsp;<span id="updated-upload-name"></span>
-                </p>
-              </div>
-            </div>
-          </sl-tab-panel>
-        </header>
-
-        <slot part="body" class="drawer__body">
-          <sl-tab-panel name="icon-packs" active>
-            <div class="icon-search">
-              <div class="icon-list"></div>
-            </div>
-          </sl-tab-panel>
-
-          <sl-tab-panel name="upload">
-            <div class="icon-upload">
-              <div>
-                <div class="upload-list"></div>
-              </div>
-            </div>
-          </sl-tab-panel>
-        </slot>
-
-        <footer part="footer" class="drawer__footer">
-          <slot name="footer">
-            <div slot="footer">
-              <sl-tab-group id="icon-drawer-tab-group" placement="bottom">
-                <sl-tab slot="nav" panel="icon-packs">
-                  Icon Packs
-                </sl-tab>
-
-                <sl-tab slot="nav" panel="upload">
-                  Upload
-                </sl-tab>
-              </sl-tab-group>
-
-              <div class="drawer-footer hidden">
-                <sl-button id="clear-icon-button" variant="danger">
-                  Clear
-                </sl-button>
-
-                <sl-button id="save-icon-button" variant="primary">
-                  Save
-                </sl-button>
-              </div>
-            </div>
-          </slot>
-        </footer>
-      </div>
-    </div>
-  </sl-drawer>
-
-  <sl-dialog
-    id="pattern-types"
-    label="Pattern Types"
-    style="--width: 50vw;"
-  >
-    <div>
-      <sl-details open>
-        <div slot="summary">
-          <sl-tag variant="primary">
-            Simple Match
-          </sl-tag>
-        </div>
-
-        This is an easy way to add a specific domain (e.g. <code>wikipedia.org</code>) or subdomain (e.g. <code>en.wikipedia.org</code>). A scheme is optional because it matches any other values before and after.
-      </sl-details>
-
-      <sl-details>
-        <div slot="summary">
-          <sl-tag variant="warning">
-            Regex Match
-          </sl-tag>
-        </div>
-
-        This is pattern matching via
-        <a
-          href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions"
-          target="_blank"
-          rel="noopener noreferrer"
-        >regular expressions</a>. Here's a
-        <a
-          href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
-          target="_blank"
-          rel="noopener noreferrer"
-        >cheatsheet</a>
-        and you can test your pattern at
-        <a
-          href="https://regex101.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >regex101</a>.
-      </sl-details>
-
-      <sl-card id="parts-of-a-url">
-        <div>
-          <div>
-            <strong>
-              Parts of a URL
-              <small>
-                (<a
-                  href="https://strategylab.ca/parts-of-a-url/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >source</a>)
-              </small>
-            </strong>
-          </div>
-
-          <img src="../../img/parts-of-a-url.png" alt="Parts of a URL" style="width: 100%" />
-        </div>
-      </sl-card>
-    </div>
-  </sl-dialog>
-
-  <sl-dialog
-    id="delete-confirmation"
-    label="Delete Confirmation"
-  >
-    <span id="delete-confirmation-text"></span>
-
-    <sl-alert variant="warning" open>
-      <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-      <strong>This cannot be undone.</strong><br />
-    </sl-alert>
-
-    <div
-      class="dialog-footer"
-      slot="footer"
-    >
-      <sl-button id="delete-cancel-button" outline>
-        Cancel
-      </sl-button>
-
-      <sl-button id="delete-confirmation-button" variant="danger">
-        Delete
-      </sl-button>
-    </div>
-  </sl-dialog>
-
-  <sl-drawer id="settings-dialog" label="Settings" placement="bottom">
-    <sl-tab-group>
-      <sl-tab slot="nav" panel="general">
-        General
-      </sl-tab>
-
-      <sl-tab slot="nav" panel="icon-packs">
-        Icon Packs
-      </sl-tab>
-
-      <sl-tab-panel name="general">
-        <table id="tableSettings">
-          <thead>
-            <tr>
-              <th class="minimal-width"></th>
-              <th></th>
-              <th class="minimal-width"></th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr>
-              <td>
-                <div class="right-align">
-                  <sl-switch
-                    id="light-theme-switch"
-                    size="large"
-                  ></sl-switch>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <span>
-                    Light Theme
-                  </span>
-                </div>
-              </td>
-
-              <td>
-                <div class="right-align">
-                  <sl-color-picker
-                    id="default-light-theme-color"
-                    label="Select a color"
-                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                  ></sl-color-picker>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <span>
-                    Default Color for Light Theme
-                  </span>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td>
-                <div class="right-align">
-                  <sl-switch
-                    id="dark-theme-switch"
-                    size="large"
-                  ></sl-switch>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <span>
-                    Dark Theme
-                  </span>
-                </div>
-              </td>
-
-              <td>
-                <div class="right-align">
-                  <sl-color-picker
-                    id="default-dark-theme-color"
-                    label="Select a color"
-                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                  ></sl-color-picker>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <span>
-                    Default Color for Dark Theme
-                  </span>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td>
-                <div style="text-align: right;">
-                  <sl-switch
-                    id="any-theme-switch"
-                    size="large"
-                    disabled
-                  ></sl-switch>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <span>Any Theme (Fallback)</span>
-                </div>
-              </td>
-
-              <td>
-                <div class="right-align">
-                  <sl-color-picker
-                    id="default-any-theme-color"
-                    label="Select a color"
-                    swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
-                  ></sl-color-picker>
-                </div>
-              </td>
-
-              <td>
-                <div>
-
-                  <span>
-                    Default Color for Any Theme (Fallback)
-                  </span>
-                </div>
-              </td>
-            </tr>
-
-            <tr></tr>
-
-            <tr>
-              <td>
-                <div>
-                  <span>
-                    Logging
-                  </span>
-                </div>
-              </td>
-
-              <td>
-                <div>
-                  <sl-select
-                    id="log-level-select"
-                    size="medium"
-                    placement="bottom"
-                    style="max-width: 150px;"
-                  >
-                    <sl-option value="silent">Silent</sl-option>
-                    <sl-option value="quiet">Quiet</sl-option>
-                    <sl-option value="info">Info</sl-option>
-                    <sl-option value="debug">Debug</sl-option>
-                    <sl-option value="verbose">Verbose</sl-option>
-                    <sl-option value="trace">Trace</sl-option>
-                  </sl-select>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </sl-tab-panel>
-
-      <sl-tab-panel name="icon-packs">
-        <div id="icon-packs-tables"></div>
-      </sl-tab-panel>
-    </sl-tab-group>
-  </sl-drawer>
-
-  <script src="../utils/logger.js"></script>
-  <script src="../db/store.js"></script>
-  <script src="../db/idb-backup-and-restore.js "></script>
-  <script src="scripts/options.js"></script>
-</body>
+    <script src="../utils/logger.js"></script>
+    <script src="../db/store.js"></script>
+    <script src="../db/idb-backup-and-restore.js "></script>
+    <script src="scripts/options.js"></script>
+  </body>
 
 </html>

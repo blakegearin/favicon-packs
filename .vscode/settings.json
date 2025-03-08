@@ -1,0 +1,13 @@
+{
+  "cSpell.words": [
+    "Ionicons"
+  ],
+  "editor.formatOnSave": true,
+  "notebook.defaultFormatter": "standard.vscode-standard",
+  "bookmarks.useWorkaroundForFormatters": true,
+  "files.autoSave": "afterDelay",
+  "editor.tabSize": 2,
+  "html.format.wrapAttributes": "force-expand-multiline",
+  "html.format.indentInnerHtml": true,
+  "html.format.extraLiners": ""
+}

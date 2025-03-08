@@ -1,25 +1,25 @@
-fpLogger.quiet('content.js loaded');
-
-(function () {
+fpLogger.quiet('content.js loaded')
+;(function () {
   const FAVICON_ID = 'favicon-packs-favicon'
   const MAX_RETRIES = 5
-  let isInitializing = false
+
+  let changeTimeout = null
   let currentFaviconHref = null
   let hasInitialized = false
-  let isOurChange = false
-  let changeTimeout = null
+  let isExtensionChange = false
+  let isInitializing = false
 
   function setOurChange (value) {
     fpLogger.debug('setOurChange()')
 
     if (changeTimeout) clearTimeout(changeTimeout)
 
-    isOurChange = value
+    isExtensionChange = value
 
     if (value) {
       changeTimeout = setTimeout(
         () => {
-          isOurChange = false
+          isExtensionChange = false
           changeTimeout = null
         },
         1000 // 1 second
@@ -42,7 +42,7 @@ fpLogger.quiet('content.js loaded');
     ].join(',')
 
     // Remove elements and prevent new insertions
-    const removeAndBlock = (node) => {
+    const removeAndBlock = node => {
       if (node.id !== FAVICON_ID) {
         node.remove()
         // Mark as removed to prevent re-insertion
@@ -122,38 +122,32 @@ fpLogger.quiet('content.js loaded');
     // Randomization to avoid detection (300-500ms)
     const CHECK_INTERVAL = Math.floor(Math.random() * 200) + 300
 
-    const checkInterval = setInterval(
-      () => {
-        const currentFavicon = document.getElementById(FAVICON_ID)
-        const existingFavicons = document.querySelectorAll('link[rel*="icon"]')
-        const style = document.getElementById('favicon-packs-style')
+    const checkInterval = setInterval(() => {
+      const currentFavicon = document.getElementById(FAVICON_ID)
+      const existingFavicons = document.querySelectorAll('link[rel*="icon"]')
+      const style = document.getElementById('favicon-packs-style')
 
-        const needsReplacement =
-          !currentFavicon ||
-          !style ||
-          currentFavicon.href !== currentFaviconHref ||
-          existingFavicons.length > 1 ||
-          !document.head.contains(currentFavicon)
+      const needsReplacement =
+        !currentFavicon ||
+        !style ||
+        currentFavicon.href !== currentFaviconHref ||
+        existingFavicons.length > 1 ||
+        !document.head.contains(currentFavicon)
 
-        if (needsReplacement) {
-          clearInterval(checkInterval)
-          if (retryCount < MAX_RETRIES) {
-            fpLogger.info(`Retry attempt ${retryCount + 1}`)
+      if (needsReplacement) {
+        clearInterval(checkInterval)
+        if (retryCount < MAX_RETRIES) {
+          fpLogger.info(`Retry attempt ${retryCount + 1}`)
 
-            // Add small random delay before retry
-            setTimeout(
-              () => {
-                persistentReplace(imgUrl, retryCount + 1)
-              },
-              Math.random() * 100
-            )
-          } else {
-            fpLogger.info('Max retries reached, giving up')
-          }
+          // Add small random delay before retry
+          setTimeout(() => {
+            persistentReplace(imgUrl, retryCount + 1)
+          }, Math.random() * 100)
+        } else {
+          fpLogger.info('Max retries reached, giving up')
         }
-      },
-      CHECK_INTERVAL
-    )
+      }
+    }, CHECK_INTERVAL)
   }
 
   // Listen for favicon updates from background script
@@ -173,7 +167,9 @@ fpLogger.quiet('content.js loaded');
       }
 
       // Reset retryCount when it's a new page initialization
-      const startingRetryCount = request.resetRetries ? 0 : request.retryCount || 0
+      const startingRetryCount = request.resetRetries
+        ? 0
+        : request.retryCount || 0
       persistentReplace(request.imgUrl, startingRetryCount)
     }
   })
@@ -197,8 +193,8 @@ fpLogger.quiet('content.js loaded');
   function setupFaviconObserver () {
     fpLogger.debug('setupFaviconObserver()')
 
-    const observer = new window.MutationObserver((mutations) => {
-      if (isOurChange) return
+    const observer = new window.MutationObserver(mutations => {
+      if (isExtensionChange) return
 
       let needsReset = false
 
@@ -206,14 +202,23 @@ fpLogger.quiet('content.js loaded');
         // Check for added nodes
         if (mutation.type === 'childList') {
           const addedNodes = Array.from(mutation.addedNodes)
-          needsReset = addedNodes.some(node =>
-            (node.nodeName === 'LINK' && node.rel && node.rel.includes('icon')) ||
-            (node.nodeName === 'META' && node.name && node.name.includes('msapplication'))
-          )
+          needsReset = addedNodes.some(node => {
+            return (
+              (node.nodeName === 'LINK' &&
+                node.rel &&
+                node.rel.includes('icon')) ||
+              (node.nodeName === 'META' &&
+                node.name &&
+                node.name.includes('msapplication'))
+            )
+          })
         }
 
         // Check for attribute changes on our favicon
-        if (mutation.type === 'attributes' && mutation.target.id === FAVICON_ID) {
+        if (
+          mutation.type === 'attributes' &&
+          mutation.target.id === FAVICON_ID
+        ) {
           needsReset = true
         }
       }
@@ -260,10 +265,12 @@ fpLogger.quiet('content.js loaded');
   }
 
   // Watch for theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    fpLogger.info('Theme change detected, resetting...')
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => {
+      fpLogger.info('Theme change detected, resetting...')
 
-    hasInitialized = false
-    initialize()
-  })
+      hasInitialized = false
+      initialize()
+    })
 })()
