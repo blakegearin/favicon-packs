@@ -35,8 +35,9 @@ async function initialize () {
         const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
         fpLogger.debug('siteConfigs', siteConfigs)
 
-        const siteConfigsOrder =
-          await window.extensionStore.getPreference('siteConfigsOrder')
+        const siteConfigsOrder = await window.extensionStore.getPreference(
+          'siteConfigsOrder'
+        )
         fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
         const sortedSiteConfigs = siteConfigsOrder
@@ -96,10 +97,14 @@ async function initialize () {
 
           imgUrl = upload.dataUri
         } else {
-          const darkThemeEnabled = await window.extensionStore.getPreference('darkThemeEnabled')
+          const darkThemeEnabled = await window.extensionStore.getPreference(
+            'darkThemeEnabled'
+          )
           fpLogger.debug('darkThemeEnabled', darkThemeEnabled)
 
-          const lightThemeEnabled = await window.extensionStore.getPreference('lightThemeEnabled')
+          const lightThemeEnabled = await window.extensionStore.getPreference(
+            'lightThemeEnabled'
+          )
           fpLogger.debug('lightThemeEnabled', lightThemeEnabled)
 
           fpLogger.debug('request.colorScheme', request.colorScheme)

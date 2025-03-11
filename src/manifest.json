@@ -1,12 +1,17 @@
 {
   "manifest_version": 2,
   "name": "Favicon Packs",
-  "version": "0.0.1",
+  "short_name": "FaviconPacks",
+  "version": "0.1.0",
   "description": "Apply icon packs as favicons",
+  "author": "Blake Gearin",
   "homepage_url": "https://github.com/blakegearin/favicon-packs",
   "icons": {
+    "16": "img/logo.svg",
+    "32": "img/logo.svg",
     "48": "img/logo.svg",
-    "96": "img/logo.svg"
+    "96": "img/logo.svg",
+    "128": "img/logo.svg"
   },
   "permissions": [
     "activeTab",
@@ -14,7 +19,10 @@
     "storage",
     "<all_urls>"
   ],
-  "options_page": "options/index.html",
+  "options_ui": {
+    "page": "options/index.html",
+    "open_in_tab": true
+  },
   "background": {
     "scripts": [
       "utils/logger.js",

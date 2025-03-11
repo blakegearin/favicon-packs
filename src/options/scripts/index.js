@@ -282,10 +282,10 @@ async function populateDrawerUploads () {
       Uploaded: ${formattedDateTime}`
 
       if (usageCount) {
-        const rowText = usageCount === 1 ? 'row' : 'rows'
+        const plural = usageCount === 1 ? '' : 's'
         confirmationText += `
 
-        It's used by ${usageCount} ${rowText} as their icon, which will be impacted.`
+        It's used by ${usageCount} site configuration${plural} which will be impacted.`
       }
 
       showDeleteConfirmationDialog(async () => {
@@ -1464,7 +1464,9 @@ async function applyPreferences () {
           window.extensionStore.checkAnyThemeEnabled()
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         apply(existingValue)
 
         const inputElement = document.querySelector(inputId)
@@ -1472,7 +1474,10 @@ async function applyPreferences () {
 
         inputElement.addEventListener('sl-change', event => {
           const isEnabled = event.target.checked
-          window.extensionStore.updatePreference(storageKey, isEnabled.toString())
+          window.extensionStore.updatePreference(
+            storageKey,
+            isEnabled.toString()
+          )
           apply(isEnabled)
         })
       }
@@ -1498,7 +1503,9 @@ async function applyPreferences () {
           window.extensionStore.checkAnyThemeEnabled()
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         apply(existingValue)
 
         const inputElement = document.querySelector(inputId)
@@ -1506,7 +1513,10 @@ async function applyPreferences () {
 
         inputElement.addEventListener('sl-change', event => {
           const isEnabled = event.target.checked
-          window.extensionStore.updatePreference(storageKey, isEnabled.toString())
+          window.extensionStore.updatePreference(
+            storageKey,
+            isEnabled.toString()
+          )
           apply(isEnabled)
         })
       }
@@ -1526,7 +1536,9 @@ async function applyPreferences () {
           if (inputElement) inputElement.value = value
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         apply(existingValue || defaultValue)
 
         const inputElement = document.querySelector(inputId)
@@ -1555,7 +1567,9 @@ async function applyPreferences () {
           if (inputElement) inputElement.value = value
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         apply(existingValue || defaultValue)
 
         const inputElement = document.querySelector(inputId)
@@ -1584,7 +1598,9 @@ async function applyPreferences () {
           if (inputElement) inputElement.value = value
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         apply(existingValue || defaultValue)
 
         const inputElement = document.querySelector(inputId)
@@ -1609,7 +1625,9 @@ async function applyPreferences () {
           await window.extensionStore.updatePreference(storageKey, value)
         }
 
-        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
         const currentValue = existingValue || defaultValue
         apply(currentValue)
 
@@ -2008,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (deleteCount > 2) {
         showDeleteConfirmationDialog(
           () => deleteSiteConfigRows(rowsChecked, ids),
-          `Are you sure you want to delete ${deleteCount} rows?`
+          `Are you sure you want to delete ${deleteCount} site configurations?`
         )
       } else {
         await deleteSiteConfigRows(rowsChecked, ids)
