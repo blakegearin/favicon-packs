@@ -14,12 +14,12 @@
     "storage",
     "<all_urls>"
   ],
-  "options_page": "src/options/options.html",
+  "options_page": "options/index.html",
   "background": {
     "scripts": [
-      "src/utils/logger.js",
-      "src/db/store.js",
-      "src/background.js"
+      "utils/logger.js",
+      "db/store.js",
+      "background.js"
     ],
     "persistent": false
   },
@@ -31,8 +31,8 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "src/utils/logger.js",
-        "src/content.js"
+        "utils/logger.js",
+        "content.js"
       ],
       "run_at": "document_idle"
     }

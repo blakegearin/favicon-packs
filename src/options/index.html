@@ -513,7 +513,7 @@
               class="center"
               colspan="9"
             >
-              No data
+              No site configurations
             </td>
           </tr>
         </tbody>
@@ -545,13 +545,29 @@
             Import
           </sl-button>
 
-          <sl-button
-            id="export-action-button"
-            variant="neutral"
-            outline
+          <sl-dropdown
+            id="export-dropdown"
+            checked
           >
-            Export
-          </sl-button>
+            <sl-button
+              slot="trigger"
+              variant="neutral"
+              caret
+              outline
+            >
+              Export
+            </sl-button>
+
+            <sl-menu>
+              <sl-menu-item class="right-align" value="site-configs">
+                Site configurations
+              </sl-menu-item>
+
+              <sl-menu-item class="right-align" value="site-configs-and-settings">
+                Site configurations & settings
+              </sl-menu-item>
+            </sl-menu>
+          </sl-dropdown>
         </div>
       </div>
     </div>
@@ -917,9 +933,9 @@
       <sl-tab-group>
         <sl-tab
           slot="nav"
-          panel="general"
+          panel="preferences"
         >
-          General
+          Preferences
         </sl-tab>
 
         <sl-tab
@@ -929,7 +945,7 @@
           Icon Packs
         </sl-tab>
 
-        <sl-tab-panel name="general">
+        <sl-tab-panel name="preferences">
           <table id="tableSettings">
             <thead>
               <tr>
@@ -1115,7 +1131,7 @@
     <script src="../utils/logger.js"></script>
     <script src="../db/store.js"></script>
     <script src="../db/idb-backup-and-restore.js "></script>
-    <script src="scripts/options.js"></script>
+    <script src="scripts/index.js"></script>
   </body>
 
 </html>

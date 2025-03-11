@@ -5,7 +5,7 @@
       "fpLogger"
     ],
     "ignore": [
-      "src/db/idb-backup-and-restore.js"
+      "db/idb-backup-and-restore.js"
     ]
   }
 }

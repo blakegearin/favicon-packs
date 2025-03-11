@@ -1,9 +1,4 @@
-fpLogger.quiet('background.js laoded')
-
-function getSiteConfigsOrder () {
-  fpLogger.debug('getSiteConfigsOrder()')
-  return JSON.parse(window.localStorage.getItem('siteConfigsOrder')) || []
-}
+fpLogger.quiet('background.js loaded')
 
 async function initialize () {
   fpLogger.debug('initialize()')
@@ -12,7 +7,7 @@ async function initialize () {
 
   browser.browserAction.onClicked.addListener(() => {
     browser.tabs.create({
-      url: browser.runtime.getURL('src/options/options.html')
+      url: browser.runtime.getURL('options/index.html')
     })
   })
 
@@ -40,7 +35,8 @@ async function initialize () {
         const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
         fpLogger.debug('siteConfigs', siteConfigs)
 
-        const siteConfigsOrder = getSiteConfigsOrder()
+        const siteConfigsOrder =
+          await window.extensionStore.getPreference('siteConfigsOrder')
         fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
         const sortedSiteConfigs = siteConfigsOrder
@@ -100,14 +96,10 @@ async function initialize () {
 
           imgUrl = upload.dataUri
         } else {
-          const settingsMetadata = window.extensionStore.getSettingsMetadata()
-          fpLogger.debug('settingsMetadata', settingsMetadata)
-
-          const darkThemeEnabled = settingsMetadata.darkThemeEnabled.getValue()
+          const darkThemeEnabled = await window.extensionStore.getPreference('darkThemeEnabled')
           fpLogger.debug('darkThemeEnabled', darkThemeEnabled)
 
-          const lightThemeEnabled =
-            settingsMetadata.lightThemeEnabled.getValue()
+          const lightThemeEnabled = await window.extensionStore.getPreference('lightThemeEnabled')
           fpLogger.debug('lightThemeEnabled', lightThemeEnabled)
 
           fpLogger.debug('request.colorScheme', request.colorScheme)

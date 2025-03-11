@@ -1,4 +1,4 @@
-fpLogger.quiet('options.js loaded')
+fpLogger.info('options.js loaded')
 
 let ICON_SELECTOR_DRAWER
 
@@ -369,28 +369,12 @@ async function populateDrawerUploads () {
   uploadList.replaceChildren(uploadListFragment)
 }
 
-function updatePriorityOrder (siteConfigsOrder) {
-  fpLogger.verbose('updatePriorityOrder()')
-
-  return window.localStorage.setItem(
-    'siteConfigsOrder',
-    JSON.stringify(siteConfigsOrder)
-  )
-}
-
-function getSiteConfigsOrder () {
-  fpLogger.trace('getSiteConfigsOrder()')
-
-  let rawSiteConfigsOrder = window.localStorage.getItem('siteConfigsOrder')
-  if (['undefined', 'null', ''].includes(rawSiteConfigsOrder)) rawSiteConfigsOrder = '[]'
-
-  return JSON.parse(rawSiteConfigsOrder)
-}
-
-function getPriority (id) {
+async function getPriority (id) {
   fpLogger.debug('getPriority()')
 
-  const siteConfigsOrder = getSiteConfigsOrder()
+  const siteConfigsOrder = await window.extensionStore.getPreference(
+    'siteConfigsOrder'
+  )
   return siteConfigsOrder.indexOf(id)
 }
 
@@ -485,7 +469,7 @@ async function updateSiteConfig ({
   anyThemeColor,
   active
 }) {
-  fpLogger.silent('updateSiteConfig()')
+  fpLogger.debug('updateSiteConfig()')
 
   const existingSiteConfig = await window.extensionStore.getSiteConfigById(id)
 
@@ -573,7 +557,10 @@ function updateRecordsSummary (siteConfigs) {
 async function swapPriorities (record1Id, direction) {
   fpLogger.debug('swapPriorities()')
 
-  const siteConfigsOrder = getSiteConfigsOrder()
+  const siteConfigsOrder = await window.extensionStore.getPreference(
+    'siteConfigsOrder'
+  )
+  fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
   const currentIndex = siteConfigsOrder.indexOf(record1Id)
 
   if (
@@ -593,9 +580,11 @@ async function swapPriorities (record1Id, direction) {
     siteConfigsOrder[targetIndex],
     siteConfigsOrder[currentIndex]
   ]
-  window.localStorage.setItem(
+
+  fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+  await window.extensionStore.updatePreference(
     'siteConfigsOrder',
-    JSON.stringify(siteConfigsOrder)
+    siteConfigsOrder
   )
 
   const tr1 = document.querySelector(`#row-${record1Id}`)
@@ -657,7 +646,7 @@ async function populateTableRow (siteConfig, insertion) {
   const incrementButton = newRow.querySelector('.increment')
   const decrementButton = newRow.querySelector('.decrement')
 
-  const priority = getPriority(id)
+  const priority = await getPriority(id)
   await setPriorityButtonVisibility(newRow, priority)
 
   incrementButton.addEventListener('click', async () => {
@@ -679,10 +668,10 @@ async function populateTableRow (siteConfig, insertion) {
 
   const toggleTypeButton = newRow.querySelector('.toggle-type')
   toggleTypeButton.addEventListener('click', () => {
-    fpLogger.silent('Toggle type button clicked')
+    fpLogger.debug('Toggle type button clicked')
 
     const patternType = 1 - siteConfig.patternType // Fun way to toggle between 0 and 1
-    fpLogger.silent('patternType', patternType)
+    fpLogger.verbose('patternType', patternType)
 
     updateSiteConfig({ id, patternType })
   })
@@ -802,15 +791,20 @@ async function populateTableRow (siteConfig, insertion) {
       anyThemeFavicon.classList.remove('display-none')
     }
 
-    const settingsMetadata = window.extensionStore.getSettingsMetadata()
-    const anyThemeDisplayElement = newRow.querySelector(
-      '.favicon-value.any-theme-display'
+    const darkThemeEnabled = await window.extensionStore.getPreference(
+      'darkThemeEnabled'
     )
+    fpLogger.debug('darkThemeEnabled', darkThemeEnabled)
 
-    if (
-      !settingsMetadata.lightThemeEnabled.getValue() &&
-      !settingsMetadata.darkThemeEnabled.getValue()
-    ) {
+    const lightThemeEnabled = await window.extensionStore.getPreference(
+      'lightThemeEnabled'
+    )
+    fpLogger.debug('lightThemeEnabled', lightThemeEnabled)
+
+    if (!darkThemeEnabled && !lightThemeEnabled) {
+      const anyThemeDisplayElement = newRow.querySelector(
+        '.favicon-value.any-theme-display'
+      )
       anyThemeDisplayElement.classList.remove('display-none')
     }
 
@@ -818,16 +812,16 @@ async function populateTableRow (siteConfig, insertion) {
       .querySelector('.favicon-value.image-display')
       .classList.add('display-none')
   } else if (siteConfig.uploadId) {
-    fpLogger.quiet('siteConfig.uploadId', siteConfig.uploadId)
+    fpLogger.debug('siteConfig.uploadId', siteConfig.uploadId)
 
     const upload = await window.extensionStore.getUploadById(
       siteConfig.uploadId
     )
-    fpLogger.quiet('upload', upload)
+    fpLogger.debug('upload', upload)
 
     const imageElement = buildUploadImg(upload)
 
-    newRow.querySelectorAll('.icon-value').forEach(iconValueElement => {
+    newRow.querySelectorAll('#icon-value').forEach(iconValueElement => {
       iconValueElement.replaceChildren(imageElement.cloneNode(true))
     })
 
@@ -1037,16 +1031,16 @@ async function populateTableRow (siteConfig, insertion) {
 }
 
 async function populateTable (siteConfigs) {
-  fpLogger.silent('populateTable()')
-  fpLogger.silent('siteConfigs', siteConfigs)
+  fpLogger.debug('populateTable()')
+  fpLogger.debug('siteConfigs', siteConfigs)
 
   const tableBody = document.querySelector('#siteConfigs tbody')
   tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove())
 
-  let siteConfigsOrder = getSiteConfigsOrder()
-  fpLogger.silent('siteConfigsOrder', siteConfigsOrder)
-
-  // debugger
+  const siteConfigsOrder = await window.extensionStore.getPreference(
+    'siteConfigsOrder'
+  )
+  fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
   // Remove any siteConfigs that no longer exist
   if (siteConfigsOrder.length > siteConfigs.length) {
@@ -1054,7 +1048,10 @@ async function populateTable (siteConfigs) {
       .filter(siteConfig => siteConfigsOrder.includes(siteConfig.id))
       .map(siteConfig => siteConfig.id)
 
-    updatePriorityOrder(siteConfigsOrder)
+    await window.extensionStore.updatePreference(
+      'siteConfigsOrder',
+      siteConfigsOrder
+    )
   }
 
   fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
@@ -1442,14 +1439,230 @@ async function populateIconPackVariantSelector () {
   }
 }
 
+async function applyPreferences () {
+  fpLogger.debug('getPreferenceMetadata()')
+
+  const preferenceMetadata = {
+    lightThemeEnabled: {
+      initialize: async () => {
+        const storageKey = 'lightThemeEnabled'
+        const inputId = '#light-theme-switch'
+        const cssVariable = '--light-theme-display'
+
+        const apply = async value => {
+          const isEnabled = value.toString() === 'true'
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+
+          const inputElement = document.querySelector(inputId)
+          if (inputElement) inputElement.checked = isEnabled
+
+          document.documentElement.style.setProperty(
+            cssVariable,
+            isEnabled ? 'table-cell' : 'none'
+          )
+
+          window.extensionStore.checkAnyThemeEnabled()
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        apply(existingValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.addEventListener('sl-change', event => {
+          const isEnabled = event.target.checked
+          window.extensionStore.updatePreference(storageKey, isEnabled.toString())
+          apply(isEnabled)
+        })
+      }
+    },
+    darkThemeEnabled: {
+      initialize: async () => {
+        const storageKey = 'darkThemeEnabled'
+        const inputId = '#dark-theme-switch'
+        const cssVariable = '--dark-theme-display'
+
+        const apply = async value => {
+          const isEnabled = value.toString() === 'true'
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+
+          const inputElement = document.querySelector(inputId)
+          if (inputElement) inputElement.checked = isEnabled
+
+          document.documentElement.style.setProperty(
+            cssVariable,
+            isEnabled ? 'table-cell' : 'none'
+          )
+
+          window.extensionStore.checkAnyThemeEnabled()
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        apply(existingValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.addEventListener('sl-change', event => {
+          const isEnabled = event.target.checked
+          window.extensionStore.updatePreference(storageKey, isEnabled.toString())
+          apply(isEnabled)
+        })
+      }
+    },
+    lightThemeDefaultColor: {
+      initialize: async () => {
+        const storageKey = 'lightThemeDefaultColor'
+        const inputId = '#default-light-theme-color'
+        const defaultValue = '#333333'
+
+        const apply = async value => {
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+
+          await window.extensionStore.updatePreference(storageKey, value)
+
+          const inputElement = document.querySelector(inputId)
+          if (inputElement) inputElement.value = value
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        apply(existingValue || defaultValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.addEventListener('sl-blur', event => {
+          event.target.updateComplete.then(() => {
+            const color = event.target.input.value
+            apply(color)
+          })
+        })
+      }
+    },
+    darkThemeDefaultColor: {
+      initialize: async () => {
+        const storageKey = 'darkThemeDefaultColor'
+        const inputId = '#default-dark-theme-color'
+        const defaultValue = '#cccccc'
+
+        const apply = async value => {
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+
+          await window.extensionStore.updatePreference(storageKey, value)
+
+          const inputElement = document.querySelector(inputId)
+          if (inputElement) inputElement.value = value
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        apply(existingValue || defaultValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.addEventListener('sl-blur', event => {
+          event.target.updateComplete.then(() => {
+            const color = event.target.input.value
+            apply(color)
+          })
+        })
+      }
+    },
+    anyThemeDefaultColor: {
+      initialize: async () => {
+        const storageKey = 'anyThemeDefaultColor'
+        const inputId = '#default-any-theme-color'
+        const defaultValue = '#808080'
+
+        const apply = async value => {
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+
+          await window.extensionStore.updatePreference(storageKey, value)
+
+          const inputElement = document.querySelector(inputId)
+          if (inputElement) inputElement.value = value
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        apply(existingValue || defaultValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.addEventListener('sl-blur', event => {
+          event.target.updateComplete.then(() => {
+            const color = event.target.input.value
+            apply(color)
+          })
+        })
+      }
+    },
+    importPriority: {
+      initialize: async () => {
+        const storageKey = 'importPriority'
+        const inputId = '#import-priority-select'
+        const defaultValue = 'lowest-priority'
+
+        const apply = async value => {
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+          await window.extensionStore.updatePreference(storageKey, value)
+        }
+
+        const existingValue = await window.extensionStore.getPreference(storageKey)
+        const currentValue = existingValue || defaultValue
+        apply(currentValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.value = currentValue
+
+        inputElement.addEventListener('sl-change', event => {
+          event.target.updateComplete.then(async () => {
+            apply(event.target.value)
+          })
+        })
+      }
+    },
+    logLevel: {
+      initialize: () => {
+        const storageKey = fpLogger.storageKey
+        const inputId = '#log-level-select'
+
+        const apply = value => {
+          fpLogger.quiet(`Setting ${storageKey} to ${value}`)
+          fpLogger.setLogLevel(value)
+        }
+
+        const existingValue = fpLogger.getLogLevelName()
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.value = existingValue
+
+        inputElement.addEventListener('sl-change', event => {
+          event.target.updateComplete.then(async () => {
+            fpLogger.quiet('Updating log level', event.target.value)
+            apply(event.target.value)
+          })
+        })
+      }
+    }
+  }
+
+  for await (const [name, preference] of Object.entries(preferenceMetadata)) {
+    fpLogger.verbose('name', name)
+    await preference.initialize()
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
   fpLogger.trace('DOMContentLoaded')
   await window.extensionStore.initialize()
 
-  const settingsMetadata = window.extensionStore.getSettingsMetadata()
-  for (const setting of Object.values(settingsMetadata)) {
-    setting.initialize()
-  }
+  await applyPreferences()
 
   // Icon selector drawer
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector')
@@ -1613,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     })
 
   const siteConfigs = await window.extensionStore.getSiteConfigs()
-  fpLogger.silent('siteConfigs', siteConfigs)
+  fpLogger.debug('siteConfigs', siteConfigs)
 
   await populateTable(siteConfigs)
   updateRecordsSummary(siteConfigs)
@@ -1711,23 +1924,30 @@ document.addEventListener('DOMContentLoaded', async function () {
   createDropdown.addEventListener('sl-select', async event => {
     fpLogger.info('Create button clicked')
 
-    const settingsMetadata = window.extensionStore.getSettingsMetadata()
-    const defaultLightThemeColor =
-      settingsMetadata.lightThemeDefaultColor.getValue()
-    const defaultDarkThemeColor =
-      settingsMetadata.darkThemeDefaultColor.getValue()
-    const defaultNoThemeColor = settingsMetadata.anyThemeDefaultColor.getValue()
+    const lightThemeDefaultColor = await window.extensionStore.getPreference(
+      'lightThemeDefaultColor'
+    )
+    const darkThemeDefaultColor = await window.extensionStore.getPreference(
+      'darkThemeDefaultColor'
+    )
+    const anyThemeDefaultColor = await window.extensionStore.getPreference(
+      'anyThemeDefaultColor'
+    )
 
     const siteConfig = await window.extensionStore.addSiteConfig({
       patternType: 0, // Default to "Simple Match"
       active: 1, // Default to active
-      lightThemeColor: defaultLightThemeColor,
-      darkThemeColor: defaultDarkThemeColor,
-      anyThemeColor: defaultNoThemeColor
+      lightThemeColor: lightThemeDefaultColor,
+      darkThemeColor: darkThemeDefaultColor,
+      anyThemeColor: anyThemeDefaultColor
     })
 
     const priority = event.detail.item.value
-    const siteConfigsOrder = getSiteConfigsOrder()
+
+    const siteConfigsOrder = await window.extensionStore.getPreference(
+      'siteConfigsOrder'
+    )
+    fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
     if (priority === 'highest-priority') {
       siteConfigsOrder.unshift(siteConfig.id)
@@ -1735,7 +1955,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       siteConfigsOrder.push(siteConfig.id)
     }
 
-    updatePriorityOrder(siteConfigsOrder)
+    await window.extensionStore.updatePreference(
+      'siteConfigsOrder',
+      siteConfigsOrder
+    )
 
     const siteConfigs = await window.extensionStore.getSiteConfigs()
     await populateTable(siteConfigs)
@@ -1755,8 +1978,15 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   async function deleteSiteConfigRows (rows, ids) {
-    const siteConfigsOrder = getSiteConfigsOrder()
-    updatePriorityOrder(siteConfigsOrder.filter(id => !ids.includes(id)))
+    const siteConfigsOrder = await window.extensionStore.getPreference(
+      'siteConfigsOrder'
+    )
+    fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+
+    await window.extensionStore.updatePreference(
+      'siteConfigsOrder',
+      siteConfigsOrder.filter(id => !ids.includes(id))
+    )
 
     await window.extensionStore.deleteSiteConfigs(ids)
     rows.forEach(row => row.remove())
@@ -1826,11 +2056,18 @@ document.addEventListener('DOMContentLoaded', async function () {
       const newSiteConfig = await window.extensionStore.addSiteConfig(
         siteConfig
       )
-      const siteConfigsOrder = getSiteConfigsOrder()
 
-      const siteConfigsOrderPriority = getPriority(id)
+      const siteConfigsOrder = await window.extensionStore.getPreference(
+        'siteConfigsOrder'
+      )
+      fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+
+      const siteConfigsOrderPriority = await getPriority(id)
       siteConfigsOrder.splice(siteConfigsOrderPriority + 1, 0, newSiteConfig.id)
-      updatePriorityOrder(siteConfigsOrder)
+      await window.extensionStore.updatePreference(
+        'siteConfigsOrder',
+        siteConfigsOrder
+      )
 
       const row = rowsChecked[0]
       row.querySelector('.active-cell sl-switch[checked]')?.click()
@@ -1847,7 +2084,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     .addEventListener('click', async event => {
       event.preventDefault()
 
-      fpLogger.silent('Import button clicked')
+      fpLogger.debug('Import button clicked')
 
       const inputElement = document.querySelector('#import-file-input')
 
@@ -1856,8 +2093,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       inputElement.parentNode.replaceChild(newInputElement, inputElement)
 
       newInputElement.addEventListener('change', async () => {
-        fpLogger.silent(
-          'inputElement.files.length',
+        fpLogger.debug(
+          'newInputElement.files.length',
           newInputElement.files.length
         )
 
@@ -1884,17 +2121,21 @@ document.addEventListener('DOMContentLoaded', async function () {
         fpLogger.verbose('idbDatabase', idbDatabase)
 
         const imports = await window.importFromJson(idbDatabase, responseString)
-        fpLogger.quiet('imports', imports)
+        fpLogger.debug('imports', imports)
 
-        const siteConfigsOrder = getSiteConfigsOrder()
+        const siteConfigsOrder = await window.extensionStore.getPreference(
+          'siteConfigsOrder'
+        )
+        fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
         const importedIds = imports?.imported?.siteConfigs?.ids || []
 
-        const settingsMetadata = window.extensionStore.getSettingsMetadata()
-        const importPriority = settingsMetadata.importPriority.getValue()
-        fpLogger.silent('importPriority', importPriority)
+        const importPriority = await window.extensionStore.getPreference(
+          'importPriority'
+        )
+        fpLogger.debug('importPriority', importPriority)
 
-        let newSiteConfigsOrder;
+        let newSiteConfigsOrder
 
         if (importPriority === 'highest-priority') {
           newSiteConfigsOrder = importedIds.concat(siteConfigsOrder)
@@ -1902,15 +2143,18 @@ document.addEventListener('DOMContentLoaded', async function () {
           newSiteConfigsOrder = siteConfigsOrder.concat(importedIds)
         }
 
-        fpLogger.silent('newSiteConfigsOrder', newSiteConfigsOrder)
-
-        updatePriorityOrder(newSiteConfigsOrder)
+        fpLogger.debug('newSiteConfigsOrder', newSiteConfigsOrder)
+        await window.extensionStore.updatePreference(
+          'siteConfigsOrder',
+          newSiteConfigsOrder
+        )
 
         const siteConfigs = await window.extensionStore.getSiteConfigs()
-        fpLogger.silent('siteConfigs', siteConfigs)
+        fpLogger.debug('siteConfigs', siteConfigs)
 
         await populateTable(siteConfigs)
         updateRecordsSummary(siteConfigs)
+        applyPreferences()
 
         // Clear the file input
         newInputElement.value = ''
@@ -1919,38 +2163,44 @@ document.addEventListener('DOMContentLoaded', async function () {
       newInputElement.click()
     })
 
-  document
-    .querySelector('#export-action-button')
-    .addEventListener('click', async () => {
-      fpLogger.debug('Export button clicked')
+  const exportDropdown = document.querySelector('#export-dropdown')
+  exportDropdown.addEventListener('sl-select', async event => {
+    fpLogger.info('Export button clicked')
 
-      const idbDatabase = window.extensionStore.getDatabase()
-      window
-        .exportToJson(idbDatabase, ['icons'])
-        .then(jsonString => {
-          fpLogger.verbose('jsonString', jsonString)
+    const exportType = event.detail.item.value
+    fpLogger.debug('exportType', exportType)
 
-          const blob = new Blob([jsonString], { type: 'application/json' })
-          const url = URL.createObjectURL(blob)
+    const excludeStores = ['icons']
+    if (exportType === 'site-configs') excludeStores.push('preferences')
+    fpLogger.debug('excludeStores', excludeStores)
 
-          const downloadLink = document.createElement('a')
-          downloadLink.href = url
-          const formattedExtensionName = fpLogger.extensionName.replaceAll(
-            ' ',
-            '-'
-          )
-          downloadLink.download = `${formattedExtensionName}-export-${Date.now()}.json`
+    const idbDatabase = window.extensionStore.getDatabase()
+    window
+      .exportToJson(idbDatabase, excludeStores)
+      .then(jsonString => {
+        fpLogger.verbose('jsonString', jsonString)
 
-          document.body.appendChild(downloadLink)
-          downloadLink.click()
-          document.body.removeChild(downloadLink)
+        const blob = new Blob([jsonString], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
 
-          setTimeout(() => URL.revokeObjectURL(url), 100)
-        })
-        .catch(error => {
-          fpLogger.error('Failed to export data', error)
-        })
-    })
+        const downloadLink = document.createElement('a')
+        downloadLink.href = url
+        const formattedExtensionName = fpLogger.extensionName.replaceAll(
+          ' ',
+          '-'
+        )
+        downloadLink.download = `${formattedExtensionName}-export-${Date.now()}.json`
+
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
+
+        setTimeout(() => URL.revokeObjectURL(url), 100)
+      })
+      .catch(error => {
+        fpLogger.error('Failed to export data', error)
+      })
+  })
 
   const settingsDialog = document.querySelector('#settings-dialog')
   document

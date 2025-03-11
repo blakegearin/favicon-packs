@@ -1,4 +1,4 @@
-fpLogger.quiet('content.js loaded')
+fpLogger.info('content.js loaded')
 ;(function () {
   const FAVICON_ID = 'favicon-packs-favicon'
   const MAX_RETRIES = 5

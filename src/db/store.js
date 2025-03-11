@@ -4,6 +4,7 @@ const DB_NAME = 'faviconPacksData'
 const DB_VERSION = 1
 const STORES = {
   icons: 'icons',
+  preferences: 'preferences',
   siteConfigs: 'siteConfigs',
   uploads: 'uploads'
 }
@@ -85,6 +86,29 @@ class ExtensionStore {
 
         if (!existingStoreNames.includes(STORES.uploads)) {
           database.createObjectStore(STORES.uploads, { keyPath: 'id' })
+        }
+
+        if (!existingStoreNames.includes(STORES.preferences)) {
+          const preferencesStore = database.createObjectStore(
+            STORES.preferences,
+            { keyPath: 'key' }
+          )
+
+          // Initialize default preferences
+          const defaultPreferences = [
+            { key: 'siteConfigsOrder', value: [] },
+            { key: 'lightThemeEnabled', value: true },
+            { key: 'darkThemeEnabled', value: true },
+            { key: 'lightThemeDefaultColor', value: '#333333' },
+            { key: 'darkThemeDefaultColor', value: '#cccccc' },
+            { key: 'anyThemeDefaultColor', value: '#808080' },
+            { key: 'importPriority', value: 'lowest-priority' }
+          ]
+
+          // Add all default preferences to the store
+          for (const preference of defaultPreferences) {
+            preferencesStore.add(preference)
+          }
         }
 
         resolve()
@@ -507,260 +531,6 @@ class ExtensionStore {
     if (toggleElement) toggleElement.checked = anyThemeEnabled
   }
 
-  getSettingsMetadata () {
-    fpLogger.debug('getSettingsMetadata()')
-
-    return {
-      lightThemeEnabled: {
-        getValue: () => {
-          const storageKey = 'lightThemeEnabled'
-          const existingValue = window.localStorage.getItem(storageKey)
-          return existingValue?.toString() === 'true'
-        },
-        initialize: () => {
-          const storageKey = 'lightThemeEnabled'
-          const inputId = '#light-theme-switch'
-          const cssVariable = '--light-theme-display'
-          const defaultValue = true
-
-          const apply = value => {
-            const isEnabled = value.toString() === 'true'
-            fpLogger.debug(`Setting ${storageKey} to ${value}`)
-
-            window.localStorage.setItem(storageKey, isEnabled)
-
-            const inputElement = document.querySelector(inputId)
-            if (inputElement) inputElement.checked = isEnabled
-
-            document.documentElement.style.setProperty(
-              cssVariable,
-              isEnabled ? 'table-cell' : 'none'
-            )
-
-            this.checkAnyThemeEnabled()
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          apply(existingValue || defaultValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.addEventListener('sl-change', event => {
-            const isEnabled = event.target.checked
-            apply(isEnabled)
-          })
-        }
-      },
-      darkThemeEnabled: {
-        getValue: () => {
-          const storageKey = 'darkThemeEnabled'
-          const existingValue = window.localStorage.getItem(storageKey)
-          return existingValue?.toString() === 'true'
-        },
-        initialize: () => {
-          const storageKey = 'darkThemeEnabled'
-          const inputId = '#dark-theme-switch'
-          const cssVariable = '--dark-theme-display'
-          const defaultValue = true
-
-          const apply = value => {
-            const isEnabled = value.toString() === 'true'
-            fpLogger.debug(`Setting ${storageKey} to ${value}`)
-
-            window.localStorage.setItem(storageKey, isEnabled)
-
-            const inputElement = document.querySelector(inputId)
-            if (inputElement) inputElement.checked = isEnabled
-
-            document.documentElement.style.setProperty(
-              cssVariable,
-              isEnabled ? 'table-cell' : 'none'
-            )
-
-            this.checkAnyThemeEnabled()
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          apply(existingValue || defaultValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.addEventListener('sl-change', event => {
-            const isEnabled = event.target.checked
-            apply(isEnabled)
-          })
-        }
-      },
-      lightThemeDefaultColor: {
-        getValue: () => {
-          const storageKey = 'lightThemeDefaultColor'
-          return window.localStorage.getItem(storageKey)
-        },
-        initialize: () => {
-          const storageKey = 'lightThemeDefaultColor'
-          const inputId = '#default-light-theme-color'
-          const defaultValue = '#333333'
-
-          const apply = value => {
-            fpLogger.debug(`Setting ${storageKey} to ${value}`)
-
-            window.localStorage.setItem(storageKey, value)
-
-            const inputElement = document.querySelector(inputId)
-            if (inputElement) inputElement.value = value
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          apply(existingValue || defaultValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.addEventListener('sl-blur', event => {
-            event.target.updateComplete.then(() => {
-              const color = event.target.input.value
-              apply(color)
-            })
-          })
-        }
-      },
-      darkThemeDefaultColor: {
-        getValue: () => {
-          const storageKey = 'darkThemeDefaultColor'
-          return window.localStorage.getItem(storageKey)
-        },
-        initialize: () => {
-          const storageKey = 'darkThemeDefaultColor'
-          const inputId = '#default-dark-theme-color'
-          const defaultValue = '#cccccc'
-
-          const apply = value => {
-            fpLogger.debug(`Setting ${storageKey} to ${value}`)
-
-            window.localStorage.setItem(storageKey, value)
-
-            const inputElement = document.querySelector(inputId)
-            if (inputElement) inputElement.value = value
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          apply(existingValue || defaultValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.addEventListener('sl-blur', event => {
-            event.target.updateComplete.then(() => {
-              const color = event.target.input.value
-              apply(color)
-            })
-          })
-        }
-      },
-      anyThemeDefaultColor: {
-        getValue: () => {
-          const storageKey = 'anyThemeDefaultColor'
-          return window.localStorage.getItem(storageKey)
-        },
-        initialize: () => {
-          const storageKey = 'anyThemeDefaultColor'
-          const inputId = '#default-any-theme-color'
-          const defaultValue = '#808080'
-
-          const apply = value => {
-            fpLogger.debug(`Setting ${storageKey} to ${value}`)
-
-            window.localStorage.setItem(storageKey, value)
-
-            const inputElement = document.querySelector(inputId)
-            if (inputElement) inputElement.value = value
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          apply(existingValue || defaultValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.addEventListener('sl-blur', event => {
-            event.target.updateComplete.then(() => {
-              const color = event.target.input.value
-              apply(color)
-            })
-          })
-        }
-      },
-      importPriority: {
-        getValue: () => {
-          const storageKey = 'importPrioritySelect'
-          return window.localStorage.getItem(storageKey)
-        },
-        initialize: () => {
-          const storageKey = 'importPrioritySelect'
-          const inputId = '#import-priority-select'
-          const defaultValue = 'lowest-priority'
-
-          const apply = value => {
-            fpLogger.quiet(`Setting ${storageKey} to ${value}`)
-            window.localStorage.setItem(storageKey, value)
-          }
-
-          const existingValue = window.localStorage.getItem(storageKey)
-          const currentValue = existingValue || defaultValue
-          apply(currentValue)
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.value = currentValue
-
-          inputElement.addEventListener('sl-change', event => {
-            event.target.updateComplete.then(async () => {
-              apply(event.target.value)
-            })
-          })
-        }
-      },
-      logLevel: {
-        initialize: () => {
-          const storageKey = fpLogger.storageKey
-          const inputId = '#log-level-select'
-
-          const apply = value => {
-            fpLogger.quiet(`Setting ${storageKey} to ${value}`)
-            fpLogger.setLogLevel(value)
-          }
-
-          const existingValue = fpLogger.getLogLevelName()
-
-          const inputElement = document.querySelector(inputId)
-          if (!inputElement) return
-
-          inputElement.value = existingValue
-
-          inputElement.addEventListener('sl-change', event => {
-            event.target.updateComplete.then(async () => {
-              fpLogger.quiet('Updating log level', event.target.value)
-              apply(event.target.value)
-            })
-          })
-        }
-      }
-    }
-  }
-
-  getSetting (storageKey) {
-    fpLogger.trace('getSetting()')
-    return this.getSettingsMetadata()[storageKey]
-  }
-
-  getSettingValue (storageKey) {
-    fpLogger.trace('getSettingValue()')
-    return this.getSetting(storageKey).getValue()
-  }
-
   // Methods for siteConfigs
   async addSiteConfig (siteConfig) {
     fpLogger.debug('addSiteConfig()')
@@ -891,6 +661,25 @@ class ExtensionStore {
   async deleteUploads (ids) {
     fpLogger.debug('deleteUploads()')
     return this._deleteRecords(STORES.uploads, ids)
+  }
+
+  // Preference methods
+  async addPreference (key, value) {
+    fpLogger.debug('addPreference()')
+
+    return await this._addRecord(STORES.preferences, { key, value })
+  }
+
+  async getPreference (key) {
+    fpLogger.debug('getPreference()')
+
+    const preference = await this._getRecord(STORES.preferences, key)
+    return preference?.value
+  }
+
+  async updatePreference (key, value) {
+    fpLogger.debug('updatePreference()')
+    return this._updateRecord(STORES.preferences, { key, value })
   }
 
   // Private helper methods

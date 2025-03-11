@@ -32,6 +32,15 @@ function exportToJson (idbDatabase, excludeStores = []) {
             if (cursor) {
               const record = cursor.value
 
+              // Skip siteConfigsOrder preference
+              if (
+                storeName === 'preferences' &&
+                record.key === 'siteConfigsOrder'
+              ) {
+                cursor.continue()
+                return
+              }
+
               if (record && typeof record === 'object' && 'id' in record) {
                 delete record.id
               }
@@ -103,7 +112,9 @@ function importFromJson (idbDatabase, json) {
           toAdd.id = Date.now() + processedRecords // Add index to avoid collisions
         }
 
-        const request = transaction.objectStore(storeName).add(toAdd)
+        // Use put for preferences to avoid constraint violations
+        const method = storeName === 'preferences' ? 'put' : 'add'
+        const request = transaction.objectStore(storeName)[method](toAdd)
 
         request.addEventListener('success', event => {
           importResults[storeName].ids.push(toAdd.id || event.target.result)
@@ -120,7 +131,7 @@ function importFromJson (idbDatabase, json) {
 
         request.addEventListener('error', event => {
           fpLogger.error(
-            `Error importing record in ${storeName}:`,
+            `Error importing record in ${storeName}`,
             event.target.error
           )
           processedRecords++

@@ -34,10 +34,14 @@ class Logger {
     return this
   }
 
+  version () {
+    return browser.runtime.getManifest().version
+  }
+
   log (level, message, variable = undefined) {
     if (this.getLogLevel() < level) return
 
-    const version = browser.runtime.getManifest().version
+    const version = this.version()
     const levelName = getLogLevelKeyByValue(level)
     const log = `[${version}] [${levelName}] ${this.extensionName}: ${message}`
 
@@ -73,9 +77,15 @@ class Logger {
     this.log(logLevels.trace, message, variable)
   }
 
-  error (message, error = null) {
-    console.error(`${this.extensionName}: ${message}`)
-    if (error) console.error(error)
+  error (message, error = undefined) {
+    const log = `[${this.version}] [error] ${this.extensionName}: ${message}`
+
+    console.groupCollapsed(log)
+
+    if (error !== undefined) console.error(error)
+
+    console.trace()
+    console.groupEnd()
   }
 }
 
