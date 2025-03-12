@@ -95,7 +95,7 @@ fpLogger.info('content.js loaded')
       `
       document.head.appendChild(style)
 
-      fpLogger.quiet('Successfully replaced favicon')
+      fpLogger.quiet('Replaced favicon')
       return link
     } finally {
       isInitializing = false

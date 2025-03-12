@@ -114,7 +114,7 @@ function createFaviconSprite (icon, siteConfig, theme = null) {
   const symbolNode = convertSymbolStringToSymbolNode(icon.symbol)
   svgSprite.appendChild(symbolNode)
 
-  fpLogger.silent('svgSprite', svgSprite)
+  fpLogger.debug('svgSprite', svgSprite)
 
   const styleElement = document.createElement('style')
 
@@ -441,7 +441,7 @@ function filterDrawerIcons (filter) {
 
     if (filter) {
       const name = icon.getAttribute('content')
-      const tags = icon.getAttribute('tags')
+      const tags = icon.getAttribute('tags') || []
 
       if (filter instanceof RegExp) {
         if (filter.test(name)) passes = true
