@@ -83,18 +83,38 @@ function buildSvgSprite (icon, size = 40) {
   // use tags don't work with createElement
   const iconUse = document.createElementNS(svgNS, 'use')
   iconUse.setAttribute('href', `#${icon.id}`)
-  iconUse.setAttribute('xlink:href', `#${icon.id}`)
 
   iconSvg.appendChild(iconUse)
 
   return iconSvg
 }
 
+function convertSymbolStringToSymbolNode (symbolString) {
+  const svgWrapper = `<svg xmlns="http://www.w3.org/2000/svg">${symbolString}</svg>`
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(svgWrapper, 'image/svg+xml')
+
+  const parserError = doc.querySelector('parsererror')
+  if (parserError) {
+    fpLogger.error('Failed to parse symbol', symbol)
+    fpLogger.error('Parser error', parserError)
+    return
+  }
+
+  const symbolElement = doc.documentElement.firstElementChild
+  return document.importNode(symbolElement, true)
+}
+
 function createFaviconSprite (icon, siteConfig, theme = null) {
   fpLogger.debug('createFaviconSprite()')
 
   const svgSprite = buildSvgSprite(icon, 1000)
-  svgSprite.innerHTML += icon.symbol
+
+  const symbolNode = convertSymbolStringToSymbolNode(icon.symbol)
+  svgSprite.appendChild(symbolNode)
+
+  fpLogger.silent('svgSprite', svgSprite)
 
   const styleElement = document.createElement('style')
 
@@ -184,29 +204,14 @@ async function populateDrawerIcons () {
     const iconPackSvgSelector = `svg[icon-pack-name="${icon.iconPackName}"][icon-pack-version="${icon.iconPackVersion}"]`
     fpLogger.verbose('iconPackSvgSelector', iconPackSvgSelector)
 
-    if (iconSymbols[iconPackSvgSelector]) {
-      iconSymbols[iconPackSvgSelector].push(icon.symbol)
-    } else {
-      iconSymbols[iconPackSvgSelector] = [icon.symbol]
-    }
+    const symbolNode = convertSymbolStringToSymbolNode(icon.symbol)
+    document.querySelector(iconPackSvgSelector).appendChild(symbolNode)
   }
 
   updateCurrentIconCount(sortedIcons.length)
 
   const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list')
   iconList.replaceChildren(iconListFragment)
-
-  fpLogger.debug('iconSymbols', iconSymbols)
-  for (const [selector, symbols] of Object.entries(iconSymbols)) {
-    const iconPackSvg = document.querySelector(selector)
-
-    if (!iconPackSvg) {
-      fpLogger.error(`Icon pack SVG not found: ${selector}`)
-      continue
-    }
-
-    iconPackSvg.innerHTML = symbols.join('')
-  }
 }
 
 async function getSiteConfigsByUpload (uploadId) {
@@ -301,7 +306,7 @@ async function populateDrawerUploads () {
           }
         }
 
-        ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+        ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
         ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
           'display-none'
         )
@@ -1429,9 +1434,18 @@ async function populateIconPackVariantSelector () {
         styleElement.textContent += `.${iconPackVariant} { display: var(${cssVariableName}); }`
 
         selectOption.setAttribute('value', iconPackVariant)
-        selectOption.innerHTML = `${iconPack.name.replaceAll('_', ' ')} ${
-          style.name
-        } (<code>${versionMetadata.name}</code>)`
+        const formattedIconPackName = iconPack.name.replaceAll('_', ' ')
+        const textBefore = document.createTextNode(
+          `${formattedIconPackName} ${style.name} (`
+        )
+        selectOption.appendChild(textBefore)
+
+        const codeElement = document.createElement('code')
+        codeElement.textContent = versionMetadata.name
+        selectOption.appendChild(codeElement)
+
+        const textAfter = document.createTextNode(')')
+        selectOption.appendChild(textAfter)
 
         iconPacksSelect.appendChild(selectOption)
       }
@@ -1718,7 +1732,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
         ''
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').innerHTML = ''
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
       ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
         'display-none'
       )
@@ -1756,9 +1770,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         updateSiteConfig({ id, uploadId })
       }
 
-      ICON_SELECTOR_DRAWER.querySelector('#current-icon').innerHTML =
-        selectedCell.innerHTML
-      selectedCell.innerHTML = ''
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
+        selectedCell.firstChild
+      )
+      selectedCell.replaceChildren()
 
       ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
         'display-none'

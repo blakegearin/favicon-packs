@@ -78,7 +78,8 @@ class Logger {
   }
 
   error (message, error = undefined) {
-    const log = `[${this.version}] [error] ${this.extensionName}: ${message}`
+    const version = this.version()
+    const log = `[${version}] [error] ${this.extensionName}: ${message}`
 
     console.groupCollapsed(log)
 
