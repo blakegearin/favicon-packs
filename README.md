@@ -2,7 +2,7 @@
   <img
     height="30%"
     width="30%"
-    src="img/logo.svg"
+    src="src/img/logo.svg"
     alt="Favicon Packs logo"
     title="Favicon Packs logo"
   />
