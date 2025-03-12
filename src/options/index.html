@@ -30,17 +30,14 @@
 
     <!-- Shoelace: https://shoelace.style -->
     <link
-      href="styles/light.css"
+      href="/shoelace/themes/light.css"
       rel="stylesheet"
     >
     <link
-      href="styles/dark.css"
+      href="/shoelace/themes/dark.css"
       rel="stylesheet"
     >
-    <script
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/shoelace.js"
-      type="module"
-    ></script>
+    <script type="module" src="/shoelace/shoelace.js"></script>
 
     <link
       href="styles/options.css"
@@ -559,11 +556,17 @@
             </sl-button>
 
             <sl-menu>
-              <sl-menu-item class="right-align" value="site-configs">
+              <sl-menu-item
+                class="right-align"
+                value="site-configs"
+              >
                 Site configurations
               </sl-menu-item>
 
-              <sl-menu-item class="right-align" value="site-configs-and-settings">
+              <sl-menu-item
+                class="right-align"
+                value="site-configs-and-settings"
+              >
                 Site configurations & settings
               </sl-menu-item>
             </sl-menu>

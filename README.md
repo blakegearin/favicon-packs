@@ -25,6 +25,9 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 - [x] Selectable rows allow for bulk updates
 - [x] Create catch-alls or categories using the priority ordering
 - [x] Upload images as a backup option
+- [x] Import and export for sharing between devices
+- [x] No tracking or analytics
+- [x] Simple JS + HTML + CSS implementation for easy auditing
 
 ## FAQ
 

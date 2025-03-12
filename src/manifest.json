@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Favicon Packs",
   "short_name": "FaviconPacks",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Apply icon packs as favicons",
   "author": "Blake Gearin",
   "homepage_url": "https://github.com/blakegearin/favicon-packs",
@@ -44,6 +44,9 @@
       ],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    "shoelace-assets/*"
   ],
   "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'; img-src blob: data: *;"
 }
