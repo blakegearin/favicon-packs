@@ -267,8 +267,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         await replaceFavicon(siteConfigMetadata[0].siteConfig.id)
       })
 
-    const updateCurrentFaviconAfterDelay = () =>
+    const updateCurrentFaviconAfterDelay = () => {
+      console.log('hi')
       setTimeout(updateCurrentFavicon, 500)
+    }
 
     document.querySelectorAll('.demo-color-picker').forEach(colorPicker => {
       colorPicker.addEventListener('sl-blur', event => {
@@ -289,8 +291,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       .addEventListener('click', updateCurrentFaviconAfterDelay)
 
     document
-      .querySelector('.site-cell.edit sl-button[type="submit"]')
-      .addEventListener('click', updateCurrentFaviconAfterDelay)
+      .querySelectorAll('.site-cell.edit sl-button[type="submit"]')
+      .forEach(editSiteButton => {
+        editSiteButton.addEventListener('click', updateCurrentFaviconAfterDelay)
+      })
   }
   waitForElement(siteConfigRowSelector, 2, callback, 100)
 })
