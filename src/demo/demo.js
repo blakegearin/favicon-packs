@@ -287,6 +287,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     document
       .querySelector('#save-icon-button')
       .addEventListener('click', updateCurrentFaviconAfterDelay)
+
+    document
+      .querySelector('.site-cell.edit')
+      .addEventListener('click', updateCurrentFaviconAfterDelay)
   }
   waitForElement(siteConfigRowSelector, 2, callback, 100)
 })
