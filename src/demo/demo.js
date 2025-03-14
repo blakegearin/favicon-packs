@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       })
 
     const updateCurrentFaviconAfterDelay = () => {
-      console.log('hi')
+      fpLogger.debug('updateCurrentFaviconAfterDelay()')
       setTimeout(updateCurrentFavicon, 500)
     }
 
@@ -291,9 +291,9 @@ document.addEventListener('DOMContentLoaded', async function () {
       .addEventListener('click', updateCurrentFaviconAfterDelay)
 
     document
-      .querySelectorAll('.site-cell.edit sl-button[type="submit"]')
-      .forEach(editSiteButton => {
-        editSiteButton.addEventListener('click', updateCurrentFaviconAfterDelay)
+      .querySelector('.site-cell.edit')
+      .forEach(form => {
+        form.addEventListener('submit', updateCurrentFaviconAfterDelay)
       })
   }
   waitForElement(siteConfigRowSelector, 2, callback, 100)
