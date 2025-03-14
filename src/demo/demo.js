@@ -104,6 +104,8 @@ async function replaceFavicon (siteConfigId) {
 }
 
 async function updateCurrentFavicon () {
+  fpLogger.debug('updateCurrentFavicon()')
+
   const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
   fpLogger.debug('siteConfigs', siteConfigs)
 
@@ -290,11 +292,9 @@ document.addEventListener('DOMContentLoaded', async function () {
       .querySelector('#save-icon-button')
       .addEventListener('click', updateCurrentFaviconAfterDelay)
 
-    document
-      .querySelector('.site-cell.edit')
-      .forEach(form => {
-        form.addEventListener('submit', updateCurrentFaviconAfterDelay)
-      })
+    document.querySelectorAll('.site-cell.edit').forEach(form => {
+      form.addEventListener('submit', updateCurrentFaviconAfterDelay)
+    })
   }
   waitForElement(siteConfigRowSelector, 2, callback, 100)
 })
