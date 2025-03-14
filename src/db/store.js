@@ -16,6 +16,7 @@ function capitalize (string) {
 class ExtensionStore {
   constructor () {
     this.db = null
+    this.initializationPromise = null
   }
 
   getDatabase () {
@@ -48,9 +49,11 @@ class ExtensionStore {
   async initialize () {
     fpLogger.verbose('initialize()')
 
+    if (this.initializationPromise) return this.initializationPromise
+
     if (this.db) return Promise.resolve()
 
-    return new Promise((resolve, reject) => {
+    this.initializationPromise = new Promise((resolve, reject) => {
       const request = window.indexedDB.open(DB_NAME, DB_VERSION)
 
       request.onerror = () => reject(request.error)
@@ -96,7 +99,6 @@ class ExtensionStore {
 
           // Initialize default preferences
           const defaultPreferences = [
-            { key: 'siteConfigsOrder', value: [] },
             { key: 'lightThemeEnabled', value: true },
             { key: 'darkThemeEnabled', value: true },
             { key: 'lightThemeDefaultColor', value: '#333333' },
@@ -111,13 +113,27 @@ class ExtensionStore {
           }
         }
 
-        resolve()
+        // We don't resolve here, as onsuccess will be called after
       }
     })
+
+    return this.initializationPromise
+  }
+
+  // Ensure database is initialized before any operation
+  async ensureInitialized () {
+    if (!this.db) {
+      await this.initialize()
+    }
+    if (!this.db) {
+      throw new Error('Failed to initialize database')
+    }
+    return this.db
   }
 
   async fetchIconsMetadata (metadataUrl) {
     fpLogger.verbose('fetchIconsMetadata()')
+    await this.ensureInitialized()
 
     let responseText
 
@@ -168,6 +184,7 @@ class ExtensionStore {
 
   async downloadSvgIconsFromUrl (iconPack, versionMetadata, url, iconsMetadata) {
     fpLogger.verbose('downloadSvgIconsFromUrl()')
+    await this.ensureInitialized()
 
     const response = await fetch(
       url.replaceAll('{VERSION}', versionMetadata.name)
@@ -296,6 +313,7 @@ class ExtensionStore {
 
   async downloadIconPackVersion (iconPack, versionMetadata) {
     fpLogger.debug('downloadIconPackVersion()')
+    await this.ensureInitialized()
 
     const iconsMetadata = iconPack.metadataUrl
       ? await this.fetchIconsMetadata(
@@ -330,6 +348,7 @@ class ExtensionStore {
 
   async deleteIconsByIconPackVersion (iconPackName, iconPackVersion) {
     fpLogger.debug('deleteIconsByIconPackVersion()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.icons], 'readwrite')
@@ -372,6 +391,7 @@ class ExtensionStore {
 
   async getIconCountByIconPackVersion (iconPackName, iconPackVersion) {
     fpLogger.debug('getIconCountByIconPackVersion()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.icons], 'readonly')
@@ -534,6 +554,7 @@ class ExtensionStore {
   // Methods for siteConfigs
   async addSiteConfig (siteConfig) {
     fpLogger.debug('addSiteConfig()')
+    await this.ensureInitialized()
 
     const configWithId = {
       ...siteConfig,
@@ -545,16 +566,19 @@ class ExtensionStore {
 
   async getSiteConfigById (id) {
     fpLogger.verbose('getSiteConfigById()')
+    await this.ensureInitialized()
     return await this._getRecord(STORES.siteConfigs, id)
   }
 
   async getSiteConfigs () {
     fpLogger.verbose('getSiteConfigs()')
+    await this.ensureInitialized()
     return this._getAllRecords(STORES.siteConfigs)
   }
 
   async getActiveSiteConfigs () {
     fpLogger.debug('getActiveSiteConfigs()')
+    await this.ensureInitialized()
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORES.siteConfigs], 'readonly')
       const store = transaction.objectStore(STORES.siteConfigs)
@@ -568,22 +592,26 @@ class ExtensionStore {
 
   async updateSiteConfig (siteConfig) {
     fpLogger.debug('updateSiteConfig()')
+    await this.ensureInitialized()
     return this._updateRecord(STORES.siteConfigs, siteConfig)
   }
 
   async deleteSiteConfig (id) {
     fpLogger.debug('deleteSiteConfig()')
+    await this.ensureInitialized()
     return this._deleteRecord(STORES.siteConfigs, id)
   }
 
   async deleteSiteConfigs (ids) {
     fpLogger.debug('deleteSiteConfigs()')
+    await this.ensureInitialized()
     return this._deleteRecords(STORES.siteConfigs, ids)
   }
 
   // Methods for icons
   async addIcon (icon) {
     fpLogger.verbose('addIcon()')
+    await this.ensureInitialized()
 
     try {
       const iconRecord = icon.id ? await this.getIconById(icon.id) : null
@@ -608,27 +636,32 @@ class ExtensionStore {
 
   async getIconById (id) {
     fpLogger.trace('getIconById()')
+    await this.ensureInitialized()
     return await this._getRecord(STORES.icons, id)
   }
 
   async getIcons () {
     fpLogger.verbose('getIcons()')
+    await this.ensureInitialized()
     return this._getAllRecords(STORES.icons)
   }
 
   async updateIcon (icon) {
     fpLogger.debug('updateIcon()')
+    await this.ensureInitialized()
     return this._updateRecord(STORES.icons, icon)
   }
 
   async deleteIcon (id) {
     fpLogger.debug('deleteIcon()')
+    await this.ensureInitialized()
     return this._deleteRecord(STORES.icons, id)
   }
 
   // Methods for upload
   async addUpload (upload) {
     fpLogger.debug('addUpload()')
+    await this.ensureInitialized()
 
     const configWithId = {
       ...upload,
@@ -640,51 +673,58 @@ class ExtensionStore {
 
   async getUploadById (id) {
     fpLogger.debug('getUploadById()')
+    await this.ensureInitialized()
     return await this._getRecord(STORES.uploads, parseInt(id))
   }
 
   async getUploads () {
     fpLogger.debug('getUploads()')
+    await this.ensureInitialized()
     return this._getAllRecords(STORES.uploads)
   }
 
   async updateUpload (upload) {
     fpLogger.debug('updateUpload()')
+    await this.ensureInitialized()
     return this._updateRecord(STORES.uploads, upload)
   }
 
   async deleteUpload (id) {
     fpLogger.debug('deleteUpload()')
+    await this.ensureInitialized()
     return this._deleteRecord(STORES.uploads, id)
   }
 
   async deleteUploads (ids) {
     fpLogger.debug('deleteUploads()')
+    await this.ensureInitialized()
     return this._deleteRecords(STORES.uploads, ids)
   }
 
   // Preference methods
   async addPreference (key, value) {
     fpLogger.debug('addPreference()')
-
+    await this.ensureInitialized()
     return await this._addRecord(STORES.preferences, { key, value })
   }
 
   async getPreference (key) {
     fpLogger.debug('getPreference()')
-
+    await this.ensureInitialized()
     const preference = await this._getRecord(STORES.preferences, key)
     return preference?.value
   }
 
   async updatePreference (key, value) {
     fpLogger.debug('updatePreference()')
+    await this.ensureInitialized()
     return this._updateRecord(STORES.preferences, { key, value })
   }
 
   // Private helper methods
   async _addRecord (storeName, record) {
     fpLogger.trace('_addRecord()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite')
@@ -698,6 +738,7 @@ class ExtensionStore {
 
   async _getAllRecords (storeName) {
     fpLogger.trace('_getAllRecords()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readonly')
@@ -711,6 +752,7 @@ class ExtensionStore {
 
   async _getRecord (storeName, id) {
     fpLogger.trace('_getRecord()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readonly')
@@ -724,6 +766,7 @@ class ExtensionStore {
 
   async _updateRecord (storeName, record) {
     fpLogger.trace('_updateRecord()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite')
@@ -737,6 +780,7 @@ class ExtensionStore {
 
   async _deleteRecord (storeName, id) {
     fpLogger.trace('_deleteRecord()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite')
@@ -750,6 +794,7 @@ class ExtensionStore {
 
   async _deleteRecords (storeName, ids) {
     fpLogger.trace('_deleteRecords()')
+    await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite')

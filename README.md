@@ -48,7 +48,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
   - Boxicons
     - Not right now. It's missing support for sprites and tags.
   - Material Symbols
-    - No. It's a smaller, marketed toward enterprise, and made by a mega-corporation that may deprecate it at any time.
+    - No. It is smaller, marketed toward enterprise, and made by a mega-corporation that may deprecate it at any time.
   - Something else
     - Generally speaking, it needs to have a public CDN to fetch all icons in bulk (sprite or symbols or SVGs). The same goes for tags which enable search. CSS or font-based solutions are not compatible.
     - Uploading your own files is always an option!

@@ -21,29 +21,30 @@
 
     <title>Favicon Packs</title>
     <link
+      id="favicon-packs-default-favicon"
       type="image/svg+xml"
-      href="../../img/logo.svg"
+      href="../img/logo.svg"
       rel="icon"
     >
 
-    <script src="scripts/theme.js"></script>
+    <script src="../options/scripts/theme.js"></script>
 
     <!-- Shoelace: https://shoelace.style -->
     <link
-      href="/shoelace/themes/light.css"
+      href="../shoelace/themes/light.css"
       rel="stylesheet"
     >
     <link
-      href="/shoelace/themes/dark.css"
+      href="../shoelace/themes/dark.css"
       rel="stylesheet"
     >
     <script
-      src="/shoelace/shoelace.js"
+      src="../shoelace/shoelace.js"
       type="module"
     ></script>
 
     <link
-      href="styles.css"
+      href="../options/styles.css"
       rel="stylesheet"
     >
   </head>
@@ -67,6 +68,7 @@
         href="https://github.com/blakegearin/favicon-packs"
         title="View on GitHub"
         target="_blank"
+        rel="noopener noreferrer"
       >
         <sl-icon-button name="github"></sl-icon-button>
       </a>
@@ -118,13 +120,22 @@
     <div class="content">
       <div id="options-title">
         <img
-          src="../../img/logo.svg"
+          src="../img/logo.svg"
           height="30"
         >
 
         <h1>
           Favicon Packs
         </h1>
+
+        <sl-badge
+          variant="success"
+          style="font-size: 1.25rem;"
+          pill
+          pulse
+        >
+          Demo
+        </sl-badge>
       </div>
 
       <div class="helper-row">
@@ -631,7 +642,7 @@
             <td class="center light-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="light-theme-color-picker light-theme-color-value"
+                  class="demo-color-picker light-theme-color-picker light-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -648,7 +659,7 @@
             <td class="center dark-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="dark-theme-color-picker dark-theme-color-value"
+                  class="demo-color-picker dark-theme-color-picker dark-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -665,7 +676,7 @@
             <td class="center any-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="any-theme-color-picker any-theme-color-value"
+                  class="demo-color-picker any-theme-color-picker any-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -735,6 +746,7 @@
 
           <sl-dropdown
             id="export-dropdown"
+            disabled
             checked
           >
             <sl-button
@@ -764,6 +776,20 @@
           </sl-dropdown>
         </div>
       </div>
+    </div>
+
+    <div class="center" style="position: fixed; bottom: 2rem; width: 100%;">
+      <a
+        href="https://addons.mozilla.org/en-US/firefox/addon/favicon-packs/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="width: 15%; display: inline-block;"
+      >
+        <img
+          src="get-the-addon.svg"
+          alt="Get the add-on"
+        >
+      </a>
     </div>
 
     <sl-drawer
@@ -1074,7 +1100,7 @@
 
             <img
               id="parts-of-a-url"
-              src="../../img/parts-of-a-url.png"
+              src="../img/parts-of-a-url.png"
               alt="Parts of a URL"
             >
           </div>
@@ -1325,7 +1351,9 @@
     <script src="../utils/logger.js"></script>
     <script src="../db/store.js"></script>
     <script src="../db/idb-backup-and-restore.js "></script>
-    <script src="scripts/index.js"></script>
+    <script src="icons.js"></script>
+    <script src="demo.js"></script>
+    <script src="../options/scripts/index.js"></script>
   </body>
 
 </html>

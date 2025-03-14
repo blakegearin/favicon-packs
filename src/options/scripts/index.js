@@ -1462,9 +1462,10 @@ async function applyPreferences () {
         const storageKey = 'lightThemeEnabled'
         const inputId = '#light-theme-switch'
         const cssVariable = '--light-theme-display'
+        const defaultValue = true
 
         const apply = async value => {
-          const isEnabled = value.toString() === 'true'
+          const isEnabled = (value === undefined ? defaultValue : value).toString() === 'true'
           fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
           const inputElement = document.querySelector(inputId)
@@ -1501,9 +1502,10 @@ async function applyPreferences () {
         const storageKey = 'darkThemeEnabled'
         const inputId = '#dark-theme-switch'
         const cssVariable = '--dark-theme-display'
+        const defaultValue = true
 
         const apply = async value => {
-          const isEnabled = value.toString() === 'true'
+          const isEnabled = (value === undefined ? defaultValue : value).toString() === 'true'
           fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
           const inputElement = document.querySelector(inputId)
@@ -2253,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   }
 
   // Lastly, remove loading indicators
-  document.querySelector('.skeleton-row').classList.toggle('display-none')
+  document.querySelectorAll('.skeleton-row').forEach(row => row.classList.toggle('display-none'))
   toggleLoadingSpinner()
 })
 

@@ -7,7 +7,7 @@
  * @param {Array<string>} [excludeStores=[]] Array of store names to exclude from export
  * @return {Promise<string>}
  */
-function exportToJson (idbDatabase, excludeStores = []) {
+function exportToJson (idbDatabase, excludeStores = [], deleteIds = true) {
   return new Promise((resolve, reject) => {
     const exportObject = {}
 
@@ -41,7 +41,7 @@ function exportToJson (idbDatabase, excludeStores = []) {
                 return
               }
 
-              if (record && typeof record === 'object' && 'id' in record) {
+              if (deleteIds && record && typeof record === 'object' && 'id' in record) {
                 delete record.id
               }
 
