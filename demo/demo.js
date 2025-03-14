@@ -107,7 +107,7 @@ async function updateCurrentFavicon () {
   const siteConfigs = await window.extensionStore.getActiveSiteConfigs()
   fpLogger.debug('siteConfigs', siteConfigs)
 
-  if (siteConfigs[0].active || siteConfigs[0].id.active) {
+  if (siteConfigs.length) {
     const siteConfigsOrder = await window.extensionStore.getPreference(
       'siteConfigsOrder'
     )
