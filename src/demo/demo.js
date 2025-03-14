@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       .addEventListener('click', updateCurrentFaviconAfterDelay)
 
     document
-      .querySelector('.site-cell.edit')
+      .querySelector('.site-cell.edit sl-button[type="submit"]')
       .addEventListener('click', updateCurrentFaviconAfterDelay)
   }
   waitForElement(siteConfigRowSelector, 2, callback, 100)
