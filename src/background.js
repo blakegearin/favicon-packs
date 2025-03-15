@@ -66,7 +66,8 @@ async function initialize () {
             const regexp = new RegExp(websitePattern, 'i')
             fpLogger.debug('regexp', websitePattern)
 
-            const matches = regexp.test(sender.url)
+            fpLogger.debug('request.url', request.url)
+            const matches = regexp.test(request.url)
             fpLogger.debug('matches', matches)
 
             return matches

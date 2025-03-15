@@ -186,7 +186,8 @@ fpLogger.info('content.js loaded')
     browser.runtime.sendMessage({
       action: 'replaceFavicon',
       colorScheme: getColorScheme(),
-      resetRetries: true
+      resetRetries: true,
+      url: window.location.href
     })
   }
 
@@ -232,7 +233,8 @@ fpLogger.info('content.js loaded')
         browser.runtime.sendMessage({
           action: 'replaceFavicon',
           colorScheme: getColorScheme(),
-          resetRetries: true
+          resetRetries: true,
+          url: window.location.href
         })
       }
     })

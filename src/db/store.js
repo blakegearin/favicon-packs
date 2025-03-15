@@ -99,6 +99,7 @@ class ExtensionStore {
 
           // Initialize default preferences
           const defaultPreferences = [
+            { key: 'siteConfigsOrder', value: [] },
             { key: 'lightThemeEnabled', value: true },
             { key: 'darkThemeEnabled', value: true },
             { key: 'lightThemeDefaultColor', value: '#333333' },
