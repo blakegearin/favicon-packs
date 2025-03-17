@@ -608,8 +608,12 @@ async function swapPriorities (record1Id, direction) {
 
 async function setPriorityButtonVisibility (row, priority) {
   fpLogger.debug('setPriorityButtonVisibility()')
+  fpLogger.verbose('row', row)
+  fpLogger.verbose('priority', priority)
 
   const siteConfigs = await window.extensionStore.getSiteConfigs()
+  fpLogger.verbose('siteConfigs', siteConfigs)
+
   const incrementButton = row.querySelector('.increment')
   const decrementButton = row.querySelector('.decrement')
 
@@ -630,7 +634,7 @@ async function setPriorityButtonVisibility (row, priority) {
   }
 }
 
-async function populateTableRow (siteConfig, insertion) {
+async function populateTableRow (siteConfig, insertion, tablePosition = 'last') {
   fpLogger.debug('populateTableRow()')
 
   const id = siteConfig.id
@@ -1031,7 +1035,12 @@ async function populateTableRow (siteConfig, insertion) {
   if (insertion) {
     fpLogger.debug('insertion')
     const tableBody = document.querySelector('#siteConfigs tbody')
-    tableBody.appendChild(newRow)
+
+    if (tablePosition === 'last') {
+      tableBody.appendChild(newRow)
+    } else if (tablePosition === 'first') {
+      tableBody.insertBefore(newRow, tableBody.firstChild)
+    }
   }
 }
 
@@ -1465,7 +1474,8 @@ async function applyPreferences () {
         const defaultValue = true
 
         const apply = async value => {
-          const isEnabled = (value === undefined ? defaultValue : value).toString() === 'true'
+          const isEnabled =
+            (value === undefined ? defaultValue : value).toString() === 'true'
           fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
           const inputElement = document.querySelector(inputId)
@@ -1505,7 +1515,8 @@ async function applyPreferences () {
         const defaultValue = true
 
         const apply = async value => {
-          const isEnabled = (value === undefined ? defaultValue : value).toString() === 'true'
+          const isEnabled =
+            (value === undefined ? defaultValue : value).toString() === 'true'
           fpLogger.debug(`Setting ${storageKey} to ${value}`)
 
           const inputElement = document.querySelector(inputId)
@@ -1984,10 +1995,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     )
     fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
 
+    let tablePosition
+
     if (priority === 'highest-priority') {
       siteConfigsOrder.unshift(siteConfig.id)
+      tablePosition = 'first'
+
+      // Update first row to remove .hidden from .increment
+      document
+        .querySelector(':nth-child(1 of .siteConfig-row .increment)')
+        ?.classList.remove('hidden')
     } else {
       siteConfigsOrder.push(siteConfig.id)
+      tablePosition = 'last'
+
+      // Update last row to remove .hidden from .decrement
+      document
+        .querySelector('.siteConfig-row:last-child .decrement')
+        ?.classList.remove('hidden')
     }
 
     await window.extensionStore.updatePreference(
@@ -1995,8 +2020,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       siteConfigsOrder
     )
 
+    document.querySelector('.no-data-row').classList.add('display-none')
+    await populateTableRow(siteConfig, true, tablePosition)
+
     const siteConfigs = await window.extensionStore.getSiteConfigs()
-    await populateTable(siteConfigs)
     updateRecordsSummary(siteConfigs)
   })
 
@@ -2254,8 +2281,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     iconPacksDiv.appendChild(iconPackTable)
   }
 
+  document.documentElement.style.setProperty('--table-row-display', 'table-row')
+
   // Lastly, remove loading indicators
-  document.querySelectorAll('.skeleton-row').forEach(row => row.classList.toggle('display-none'))
+  document
+    .querySelectorAll('.skeleton-row')
+    .forEach(row => row.classList.toggle('display-none'))
   toggleLoadingSpinner()
 })
 

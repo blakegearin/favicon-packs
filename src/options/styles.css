@@ -5,6 +5,7 @@
   --light-theme-display: table-cell;
   --dark-theme-display: table-cell;
   --any-theme-display: none;
+  --table-row-display: none;
 }
 
 :root,
@@ -460,6 +461,11 @@ sl-tag sl-icon-button
 #delete-confirmation-text
 {
   word-wrap: break-word;
+}
+
+.siteConfig-row
+{
+  display: var(--table-row-display);
 }
 
 /* Pattern Types Dialog */
