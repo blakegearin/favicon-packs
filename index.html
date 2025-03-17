@@ -117,25 +117,16 @@
       </sl-dropdown>
     </div>
 
-    <div class="content">
+    <div class="header">
       <div id="options-title">
         <img
-          src="src/img/logo.svg"
+          src="../../img/logo.svg"
           height="30"
         >
 
         <h1>
           Favicon Packs
         </h1>
-
-        <sl-badge
-          variant="success"
-          style="font-size: 1.25rem;"
-          pill
-          pulse
-        >
-          Demo
-        </sl-badge>
       </div>
 
       <div class="helper-row">
@@ -207,7 +198,9 @@
           &nbsp;Total: <span id="siteConfigs-length">0</span>
         </span>
       </div>
+    </div>
 
+    <div class="content">
       <table id="siteConfigs">
         <thead>
           <tr>
@@ -746,7 +739,6 @@
 
           <sl-dropdown
             id="export-dropdown"
-            disabled
             checked
           >
             <sl-button
@@ -778,7 +770,10 @@
       </div>
     </div>
 
-    <div class="center" style="position: fixed; bottom: 2rem; width: 100%;">
+    <div
+      class="center"
+      style="position: fixed; bottom: 2rem; width: 100%;"
+    >
       <a
         href="https://addons.mozilla.org/en-US/firefox/addon/favicon-packs/"
         target="_blank"
