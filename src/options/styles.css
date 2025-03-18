@@ -173,16 +173,14 @@ sl-drawer table
 /* Header */
 .header
 {
-  margin: 2rem;
-  margin-top: 0;
-  padding-top: 2rem;
-  position: fixed;
+  padding: 2rem;
+  position: sticky;
   z-index: 1;
-  left: 0;
-  right: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
   background: var(--main-background);
+  border-bottom: 1px solid var(--table-border);
 }
 
 #options-title
@@ -203,7 +201,6 @@ sl-drawer table
 {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
   align-items: end;
 }
 
@@ -214,6 +211,11 @@ sl-drawer table
 }
 
 /* Table */
+table#siteConfigs
+{
+  margin-bottom: 2rem;
+}
+
 table#siteConfigs th:not(.width-auto),
 #icon-packs-tables table th:not(.width-auto)
 {
@@ -270,8 +272,6 @@ table#siteConfigs th:not(.width-auto),
 .content
 {
   margin: 2rem;
-  margin-top: 0;
-  padding-top: 11rem;
 }
 
 .skeleton-row
