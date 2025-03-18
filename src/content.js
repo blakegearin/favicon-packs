@@ -1,10 +1,10 @@
 fpLogger.info('content.js loaded')
 ;(function () {
-  const FAVICON_ID = 'favicon-packs-favicon'
+  const CUSTOM_FAVICON_CLASS = 'favicon-packs-custom-favicon'
   const MAX_RETRIES = 5
 
   let changeTimeout = null
-  let currentFaviconHref = null
+  let customFaviconHref = null
   let hasInitialized = false
   let isExtensionChange = false
   let isInitializing = false
@@ -43,7 +43,7 @@ fpLogger.info('content.js loaded')
 
     // Remove elements and prevent new insertions
     const removeAndBlock = node => {
-      if (node.id !== FAVICON_ID) {
+      if (node.class !== CUSTOM_FAVICON_CLASS) {
         node.remove()
         // Mark as removed to prevent re-insertion
         node.dataset.removed = 'true'
@@ -68,35 +68,44 @@ fpLogger.info('content.js loaded')
       cleanupExistingIcons()
 
       // Remove existing favicon if present
-      const existingFavicon = document.getElementById(FAVICON_ID)
-      if (existingFavicon) existingFavicon.remove()
+      const existingFavicons = document.querySelectorAll(CUSTOM_FAVICON_CLASS)
+      if (existingFavicons) existingFavicons.forEach(node => node.remove())
 
-      const link = document.createElement('link')
-      link.rel = 'shortcut icon'
-      link.type = 'image/png'
-      link.id = FAVICON_ID
-      link.href = imgUrl
+      const iconLink = document.createElement('link')
+      iconLink.rel = 'icon'
+      iconLink.type = 'image/png'
+      iconLink.classList.add(CUSTOM_FAVICON_CLASS)
+      iconLink.href = imgUrl
 
-      currentFaviconHref = imgUrl
+      customFaviconHref = imgUrl
 
       setOurChange(true)
-      document.head.appendChild(link)
+
+      const shortcutLink = iconLink.cloneNode(true)
+      shortcutLink.rel = 'shortcut icon'
+      document.head.appendChild(shortcutLink)
+
+      document.head.appendChild(iconLink)
 
       // Add a style to prevent other favicons
-      const style = document.createElement('style')
-      style.id = 'favicon-packs-style'
-      style.textContent = `
-        link[rel*="icon"]:not(#${FAVICON_ID}),
-        link[rel*="shortcut"]:not(#${FAVICON_ID}),
-        link[rel*="apple-touch"]:not(#${FAVICON_ID}),
-        link[rel*="mask-icon"]:not(#${FAVICON_ID}) {
-          display: none !important;
-        }
-      `
-      document.head.appendChild(style)
+      const styleId = 'favicon-packs-style'
+      const existingStyle = document.getElementById(styleId)
+      if (!existingStyle) {
+        const style = document.createElement('style')
+        style.id = styleId
+        style.textContent = `
+          link[rel*="icon"]:not(.${CUSTOM_FAVICON_CLASS}),
+          link[rel*="shortcut"]:not(.${CUSTOM_FAVICON_CLASS}),
+          link[rel*="apple-touch"]:not(.${CUSTOM_FAVICON_CLASS}),
+          link[rel*="mask-icon"]:not(.${CUSTOM_FAVICON_CLASS}) {
+            display: none !important;
+          }
+        `
+        document.head.appendChild(style)
+      }
 
-      fpLogger.quiet('Replaced favicon')
-      return link
+      fpLogger.info('Replaced favicon')
+      return iconLink
     } finally {
       isInitializing = false
     }
@@ -123,16 +132,17 @@ fpLogger.info('content.js loaded')
     const CHECK_INTERVAL = Math.floor(Math.random() * 200) + 300
 
     const checkInterval = setInterval(() => {
-      const currentFavicon = document.getElementById(FAVICON_ID)
+      const customFavicon = document.querySelectorAll(`.${CUSTOM_FAVICON_CLASS}`)
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]')
       const style = document.getElementById('favicon-packs-style')
 
       const needsReplacement =
-        !currentFavicon ||
+        !customFavicon.length < 2 ||
         !style ||
-        currentFavicon.href !== currentFaviconHref ||
+        customFavicon[0].href !== customFaviconHref ||
+        customFavicon[1].href !== customFaviconHref ||
         existingFavicons.length > 1 ||
-        !document.head.contains(currentFavicon)
+        !document.head.contains(customFavicon)
 
       if (needsReplacement) {
         clearInterval(checkInterval)
@@ -197,35 +207,10 @@ fpLogger.info('content.js loaded')
     const observer = new window.MutationObserver(mutations => {
       if (isExtensionChange) return
 
-      let needsReset = false
-
       for (const mutation of mutations) {
-        // Check for added nodes
-        if (mutation.type === 'childList') {
-          const addedNodes = Array.from(mutation.addedNodes)
-          needsReset = addedNodes.some(node => {
-            return (
-              (node.nodeName === 'LINK' &&
-                node.rel &&
-                node.rel.includes('icon')) ||
-              (node.nodeName === 'META' &&
-                node.name &&
-                node.name.includes('msapplication'))
-            )
-          })
-        }
+        fpLogger.trace('mutation', mutation)
 
-        // Check for attribute changes on our favicon
-        if (
-          mutation.type === 'attributes' &&
-          mutation.target.id === FAVICON_ID
-        ) {
-          needsReset = true
-        }
-      }
-
-      if (needsReset) {
-        fpLogger.info('Favicon modification detected, resetting...')
+        fpLogger.info('Resetting favicon due to mutation')
 
         hasInitialized = false
         cleanupExistingIcons()
