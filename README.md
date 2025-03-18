@@ -20,7 +20,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 - [x] Choose from over 10,000 icons (Ionicons, Font Awesome, Lucide, Tabler)
 - [x] Easily add domains or patterns for more advanced matching
 - [x] Custom colors for light & dark themes
-- [x] Guards against favicon hijacking (e.g. Notion)
+- [x] Aggressive update strategy guards against favicon hijacking (e.g. Notion, Google Calendar)
 - [x] Convenient copy to clipboard buttons help keep track of values
 - [x] Selectable rows allow for bulk updates
 - [x] Create catch-alls or categories using the priority ordering
@@ -28,6 +28,17 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 - [x] Import and export for sharing between devices
 - [x] No tracking or analytics
 - [x] Simple JS + HTML + CSS implementation for easy auditing
+
+## Install
+
+<a href="https://addons.mozilla.org/en-US/firefox/addon/favicon-packs/">
+  <img
+    width="30%"
+    src="src/demo/get-the-addon.svg"
+    alt="Firefox logo with text saying 'Get the add-on'"
+    title="Firefox logo with text saying 'Get the add-on'"
+  />
+</a>
 
 ## FAQ
 
