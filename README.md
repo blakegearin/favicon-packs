@@ -53,6 +53,10 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
     - Generally speaking, it needs to have a public CDN to fetch all icons in bulk (sprite or symbols or SVGs). The same goes for tags which enable search. CSS or font-based solutions are not compatible.
     - Uploading your own files is always an option!
 
+- What about Chromium browsers?
+
+  - I don't have plans to port this due to Google's manifest v3 rollout. It's harmful and anti-competitive. I recommend reading [this article from EFF](https://www.eff.org/deeplinks/2021/12/chrome-users-beware-manifest-v3-deceitful-and-threatening). I'm a big fan of [Zen Browser](https://zen-browser.app/) at the moment.
+
 ## Contributing
 
 This was built using Visual Studio Code and includes a `.vscode` directory with settings that enable auto-formatting on JS and HTML files.

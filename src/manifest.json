@@ -2,8 +2,8 @@
   "manifest_version": 2,
   "name": "Favicon Packs",
   "short_name": "FaviconPacks",
-  "version": "0.2.0",
-  "description": "Apply icon packs as favicons",
+  "version": "0.3.0",
+  "description": "Customize tab favicons with icons or images",
   "author": "Blake Gearin",
   "homepage_url": "https://github.com/blakegearin/favicon-packs",
   "icons": {
