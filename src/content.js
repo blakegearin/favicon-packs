@@ -236,6 +236,12 @@ fpLogger.info('content.js loaded')
     return observer
   }
 
+  // Avoid running on demo site
+  if (window.location.href.includes('faviconpacks.com')) {
+    fpLogger.info('Running on demo site, halting execution')
+    return;
+  }
+
   // Multiple initialization points to catch different site behaviors
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
