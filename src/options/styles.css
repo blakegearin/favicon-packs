@@ -15,8 +15,8 @@
   --high-contrast: black;
   --main-background: aliceblue;
   --main-color: black;
+  --main-border: #4b4b4b;
   --table-background: white;
-  --table-border: #4b4b4b;
   --loading-overlay-background: rgba(0, 0, 0, 0.7);
   --scrollbar-foreground: #7B7B7B;
 }
@@ -27,8 +27,8 @@
   --high-contrast: white;
   --main-background: #14191d;
   --main-color: #cccccc;
+  --main-border: #4b4b4b;
   --table-background: black;
-  --table-border: #4b4b4b;
   --loading-overlay-background: rgba(0, 0, 0, 0.5);
   --scrollbar-foreground: #9C9C9E;
 }
@@ -65,7 +65,7 @@ table td.width-content
 
 tr, td, th
 {
-  border: 1px solid var(--table-border);
+  border: 1px solid var(--main-border);
   padding: 6px 8px;
   text-align: left;
 }
@@ -180,7 +180,7 @@ sl-drawer table
   display: flex;
   flex-direction: column;
   background: var(--main-background);
-  border-bottom: 1px solid var(--table-border);
+  border-bottom: 1px solid var(--main-border);
 }
 
 #options-title
@@ -194,7 +194,8 @@ sl-drawer table
 
 #options-title img
 {
-  height: 100%;
+  height: 50px;
+  width: 50px;
 }
 
 .helper-row

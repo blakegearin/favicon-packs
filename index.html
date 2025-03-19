@@ -91,6 +91,7 @@
             aria-display-none="true"
             library="default"
           ></sl-icon>
+
           <sl-icon
             class="only-dark"
             name="moon-fill"
@@ -103,26 +104,32 @@
           <sl-menu-item
             type="checkbox"
             value="light"
-          >Light</sl-menu-item>
+          >
+            Light
+          </sl-menu-item>
+
           <sl-menu-item
             type="checkbox"
             value="dark"
-          >Dark</sl-menu-item>
+          >
+            Dark
+          </sl-menu-item>
+
           <sl-divider></sl-divider>
+
           <sl-menu-item
             type="checkbox"
             value="auto"
-          >System</sl-menu-item>
+          >
+            System
+          </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
     </div>
 
     <div class="header">
       <div id="options-title">
-        <img
-          src="src/img/logo.svg"
-          height="30"
-        >
+        <img src="src/img/logo.svg">
 
         <h1>
           Favicon Packs
@@ -635,7 +642,7 @@
             <td class="center light-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="demo-color-picker light-theme-color-picker light-theme-color-value"
+                  class="light-theme-color-picker light-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -652,7 +659,7 @@
             <td class="center dark-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="demo-color-picker dark-theme-color-picker dark-theme-color-value"
+                  class="dark-theme-color-picker dark-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -669,7 +676,7 @@
             <td class="center any-theme-display">
               <div class="center-cell color-cell">
                 <sl-color-picker
-                  class="demo-color-picker any-theme-color-picker any-theme-color-value"
+                  class="any-theme-color-picker any-theme-color-value"
                   label="Select a color"
                   swatches="#000000; #242424; #484848; #6C6C6C; #909090; #B4B4B4; #D8D8D8; #FFFFFF"
                 ></sl-color-picker>
@@ -768,23 +775,6 @@
           </sl-dropdown>
         </div>
       </div>
-    </div>
-
-    <div
-      class="center"
-      style="position: fixed; bottom: 2rem; width: 100%;"
-    >
-      <a
-        href="https://addons.mozilla.org/en-US/firefox/addon/favicon-packs/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="width: 15%; display: inline-block;"
-      >
-        <img
-          src="src/demo/get-the-addon.svg"
-          alt="Get the add-on"
-        >
-      </a>
     </div>
 
     <sl-drawer
@@ -1333,6 +1323,32 @@
                   </div>
                 </td>
               </tr>
+
+              <tr>
+                <td></td>
+                <td></td>
+
+                <td>
+                  <div class="right-align">
+                    <span>
+                      Toolbar logo
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <sl-select
+                      id="toolbar-logo-select"
+                      size="medium"
+                      placement="bottom"
+                    >
+                      <sl-option value="standard">Standard</sl-option>
+                      <sl-option value="monochrome">Monochrome</sl-option>
+                    </sl-select>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </sl-tab-panel>
@@ -1345,7 +1361,7 @@
 
     <script src="src/utils/logger.js"></script>
     <script src="src/db/store.js"></script>
-    <script src="src/db/idb-backup-and-restore.js "></script>
+    <script src="src/db/idb-backup-and-restore.js"></script>
     <script src="src/demo/icons.js"></script>
     <script src="src/demo/demo.js"></script>
     <script src="src/options/options.js"></script>

@@ -169,6 +169,29 @@ async function updateCurrentFavicon () {
 document.addEventListener('DOMContentLoaded', async function () {
   await window.extensionStore.initialize()
 
+  const addOnDiv = document.createElement('div')
+  addOnDiv.className = 'center'
+  addOnDiv.style.position = 'fixed'
+  addOnDiv.style.bottom = '2rem'
+  addOnDiv.style.width = '100%'
+
+  const addOnLink = document.createElement('a')
+  addOnLink.href =
+    'https://addons.mozilla.org/en-US/firefox/addon/favicon-packs/'
+  addOnLink.target = '_blank'
+  addOnLink.rel = 'noopener noreferrer'
+  addOnLink.style.width = '15%'
+  addOnLink.style.display = 'inline-block'
+
+  const addOnImg = document.createElement('img')
+  addOnImg.src = 'src/demo/get-the-addon.svg'
+  addOnImg.alt = 'Get the add-on'
+
+  addOnLink.appendChild(addOnImg)
+  addOnDiv.appendChild(addOnLink)
+
+  document.querySelector('.content').insertAdjacentElement('afterend', addOnDiv)
+
   const siteConfigs = await window.extensionStore.getSiteConfigs()
   fpLogger.debug('siteConfigs', siteConfigs)
 
@@ -274,11 +297,13 @@ document.addEventListener('DOMContentLoaded', async function () {
       setTimeout(updateCurrentFavicon, 500)
     }
 
-    document.querySelectorAll('.demo-color-picker').forEach(colorPicker => {
-      colorPicker.addEventListener('sl-blur', event => {
-        event.target.updateComplete.then(updateCurrentFaviconAfterDelay)
+    document
+      .querySelectorAll('.color-cell sl-color-picker')
+      .forEach(colorPicker => {
+        colorPicker.addEventListener('sl-blur', event => {
+          event.target.updateComplete.then(updateCurrentFaviconAfterDelay)
+        })
       })
-    })
 
     document
       .querySelectorAll('.active-cell sl-switch')

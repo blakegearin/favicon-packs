@@ -10,10 +10,11 @@
 
 # Favicon Packs
 
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Faddons.mozilla.org%2Fapi%2Fv5%2Faddons%2Faddon%2Ffavicon-packs%2F&query=%24.average_daily_users&suffix=%20users&label=firefox%20add-on&color=%23E66000&link=https%3A%2F%2Faddons.mozilla.org%2Fen-US%2Ffirefox%2Faddon%2Ffavicon-packs)
 [![Javascript Style Guide](https://img.shields.io/badge/code_style-standard-f3df49)](https://standardjs.com)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to apply icon packs as [favicons](https://en.wikipedia.org/wiki/Favicon).
+This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to customize tab [favicons](https://en.wikipedia.org/wiki/Favicon) with icons or images.
 
 ## Features
 

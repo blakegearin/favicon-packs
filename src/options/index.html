@@ -91,6 +91,7 @@
             aria-display-none="true"
             library="default"
           ></sl-icon>
+
           <sl-icon
             class="only-dark"
             name="moon-fill"
@@ -103,26 +104,32 @@
           <sl-menu-item
             type="checkbox"
             value="light"
-          >Light</sl-menu-item>
+          >
+            Light
+          </sl-menu-item>
+
           <sl-menu-item
             type="checkbox"
             value="dark"
-          >Dark</sl-menu-item>
+          >
+            Dark
+          </sl-menu-item>
+
           <sl-divider></sl-divider>
+
           <sl-menu-item
             type="checkbox"
             value="auto"
-          >System</sl-menu-item>
+          >
+            System
+          </sl-menu-item>
         </sl-menu>
       </sl-dropdown>
     </div>
 
     <div class="header">
       <div id="options-title">
-        <img
-          src="../../img/logo.svg"
-          height="30"
-        >
+        <img src="/img/logo.svg">
 
         <h1>
           Favicon Packs
@@ -1078,7 +1085,7 @@
 
             <img
               id="parts-of-a-url"
-              src="../../img/parts-of-a-url.png"
+              src="../img/parts-of-a-url.png"
               alt="Parts of a URL"
             >
           </div>
@@ -1316,6 +1323,32 @@
                   </div>
                 </td>
               </tr>
+
+              <tr>
+                <td></td>
+                <td></td>
+
+                <td>
+                  <div class="right-align">
+                    <span>
+                      Toolbar logo
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <div>
+                    <sl-select
+                      id="toolbar-logo-select"
+                      size="medium"
+                      placement="bottom"
+                    >
+                      <sl-option value="standard">Standard</sl-option>
+                      <sl-option value="monochrome">Monochrome</sl-option>
+                    </sl-select>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </sl-tab-panel>
@@ -1328,7 +1361,7 @@
 
     <script src="../utils/logger.js"></script>
     <script src="../db/store.js"></script>
-    <script src="../db/idb-backup-and-restore.js "></script>
+    <script src="../db/idb-backup-and-restore.js"></script>
     <script src="options.js"></script>
   </body>
 

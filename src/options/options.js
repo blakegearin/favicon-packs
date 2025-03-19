@@ -1462,6 +1462,19 @@ async function populateIconPackVariantSelector () {
   }
 }
 
+async function applyToolbarLogo () {
+  const toolbarLogo = await window.extensionStore.getPreference('toolbarLogo')
+  let path = '../img/logo.svg'
+
+  switch (toolbarLogo) {
+    case 'monochrome':
+      path = '../img/monochrome-logo.svg'
+      break
+  }
+
+  browser.browserAction.setIcon({ path })
+}
+
 async function applyPreferences () {
   fpLogger.debug('getPreferenceMetadata()')
 
@@ -1694,6 +1707,37 @@ async function applyPreferences () {
           })
         })
       }
+    },
+    toolbarLogo: {
+      initialize: async () => {
+        const storageKey = 'toolbarLogo'
+        const inputId = '#toolbar-logo-select'
+        const defaultValue = 'standard'
+
+        const apply = async value => {
+          fpLogger.debug(`Setting ${storageKey} to ${value}`)
+          await window.extensionStore.updatePreference(storageKey, value)
+
+          await applyToolbarLogo()
+        }
+
+        const existingValue = await window.extensionStore.getPreference(
+          storageKey
+        )
+        const currentValue = existingValue || defaultValue
+        apply(currentValue)
+
+        const inputElement = document.querySelector(inputId)
+        if (!inputElement) return
+
+        inputElement.value = currentValue
+
+        inputElement.addEventListener('sl-change', event => {
+          event.target.updateComplete.then(async () => {
+            apply(event.target.value)
+          })
+        })
+      }
     }
   }
 
@@ -1708,6 +1752,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   await window.extensionStore.initialize()
 
   await applyPreferences()
+  void applyToolbarLogo()
 
   // Icon selector drawer
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector')

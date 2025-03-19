@@ -105,7 +105,8 @@ class ExtensionStore {
             { key: 'lightThemeDefaultColor', value: '#333333' },
             { key: 'darkThemeDefaultColor', value: '#cccccc' },
             { key: 'anyThemeDefaultColor', value: '#808080' },
-            { key: 'importPriority', value: 'lowest-priority' }
+            { key: 'importPriority', value: 'lowest-priority' },
+            { key: 'toolbarLogo', value: 'standard' }
           ]
 
           // Add all default preferences to the store
