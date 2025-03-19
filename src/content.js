@@ -210,7 +210,7 @@ fpLogger.info('content.js loaded')
       for (const mutation of mutations) {
         fpLogger.trace('mutation', mutation)
 
-        fpLogger.info('Resetting favicon due to mutation')
+        fpLogger.debug('Resetting favicon due to mutation')
 
         hasInitialized = false
         cleanupExistingIcons()

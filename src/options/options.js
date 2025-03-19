@@ -1472,7 +1472,11 @@ async function applyToolbarLogo () {
       break
   }
 
-  browser.browserAction.setIcon({ path })
+  try {
+    browser.browserAction.setIcon({ path })
+  } catch (error) {
+    fpLogger.verbose('Failed to set toolbar logo', error)
+  }
 }
 
 async function applyPreferences () {

@@ -88,19 +88,6 @@ async function replaceFavicon (siteConfigId) {
   currentFaviconHref = imgUrl
 
   document.head.appendChild(link)
-
-  // Add a style to prevent other favicons
-  const style = document.createElement('style')
-  style.id = 'favicon-packs-style'
-  style.textContent = `
-    link[rel*="icon"]:not(#${FAVICON_ID}),
-    link[rel*="shortcut"]:not(#${FAVICON_ID}),
-    link[rel*="apple-touch"]:not(#${FAVICON_ID}),
-    link[rel*="mask-icon"]:not(#${FAVICON_ID}) {
-      display: none !important;
-    }
-  `
-  document.head.appendChild(style)
 }
 
 async function updateCurrentFavicon () {
@@ -162,6 +149,17 @@ async function updateCurrentFavicon () {
       )
       document.head.appendChild(defaultFavicon.cloneNode(true))
       defaultFavicon.remove()
+    }
+
+    const defaultLinkId = 'favicon-packs-default-favicon'
+
+    if (!document.getElementById(defaultLinkId)) {
+      const defaultLink = document.createElement('link')
+      defaultLink.id = defaultLinkId
+      defaultLink.type = 'image/svg+xml'
+      defaultLink.href = 'src/img/logo.svg'
+      defaultLink.rel = 'icon'
+      document.head.appendChild(defaultLink)
     }
   }
 }
