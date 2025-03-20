@@ -6,7 +6,8 @@ const STORES = {
   icons: 'icons',
   preferences: 'preferences',
   siteConfigs: 'siteConfigs',
-  uploads: 'uploads'
+  uploads: 'uploads',
+  urlImports: 'urlImports'
 }
 
 function capitalize (string) {
@@ -89,6 +90,10 @@ class ExtensionStore {
 
         if (!existingStoreNames.includes(STORES.uploads)) {
           database.createObjectStore(STORES.uploads, { keyPath: 'id' })
+        }
+
+        if (!existingStoreNames.includes(STORES.urlImports)) {
+          database.createObjectStore(STORES.urlImports, { keyPath: 'id' })
         }
 
         if (!existingStoreNames.includes(STORES.preferences)) {
@@ -701,6 +706,49 @@ class ExtensionStore {
     fpLogger.debug('deleteUploads()')
     await this.ensureInitialized()
     return this._deleteRecords(STORES.uploads, ids)
+  }
+
+  // Methods for urlImports
+  async addUrlImport (urlImport) {
+    fpLogger.debug('addUrlImport()')
+    await this.ensureInitialized()
+
+    const configWithId = {
+      ...urlImport,
+      id: Date.now()
+    }
+
+    return this._addRecord(STORES.urlImports, configWithId)
+  }
+
+  async getUrlImportById (id) {
+    fpLogger.debug('getUrlImportById()')
+    await this.ensureInitialized()
+    return await this._getRecord(STORES.urlImports, parseInt(id))
+  }
+
+  async getUrlImports () {
+    fpLogger.debug('getUrlImports()')
+    await this.ensureInitialized()
+    return this._getAllRecords(STORES.urlImports)
+  }
+
+  async updateUrlImport (urlImport) {
+    fpLogger.debug('updateUrlImport()')
+    await this.ensureInitialized()
+    return this._updateRecord(STORES.urlImports, urlImport)
+  }
+
+  async deleteUrlImport (id) {
+    fpLogger.debug('deleteUrlImport()')
+    await this.ensureInitialized()
+    return this._deleteRecord(STORES.urlImports, id)
+  }
+
+  async deleteUrlImports (ids) {
+    fpLogger.debug('deleteUrlImports()')
+    await this.ensureInitialized()
+    return this._deleteRecords(STORES.urlImports, ids)
   }
 
   // Preference methods

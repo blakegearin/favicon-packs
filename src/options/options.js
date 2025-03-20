@@ -68,6 +68,16 @@ function buildUploadImg (upload) {
   return iconImage
 }
 
+function buildUrlImportImg (urlImport) {
+  fpLogger.debug('buildUploadImg()')
+
+  const iconImage = document.createElement('img')
+  iconImage.src = urlImport.dataUri
+  iconImage.setAttribute('url-import-id', urlImport.id)
+
+  return iconImage
+}
+
 function buildSvgSprite (icon, size = 40) {
   fpLogger.trace('buildSvgSprite()')
 
@@ -223,6 +233,15 @@ async function getSiteConfigsByUpload (uploadId) {
   )
 }
 
+async function getSiteConfigsByUrlImport (urlImportId) {
+  fpLogger.debug('getSiteConfigsByUrlImport()')
+
+  const siteConfigs = await window.extensionStore.getSiteConfigs()
+  return siteConfigs.filter(
+    siteConfig => siteConfig.urlImportId?.toString() === urlImportId?.toString()
+  )
+}
+
 async function populateDrawerUploads () {
   fpLogger.debug('populateDrawerUploads()')
 
@@ -374,6 +393,157 @@ async function populateDrawerUploads () {
   uploadList.replaceChildren(uploadListFragment)
 }
 
+async function populateDrawerUrlImports () {
+  fpLogger.debug('populateDrawerUrlImports()')
+
+  const urlImports = await window.extensionStore.getUrlImports()
+  const urlImportListFragment = document.createDocumentFragment()
+
+  const headerDiv = document.createElement('div')
+  headerDiv.slot = 'header'
+
+  const footerDiv = document.createElement('div')
+  footerDiv.slot = 'footer'
+
+  const deleteButton = document.createElement('sl-icon-button')
+  deleteButton.setAttribute('name', 'trash')
+  deleteButton.setAttribute('label', 'Delete')
+  deleteButton.classList.add('delete-urlImport')
+
+  const selectRadio = document.createElement('sl-radio')
+  selectRadio.setAttribute('size', 'large')
+
+  for (const urlImport of urlImports) {
+    const cardElement = document.createElement('sl-card')
+    cardElement.classList.add('url-import-list-item')
+
+    const urlImportHeaderDiv = headerDiv.cloneNode()
+    urlImportHeaderDiv.textContent = urlImport.url
+    cardElement.appendChild(urlImportHeaderDiv)
+
+    const iconImage = buildUrlImportImg(urlImport)
+    cardElement.appendChild(iconImage)
+
+    const urlImportFooterDiv = footerDiv.cloneNode(true)
+
+    const deleteTooltip = document.createElement('sl-tooltip')
+    deleteTooltip.setAttribute('content', 'Delete')
+
+    const urlImportDeleteButton = deleteButton.cloneNode(true)
+    urlImportDeleteButton.addEventListener('click', async () => {
+      fpLogger.info('URL import delete button clicked')
+
+      const relatedSiteConfigs = await getSiteConfigsByUrlImport(urlImport.id)
+      fpLogger.debug('relatedSiteConfigs', relatedSiteConfigs)
+
+      const usageCount = relatedSiteConfigs.length
+      const urlImportDate = new Date(parseInt(urlImport.id, 10))
+      const formattedDate = urlImportDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      const formattedTime = urlImportDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      const formattedDateTime = `${formattedDate} at ${formattedTime}`
+
+      let confirmationText = `Are you sure you want to delete this file?
+
+      URL: ${urlImport.url}
+
+      Imported: ${formattedDateTime}`
+
+      if (usageCount) {
+        const plural = usageCount === 1 ? '' : 's'
+        confirmationText += `
+
+        It's used by ${usageCount} site configuration${plural} which will be impacted.`
+      }
+
+      showDeleteConfirmationDialog(async () => {
+        await window.extensionStore.deleteUrlImport(urlImport.id)
+
+        const siteConfigs = await window.extensionStore.getSiteConfigs()
+        for (const config of siteConfigs) {
+          if (config.urlImportId === urlImport.id) {
+            await updateSiteConfig({
+              id: config.id,
+              urlImportId: null
+            })
+          }
+        }
+
+        ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
+        ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.add(
+          'display-none'
+        )
+        ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.add(
+          'hidden'
+        )
+        // ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+        //   ''
+
+        await populateDrawerUploads()
+      }, confirmationText)
+    })
+
+    deleteTooltip.appendChild(urlImportDeleteButton)
+    urlImportFooterDiv.appendChild(deleteTooltip)
+
+    const selectTooltip = document.createElement('sl-tooltip')
+    selectTooltip.setAttribute('content', 'Select')
+
+    const urlImportSelectRadio = selectRadio.cloneNode(true)
+
+    const updatedIconUrlImportId =
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon img')?.getAttribute(
+        'url-import-id'
+      )
+    fpLogger.debug('updatedIconUrlImportId', updatedIconUrlImportId)
+
+    if (updatedIconUrlImportId?.toString() === urlImport.id.toString()) {
+      urlImportSelectRadio.checked = true
+    }
+
+    urlImportSelectRadio.addEventListener('click', async () => {
+      fpLogger.debug('URL import selected')
+
+      ICON_SELECTOR_DRAWER.querySelectorAll(
+        '.url-import-list-item sl-radio'
+      ).forEach(radio => {
+        if (radio !== urlImportSelectRadio) radio.checked = false
+      })
+      urlImportSelectRadio.checked = true
+
+      const imagePreview = buildUrlImportImg(urlImport)
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        imagePreview
+      )
+
+      // ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+      //   upload.name
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+        'display-none'
+      )
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+        'hidden'
+      )
+    })
+
+    selectTooltip.appendChild(urlImportSelectRadio)
+    urlImportFooterDiv.appendChild(selectTooltip)
+
+    cardElement.appendChild(urlImportFooterDiv)
+    urlImportListFragment.appendChild(cardElement)
+  }
+
+  const urlImportList = ICON_SELECTOR_DRAWER.querySelector('.url-import-list')
+  urlImportList.replaceChildren(urlImportListFragment)
+}
+
 async function getPriority (id) {
   fpLogger.debug('getPriority()')
 
@@ -469,6 +639,7 @@ async function updateSiteConfig ({
   websitePattern,
   iconId,
   uploadId,
+  urlImportId,
   lightThemeColor,
   darkThemeColor,
   anyThemeColor,
@@ -493,6 +664,7 @@ async function updateSiteConfig ({
     websitePattern: websitePattern || existingSiteConfig.websitePattern,
     iconId: iconId || existingSiteConfig.iconId,
     uploadId: uploadId || existingSiteConfig.uploadId,
+    urlImportId: urlImportId || existingSiteConfig.urlImportId,
     lightThemeColor: lightThemeColor || existingSiteConfig.lightThemeColor,
     darkThemeColor: darkThemeColor || existingSiteConfig.darkThemeColor,
     anyThemeColor: anyThemeColor || existingSiteConfig.anyThemeColor,
@@ -531,7 +703,8 @@ async function updateSiteConfig ({
     }
 
     delete newSiteConfig.uploadId
-  } else if (uploadId) {
+    delete newSiteConfig.urlImportId
+  } else if (uploadId || urlImportId) {
     delete newSiteConfig.iconId
     delete newSiteConfig.lightPngUrl
     delete newSiteConfig.darkPngUrl
@@ -820,15 +993,28 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
     newRow
       .querySelector('.favicon-value.image-display')
       .classList.add('display-none')
-  } else if (siteConfig.uploadId) {
-    fpLogger.debug('siteConfig.uploadId', siteConfig.uploadId)
+  } else if (siteConfig.uploadId || siteConfig.urlImportId) {
+    let imageElement
 
-    const upload = await window.extensionStore.getUploadById(
-      siteConfig.uploadId
-    )
-    fpLogger.debug('upload', upload)
+    if (siteConfig.uploadId) {
+      fpLogger.debug('siteConfig.uploadId', siteConfig.uploadId)
 
-    const imageElement = buildUploadImg(upload)
+      const upload = await window.extensionStore.getUploadById(
+        siteConfig.uploadId
+      )
+      fpLogger.debug('upload', upload)
+
+      imageElement = buildUploadImg(upload)
+    } else if (siteConfig.urlImportId) {
+      fpLogger.debug('siteConfig.urlImportId', siteConfig.urlImportId)
+
+      const urlImport = await window.extensionStore.getUrlImportById(
+        siteConfig.urlImportId
+      )
+      fpLogger.debug('urlImport', urlImport)
+
+      imageElement = buildUrlImportImg(urlImport)
+    }
 
     newRow.querySelectorAll('#icon-value').forEach(iconValueElement => {
       iconValueElement.replaceChildren(imageElement.cloneNode(true))
@@ -913,6 +1099,26 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
         upload.name
       ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
         ''
+    } else if (siteConfig.urlImportId) {
+      ICON_SELECTOR_DRAWER.querySelector('[panel="url"]').click()
+
+      ICON_SELECTOR_DRAWER.querySelectorAll(
+        '.url-import-list-item sl-radio'
+      ).forEach(radio => {
+        radio.checked = false
+      })
+
+      const urlImport = await window.extensionStore.getUrlImportById(
+        siteConfig.urlImportId
+      )
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
+        buildUrlImportImg(urlImport)
+      )
+
+      // ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent =
+      //   upload.name
+      // ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+      //   ''
     } else {
       ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
       ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
@@ -1096,6 +1302,9 @@ function openTabPanels (tabPanelName) {
   const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="upload"]'
   )
+  const urlTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
+    'sl-tab-panel[name="url"]'
+  )
 
   switch (tabPanelName) {
     case 'icon-packs':
@@ -1103,10 +1312,19 @@ function openTabPanels (tabPanelName) {
       iconPacksTabPanels.forEach(tabPanel =>
         tabPanel.setAttribute('active', '')
       )
+      urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'upload':
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
+      urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
+      break
+    case 'url':
+      iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      uploadTabPanels.forEach(tabPanel =>
+        tabPanel.removeAttribute('active', '')
+      )
+      urlTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       break
   }
 }
@@ -1774,12 +1992,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group')
   iconDrawerTabGroup.addEventListener('sl-tab-show', event => {
-    fpLogger.debug('Switching tab un icon selector drawer')
+    fpLogger.debug('Switching tab to icon selector drawer')
     openTabPanels(event.detail.name)
   })
 
   await populateDrawerIcons()
   await populateDrawerUploads()
+  await populateDrawerUrlImports()
 
   ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener(
     'click',
@@ -1787,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       fpLogger.info('Clear icon button clicked')
 
       ICON_SELECTOR_DRAWER.querySelectorAll(
-        '.upload-list-item sl-radio'
+        '.upload-list-item sl-radio, .url-import-list-item sl-radio'
       ).forEach(radio => {
         radio.checked = false
       })
@@ -1820,6 +2039,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         const iconId = selectedCell
           .querySelector('[icon-id]')
           .getAttribute('icon-id')
+        fpLogger.debug('iconId', iconId)
+
         updateSiteConfig({ id, iconId })
       } else if (
         ICON_SELECTOR_DRAWER.querySelector(
@@ -1829,7 +2050,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         const uploadId = selectedCell
           .querySelector('[upload-id]')
           .getAttribute('upload-id')
+        fpLogger.debug('uploadId', uploadId)
+
         updateSiteConfig({ id, uploadId })
+      } else if (
+        ICON_SELECTOR_DRAWER.querySelector(
+          'sl-tab-panel[name="url"][active]'
+        )
+      ) {
+        const urlImportId = selectedCell
+          .querySelector('[url-import-id]')
+          .getAttribute('url-import-id')
+        fpLogger.silent('urlImportId', urlImportId)
+
+        updateSiteConfig({ id, urlImportId })
       }
 
       ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
@@ -1912,6 +2146,63 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     }
   )
+
+  ICON_SELECTOR_DRAWER.querySelector(
+    '.url-input-row > sl-button'
+  ).addEventListener('click', async event => {
+    event.preventDefault()
+    fpLogger.silent('Import button clicked')
+
+    const urlInput = ICON_SELECTOR_DRAWER.querySelector('#icon-url-import-input')
+    const url = urlInput.value
+    fpLogger.debug('url', url)
+
+    // Fetch the image from the URL and turn it into a data URI
+    function urlToDataUri (url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.crossOrigin = 'Anonymous'
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0)
+          const dataUri = canvas.toDataURL('image/png')
+          resolve(dataUri)
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+        img.src = url
+      })
+    }
+
+    const dataUri = await urlToDataUri(url)
+    const urlImport = await window.extensionStore.addUrlImport({ url, dataUri })
+    fpLogger.verbose('urlImport', urlImport)
+
+    const imagePreview = document.createElement('img')
+    imagePreview.src = urlImport.dataUri
+    imagePreview.setAttribute('url-import-id', urlImport.id)
+
+    ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+      imagePreview
+    )
+    // ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+    //   upload.name
+
+    // Show unsaved changes UI
+    ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+      'display-none'
+    )
+    ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+      'hidden'
+    )
+
+    // Clear the URL input
+    urlInput.value = ''
+
+    await populateDrawerUrlImports()
+  })
 
   document
     .querySelector('#pattern-type-header sl-icon-button')

@@ -913,7 +913,7 @@
             >
               <div>
                 <span>
-                  Upload your own image files.
+                  Upload an image file.
                 </span>
 
                 <br>
@@ -939,7 +939,7 @@
                 </form>
 
                 <div>
-                  <p>
+                  <panel=p>
                     Current File Name:&nbsp;<span id="current-upload-name"></span>
                   </p>
                 </div>
@@ -950,6 +950,48 @@
                   <p>
                     Updated File Name:&nbsp;<span id="updated-upload-name"></span>
                   </p>
+                </div>
+              </div>
+            </sl-tab-panel>
+
+            <sl-tab-panel
+              class="icon-url"
+              name="url"
+            >
+              <div>
+                <span>
+                  Enter a URL to an image file.
+                </span>
+
+                <br>
+                <br>
+
+                <span>
+                  Supported files: svg, png, jpg, jpeg, ico
+                </span>
+              </div>
+
+              <div>
+                <div class="url-input-row">
+                  <sl-input
+                    id="icon-url-import-input"
+                    placeholder="https://wikipedia.org"
+                    autofocus
+                    clearable
+                  >
+                    <sl-icon
+                      name="link-45deg"
+                      slot="prefix"
+                    ></sl-icon>
+                  </sl-input>
+
+                  <sl-button
+                    variant="neutral"
+                    outline
+                  >
+                    Import
+                  </sl-button>
+                  </sl-input>
                 </div>
               </div>
             </sl-tab-panel>
@@ -972,6 +1014,14 @@
               <div class="icon-upload">
                 <div>
                   <div class="upload-list"></div>
+                </div>
+              </div>
+            </sl-tab-panel>
+
+            <sl-tab-panel name="url">
+              <div class="icon-url">
+                <div>
+                  <div class="url-import-list"></div>
                 </div>
               </div>
             </sl-tab-panel>
@@ -998,7 +1048,14 @@
                     slot="nav"
                     panel="upload"
                   >
-                    Upload
+                    File Upload
+                  </sl-tab>
+
+                  <sl-tab
+                    slot="nav"
+                    panel="url"
+                  >
+                    URL Import
                   </sl-tab>
                 </sl-tab-group>
 

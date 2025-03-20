@@ -4,7 +4,7 @@ package:
 demo:
 	cp src/options/index.html index.html
 	sed -i '' -e 's|href="../img/|href="src/img/|g' index.html
-	sed -i '' -e 's|src="scripts/theme.js"|src="src/options/theme.js"|g' index.html
+	sed -i '' -e 's|src="theme.js"|src="src/options/theme.js"|g' index.html
 	sed -i '' -e 's|href="/shoelace/|href="src/shoelace/|g' index.html
 	sed -i '' -e 's|src="/shoelace/|src="src/shoelace/|g' index.html
 	sed -i '' -e 's|href="styles.css"|href="src/options/styles.css"|g' index.html

@@ -499,7 +499,8 @@ sl-tag sl-icon-button
   width: 100%;
 }
 
-.upload-list-item div[slot="footer"]
+.upload-list-item div[slot="footer"],
+.url-import-list-item div[slot="footer"]
 {
   display: flex;
   align-items: center;
@@ -693,24 +694,31 @@ html:not(.sl-theme-dark) .only-dark
   width: 30px;
 }
 
-.upload-list {
+.upload-list,
+.url-import-list
+{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: end;
 }
 
-.upload-list-item {
+.upload-list-item,
+.url-import-list-item
+{
   width: auto !important;
   max-width: 100%;
 }
 
-.upload-list-item::part(footer)
+.upload-list-item::part(footer),
+.url-import-list-item::part(footer)
 {
   --padding: 0;
 }
 
-.upload-list-item img {
+.upload-list-item img,
+.url-import-list-item img
+{
   max-width: 100%;
   height: auto;
   object-fit: contain;
@@ -719,7 +727,9 @@ html:not(.sl-theme-dark) .only-dark
   display: block;
 }
 
-.upload-list-item [slot="header"] {
+.upload-list-item [slot="header"],
+.url-import-list-item [slot="header"]
+{
   word-wrap: break-word;
   word-break: break-all;
   hyphens: auto;
@@ -743,17 +753,20 @@ sl-tab
   max-width: 250px;
 }
 
-.icon-upload > div:first-child
+.icon-upload > div:first-child,
+.icon-url > div:first-child
 {
   margin-bottom: 1.5rem;
 }
 
-.drawer__header .icon-upload
+.drawer__header .icon-upload,
+.drawer__header .icon-url
 {
   overflow: scroll;
 }
 
-.drawer__header .icon-upload > div
+.drawer__header .icon-upload > div,
+.drawer__header .icon-url > div
 {
   padding: 1rem;
   border: solid 1px var(--sl-panel-border-color);
@@ -761,12 +774,14 @@ sl-tab
   overflow: scroll;
 }
 
-.drawer__body .icon-upload > div
+.drawer__body .icon-upload > div,
+.drawer__body .icon-url > div
 {
   padding: 1rem;
 }
 
-.icon-upload p
+.icon-upload p,
+.icon-url p
 {
   display: ruby;
 }
@@ -875,6 +890,17 @@ sl-tab
 .upload-row > button
 {
   margin-right: 0.5rem;
+}
+
+.url-input-row
+{
+  display: flex;
+  justify-content: space-between;
+}
+
+#icon-url-import-input
+{
+  max-width: 235px;
 }
 
 /* Drawer */
