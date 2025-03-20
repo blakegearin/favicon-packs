@@ -167,6 +167,8 @@ async function updateCurrentFavicon () {
 document.addEventListener('DOMContentLoaded', async function () {
   await window.extensionStore.initialize()
 
+  document.querySelector('#demo-badge').classList.remove('display-none')
+
   const addOnDiv = document.createElement('div')
   addOnDiv.className = 'center'
   addOnDiv.style.position = 'fixed'
