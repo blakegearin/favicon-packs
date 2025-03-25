@@ -69,7 +69,7 @@ function buildUploadImg (upload) {
 }
 
 function buildUrlImportImg (urlImport) {
-  fpLogger.debug('buildUploadImg()')
+  fpLogger.debug('buildUrlImportImg()')
 
   const iconImage = document.createElement('img')
   iconImage.src = urlImport.dataUri
@@ -1257,10 +1257,19 @@ async function populateTable (siteConfigs) {
   const tableBody = document.querySelector('#siteConfigs tbody')
   tableBody.querySelectorAll('.siteConfig-row').forEach(row => row.remove())
 
-  const siteConfigsOrder = await window.extensionStore.getPreference(
+  let siteConfigsOrder = await window.extensionStore.getPreference(
     'siteConfigsOrder'
   )
   fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+
+  if (!siteConfigsOrder) {
+    siteConfigsOrder = []
+
+    await window.extensionStore.updatePreference(
+      'siteConfigsOrder',
+      siteConfigsOrder
+    )
+  }
 
   // Remove any siteConfigs that no longer exist
   if (siteConfigsOrder.length > siteConfigs.length) {
@@ -2054,9 +2063,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         updateSiteConfig({ id, uploadId })
       } else if (
-        ICON_SELECTOR_DRAWER.querySelector(
-          'sl-tab-panel[name="url"][active]'
-        )
+        ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="url"][active]')
       ) {
         const urlImportId = selectedCell
           .querySelector('[url-import-id]')
@@ -2153,7 +2160,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     event.preventDefault()
     fpLogger.silent('Import button clicked')
 
-    const urlInput = ICON_SELECTOR_DRAWER.querySelector('#icon-url-import-input')
+    const urlInput = ICON_SELECTOR_DRAWER.querySelector(
+      '#icon-url-import-input'
+    )
     const url = urlInput.value
     fpLogger.debug('url', url)
 

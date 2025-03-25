@@ -41,7 +41,14 @@ function exportToJson (idbDatabase, excludeStores = [], deleteIds = true) {
                 return
               }
 
-              if (deleteIds && record && typeof record === 'object' && 'id' in record) {
+              // Don't delete IDs for uploads and urlImports as they're referenced by siteConfigs
+              if (
+                deleteIds &&
+                record &&
+                typeof record === 'object' &&
+                'id' in record &&
+                !['uploads', 'urlImports'].includes(storeName)
+              ) {
                 delete record.id
               }
 
@@ -112,8 +119,9 @@ function importFromJson (idbDatabase, json) {
           toAdd.id = Date.now() + processedRecords // Add index to avoid collisions
         }
 
-        // Use put for preferences to avoid constraint violations
-        const method = storeName === 'preferences' ? 'put' : 'add'
+        const method = ['preferences', 'uploads'].includes(storeName)
+          ? 'put'
+          : 'add'
         const request = transaction.objectStore(storeName)[method](toAdd)
 
         request.addEventListener('success', event => {
