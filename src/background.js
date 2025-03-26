@@ -126,10 +126,31 @@ async function initialize () {
           }
         }
 
+        const replaceStrategy = siteConfig.replaceStrategy || {
+          removeExistingIcons: true,
+          addCssHiding: true,
+          addShortcutLink: true,
+          observeMutations: {
+            enabled: true,
+            attributeFilter: ['href', 'rel', 'src']
+          },
+          persistence: {
+            enabled: true,
+            checkIntervalTime: 400,
+            randomizationFactor: 0.2,
+            retryLimit: null
+          },
+          urlChangeDetection: {
+            enabled: true,
+            checkIntervalTime: 1000
+          }
+        }
+
         fpLogger.debug('imgUrl', imgUrl)
         browser.tabs.sendMessage(sender.tab.id, {
           action: 'setFavicon',
-          imgUrl
+          imgUrl,
+          replaceStrategy
         })
       }
     }

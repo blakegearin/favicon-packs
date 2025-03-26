@@ -1,35 +1,24 @@
 fpLogger.info('content.js loaded')
 ;(function () {
   const CUSTOM_FAVICON_CLASS = 'favicon-packs-custom-favicon'
-  const MAX_RETRIES = 5
 
-  let changeTimeout = null
   let customFaviconHref = null
   let hasInitialized = false
-  let isExtensionChange = false
   let isInitializing = false
+  let currentCheckInterval = null
+  let currentObserver = null
+  let observerConfig = null
 
-  function setOurChange (value) {
-    fpLogger.debug('setOurChange()')
+  let lastUrl = window.location.href
+  let urlCheckInterval = null
 
-    if (changeTimeout) clearTimeout(changeTimeout)
-
-    isExtensionChange = value
-
-    if (value) {
-      changeTimeout = setTimeout(
-        () => {
-          isExtensionChange = false
-          changeTimeout = null
-        },
-        1000 // 1 second
-      )
-    }
-  }
-
-  // Update the cleanupExistingIcons function to be more thorough
-  function cleanupExistingIcons () {
+  function cleanupExistingIcons (strategy = {}) {
     fpLogger.debug('cleanupExistingIcons()')
+
+    if (strategy.removeExistingIcons === false) {
+      fpLogger.debug('Skipping icon removal due to strategy settings')
+      return
+    }
 
     const selectors = [
       'link[rel*="icon"]',
@@ -41,7 +30,6 @@ fpLogger.info('content.js loaded')
       'meta[name*="msapplication"]'
     ].join(',')
 
-    // Remove elements and prevent new insertions
     const removeAndBlock = node => {
       if (node.class !== CUSTOM_FAVICON_CLASS) {
         node.remove()
@@ -53,10 +41,9 @@ fpLogger.info('content.js loaded')
     document.querySelectorAll(selectors).forEach(removeAndBlock)
   }
 
-  function replaceFavicon (imgUrl) {
+  function replaceFavicon (imgUrl, strategy = {}) {
     fpLogger.debug('replaceFavicon()')
 
-    // Prevent concurrent initializations
     if (isInitializing) {
       fpLogger.info('Already initializing, skipping')
       return
@@ -65,9 +52,15 @@ fpLogger.info('content.js loaded')
     isInitializing = true
 
     try {
-      cleanupExistingIcons()
+      // Temporarily disconnect the observer to prevent infinite loops
+      const needToReconnect = currentObserver !== null
+      if (needToReconnect) {
+        fpLogger.debug('Temporarily disconnecting mutation observer')
+        currentObserver.disconnect()
+      }
 
-      // Remove existing favicon if present
+      cleanupExistingIcons(strategy)
+
       const existingFavicons = document.querySelectorAll(CUSTOM_FAVICON_CLASS)
       if (existingFavicons) existingFavicons.forEach(node => node.remove())
 
@@ -79,29 +72,36 @@ fpLogger.info('content.js loaded')
 
       customFaviconHref = imgUrl
 
-      setOurChange(true)
-
-      const shortcutLink = iconLink.cloneNode(true)
-      shortcutLink.rel = 'shortcut icon'
-      document.head.appendChild(shortcutLink)
+      if (strategy.addShortcutLink !== false) {
+        const shortcutLink = iconLink.cloneNode(true)
+        shortcutLink.rel = 'shortcut icon'
+        document.head.appendChild(shortcutLink)
+      }
 
       document.head.appendChild(iconLink)
 
-      // Add a style to prevent other favicons
-      const styleId = 'favicon-packs-style'
-      const existingStyle = document.getElementById(styleId)
-      if (!existingStyle) {
-        const style = document.createElement('style')
-        style.id = styleId
-        style.textContent = `
-          link[rel*="icon"]:not(.${CUSTOM_FAVICON_CLASS}),
-          link[rel*="shortcut"]:not(.${CUSTOM_FAVICON_CLASS}),
-          link[rel*="apple-touch"]:not(.${CUSTOM_FAVICON_CLASS}),
-          link[rel*="mask-icon"]:not(.${CUSTOM_FAVICON_CLASS}) {
-            display: none !important;
-          }
-        `
-        document.head.appendChild(style)
+      if (strategy.addCssHiding !== false) {
+        const styleId = 'favicon-packs-style'
+
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style')
+          style.id = styleId
+          style.textContent = `
+            link[rel*="icon"]:not(.${CUSTOM_FAVICON_CLASS}),
+            link[rel*="shortcut"]:not(.${CUSTOM_FAVICON_CLASS}),
+            link[rel*="apple-touch"]:not(.${CUSTOM_FAVICON_CLASS}),
+            link[rel*="mask-icon"]:not(.${CUSTOM_FAVICON_CLASS}) {
+              display: none !important;
+            }
+          `
+          document.head.appendChild(style)
+        }
+      }
+
+      // Reconnect the observer after changes are complete
+      if (needToReconnect && observerConfig) {
+        fpLogger.debug('Reconnecting mutation observer')
+        currentObserver.observe(document.documentElement, observerConfig)
       }
 
       fpLogger.info('Replaced favicon')
@@ -111,53 +111,87 @@ fpLogger.info('content.js loaded')
     }
   }
 
-  function getColorScheme () {
-    fpLogger.debug('getColorScheme()')
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
-  }
+  function setupPersistenceChecking (imgUrl, strategy = {}, retryCount = 0) {
+    fpLogger.debug('setupPersistenceChecking()')
 
-  // Update the persistence check to be more aggressive
-  function persistentReplace (imgUrl, retryCount = 0) {
-    fpLogger.debug('persistentReplace()')
+    if (currentCheckInterval) {
+      clearInterval(currentCheckInterval)
+      currentCheckInterval = null
+    }
 
-    const favicon = replaceFavicon(imgUrl)
-    if (!favicon) {
-      fpLogger.quiet('Failed to replace favicon')
+    const persistenceSettings = strategy.persistence || {}
+    let checkIntervalTime = persistenceSettings.checkIntervalTime
+
+    // If no checkIntervalTime is provided, no persistence
+    if (!checkIntervalTime) {
+      fpLogger.debug('Persistence disabled (no checkIntervalTime provided)')
       return
     }
 
-    // Randomization to avoid detection (300-500ms)
-    const CHECK_INTERVAL = Math.floor(Math.random() * 200) + 300
+    // Apply randomization if configured
+    if (persistenceSettings.randomizationFactor && checkIntervalTime > 0) {
+      const randomFactor = persistenceSettings.randomizationFactor
+      const randomVariation = Math.floor(
+        checkIntervalTime * randomFactor * (Math.random() * 2 - 1)
+      )
+      checkIntervalTime = Math.max(50, checkIntervalTime + randomVariation)
+    }
 
-    const checkInterval = setInterval(() => {
-      const customFavicon = document.querySelectorAll(`.${CUSTOM_FAVICON_CLASS}`)
+    // If interval time is 0 or negative, disable persistence
+    if (checkIntervalTime <= 0) {
+      fpLogger.debug('Persistence disabled (checkIntervalTime <= 0)')
+      return
+    }
+
+    currentCheckInterval = setInterval(() => {
+      const customFavicon = document.querySelectorAll(
+        `.${CUSTOM_FAVICON_CLASS}`
+      )
+      const expectedFaviconCount = strategy.addShortcutLink !== false ? 2 : 1
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]')
       const style = document.getElementById('favicon-packs-style')
 
+      const styleNeeded = strategy.addCssHiding !== false
+      const styleValid = !styleNeeded || style
+
       const needsReplacement =
-        !customFavicon.length < 2 ||
-        !style ||
-        customFavicon[0].href !== customFaviconHref ||
-        customFavicon[1].href !== customFaviconHref ||
-        existingFavicons.length > 1 ||
-        !document.head.contains(customFavicon)
+        customFavicon.length !== expectedFaviconCount ||
+        !styleValid ||
+        (customFavicon.length > 0 &&
+          customFavicon[0].href !== customFaviconHref) ||
+        (customFavicon.length > 1 &&
+          customFavicon[1].href !== customFaviconHref) ||
+        (strategy.removeExistingIcons !== false &&
+          existingFavicons.length > expectedFaviconCount) ||
+        (customFavicon.length > 0 && !document.head.contains(customFavicon[0]))
 
       if (needsReplacement) {
-        clearInterval(checkInterval)
-        if (retryCount < MAX_RETRIES) {
-          fpLogger.info(`Retry attempt ${retryCount + 1}`)
+        clearInterval(currentCheckInterval)
+        currentCheckInterval = null
+
+        // Get retry limit from persistence settings
+        const retryLimit = persistenceSettings.retryLimit
+
+        // If no retry limit is set, don't retry
+        if (retryLimit === undefined) {
+          fpLogger.debug('Persistence retry disabled (no retryLimit provided)')
+          return
+        }
+
+        if (retryCount < retryLimit) {
+          fpLogger.info(`Persistence retry attempt ${retryCount + 1}`)
 
           // Add small random delay before retry
           setTimeout(() => {
-            persistentReplace(imgUrl, retryCount + 1)
+            setupPersistenceChecking(imgUrl, strategy, retryCount + 1)
           }, Math.random() * 100)
         } else {
-          fpLogger.info('Max retries reached, giving up')
+          fpLogger.info(
+            `Persistence retry limit (${retryLimit}) reached, giving up`
+          )
         }
       }
-    }, CHECK_INTERVAL)
+    }, checkIntervalTime)
   }
 
   // Listen for favicon updates from background script
@@ -173,88 +207,191 @@ fpLogger.info('content.js loaded')
 
         hasInitialized = false
         isInitializing = false
+
+        // Clear any existing check interval
+        if (currentCheckInterval) {
+          clearInterval(currentCheckInterval)
+          currentCheckInterval = null
+        }
         return
       }
 
-      // Reset retryCount when it's a new page initialization
-      const startingRetryCount = request.resetRetries
-        ? 0
-        : request.retryCount || 0
-      persistentReplace(request.imgUrl, startingRetryCount)
+      currentStrategy = request.replaceStrategy || currentStrategy
+
+      // Strategy 1: Basic favicon replacement (always happens)
+      fpLogger.debug('Applying basic favicon replacement')
+      replaceFavicon(request.imgUrl, currentStrategy)
+
+      // Strategy 2: Persistence checking
+      if (currentStrategy.persistence?.enabled === true) {
+        fpLogger.debug('Setting up persistence checking')
+        setupPersistenceChecking(request.imgUrl, currentStrategy, 0)
+      }
+
+      // Strategy 3: Mutation observer
+      if (currentObserver) {
+        currentObserver.disconnect()
+        currentObserver = null
+      }
+
+      if (
+        hasInitialized &&
+        currentStrategy.observeMutations?.enabled === true
+      ) {
+        fpLogger.debug('Setting up mutation observer')
+        currentObserver = setupFaviconObserver(currentStrategy)
+      }
+
+      // Strategy 4: URL change detection
+      setupUrlChangeDetection(currentStrategy)
     }
   })
 
-  function initialize () {
+  function initialize (forceReset = false) {
     fpLogger.debug('initialize()')
 
-    if (hasInitialized) {
+    if (hasInitialized && !forceReset) {
       fpLogger.debug('Already initialized, skipping')
       return
     }
 
+    const colorScheme = window.matchMedia('(prefers-color-scheme: dark)')
+      .matches
+      ? 'dark'
+      : 'light'
+
     hasInitialized = true
     browser.runtime.sendMessage({
       action: 'replaceFavicon',
-      colorScheme: getColorScheme(),
-      resetRetries: true,
+      colorScheme,
       url: window.location.href
     })
   }
 
-  function setupFaviconObserver () {
+  function setupFaviconObserver (strategy = {}) {
     fpLogger.debug('setupFaviconObserver()')
 
-    const observer = new window.MutationObserver(mutations => {
-      if (isExtensionChange) return
+    if (!strategy.observeMutations?.enabled) {
+      fpLogger.debug('Mutation observation disabled by strategy')
+      return null
+    }
 
-      for (const mutation of mutations) {
-        fpLogger.trace('mutation', mutation)
+    const attributeFilter = strategy.observeMutations?.attributeFilter
 
-        fpLogger.debug('Resetting favicon due to mutation')
-
-        hasInitialized = false
-        cleanupExistingIcons()
-
-        browser.runtime.sendMessage({
-          action: 'replaceFavicon',
-          colorScheme: getColorScheme(),
-          resetRetries: true,
-          url: window.location.href
-        })
-      }
-    })
-
-    // Observe both head and body to catch all favicon changes
-    observer.observe(document.documentElement, {
+    observerConfig = {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['href', 'rel', 'src'],
+      attributeFilter,
       characterData: true
+    }
+
+    const observer = new window.MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        fpLogger.trace('mutation', mutation)
+
+        if (!customFaviconHref) {
+          fpLogger.error(
+            'Mutation detected but no favicon URL is available - this is unexpected'
+          )
+          continue
+        }
+
+        fpLogger.info('Resetting favicon due to mutation')
+        replaceFavicon(customFaviconHref, currentStrategy)
+      }
     })
 
+    // Determine which element to observe
+    let targetElement = document.documentElement
+
+    const targetSelector = strategy.observeMutations?.targetSelector
+    fpLogger.debug('targetSelector', targetSelector)
+
+    if (targetSelector) {
+      try {
+        // Try to find the element with the selector
+        const foundElement = document.querySelector(targetSelector)
+
+        if (foundElement) {
+          fpLogger.debug(
+            `Observing element matching selector: ${targetSelector}`
+          )
+          targetElement = foundElement
+        } else {
+          fpLogger.error(
+            'No element found matching selector, falling back to document'
+          )
+        }
+      } catch (error) {
+        fpLogger.error(
+          'No element found matching selector, falling back to document',
+          error
+        )
+      }
+    } else {
+      fpLogger.debug('No target selector provided, observing entire document')
+    }
+
+    observer.observe(targetElement, observerConfig)
     return observer
+  }
+
+  function setupUrlChangeDetection (strategy = {}) {
+    if (!strategy.urlChangeDetection?.enabled) {
+      fpLogger.debug('URL change detection disabled by strategy')
+      return
+    }
+
+    fpLogger.debug('Setting up URL change detection for SPAs')
+
+    window.addEventListener('popstate', () => {
+      fpLogger.debug('Pop state detected, checking for URL change')
+      checkForUrlChange()
+    })
+
+    window.addEventListener('hashchange', () => {
+      fpLogger.debug('Hash change detected, checking for URL change')
+      checkForUrlChange()
+    })
+
+    const checkIntervalTime = strategy.urlChangeDetection?.checkIntervalTime
+
+    if (checkIntervalTime && checkIntervalTime > 0) {
+      if (urlCheckInterval) clearInterval(urlCheckInterval)
+
+      urlCheckInterval = setInterval(checkForUrlChange, checkIntervalTime)
+    }
+  }
+
+  function checkForUrlChange () {
+    const currentUrl = window.location.href
+
+    if (currentUrl !== lastUrl) {
+      fpLogger.info(`URL changed from ${lastUrl} to ${currentUrl}`)
+      lastUrl = currentUrl
+
+      hasInitialized = false
+      initialize(true)
+    }
   }
 
   // Avoid running on demo site
   if (window.location.href.includes('faviconpacks.com')) {
     fpLogger.info('Running on demo site, halting execution')
-    return;
+    return
   }
 
-  // Multiple initialization points to catch different site behaviors
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       fpLogger.debug('DOMContentLoaded')
 
       initialize()
-      setupFaviconObserver()
     })
   } else {
     fpLogger.debug('Already loaded')
 
     initialize()
-    setupFaviconObserver()
   }
 
   // Watch for theme changes
