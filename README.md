@@ -30,7 +30,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 - [x] No tracking or analytics as all data is stored locally
 - [x] Simple JS + HTML + CSS implementation for easy auditing
 - [ ] Import and export for sharing between devices (beta)
-- [ ] Custom update strategies to guards against hijacking (e.g. Notion, Google Calendar)
+- [ ] Custom update strategies to guard against hijacking (e.g. Notion, Google Calendar)
 
 ## Install
 
