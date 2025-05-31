@@ -24,13 +24,13 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 - [x] Upload an image or import from a URL
 - [x] Easily add domains or patterns for more advanced matching
 - [x] Custom colors for light & dark themes
-- [x] Aggressive update strategy guards against hijacking (e.g. Notion, Google Calendar)
 - [x] Convenient copy to clipboard buttons help keep track of values
 - [x] Selectable rows enable bulk updates
 - [x] Create catch-alls or categories using the priority ordering
 - [x] No tracking or analytics as all data is stored locally
 - [x] Simple JS + HTML + CSS implementation for easy auditing
 - [ ] Import and export for sharing between devices (beta)
+- [ ] Custom update strategies to guards against hijacking (e.g. Notion, Google Calendar)
 
 ## Install
 
