@@ -40,7 +40,7 @@ html, body
   color: var(--main-color);
   font-family: Arial, sans-serif;
   margin: 0;
-  scrollbar-width: 2px;
+  scrollbar-width: thin;
   --scrollbar-background: transparent;
 	scrollbar-color: var(--scrollbar-foreground) var(--scrollbar-background);
 }
@@ -437,6 +437,7 @@ sl-tag sl-icon-button
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 40px;
 }
 
 #current-icon,
@@ -535,6 +536,33 @@ sl-tag sl-icon-button
   gap: 7px;
   align-items: center;
   justify-content: center;
+}
+
+/* emoji-picker-element */
+sl-tab-panel.emojis
+{
+  padding: 0.5rem;
+}
+
+emoji-picker {
+  --background: transparent;
+  --border-size: '0px';
+  --input-border-color: var(--sl-input-border-color);
+  --input-border-radius: var(--sl-input-border-radius-medium);
+  --input-placeholder-color: var(--sl-input-icon-color);
+  --input-font-color: var(--sl-input-font-color);
+  --indicator-color: var(--sl-color-primary-600);
+  --outline-color: var(--sl-color-primary-600);
+
+  height: 100%;
+  width: 100%;
+}
+
+.drawer__header .emojis > div
+{
+  border: solid 1px var(--sl-panel-border-color);
+  border-radius: var(--sl-border-radius-medium);
+  overflow: scroll;
 }
 
 /* Icon style */

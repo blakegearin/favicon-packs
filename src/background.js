@@ -48,7 +48,14 @@ async function initialize () {
 
         const siteConfig = sortedSiteConfigs.find(localSiteConfig => {
           if (!localSiteConfig.websitePattern) return false
-          if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
+          if (
+            !localSiteConfig.iconId &&
+            !localSiteConfig.uploadId &&
+            !localSiteConfig.urlImportId &&
+            !localSiteConfig.emojiUrl
+          ) {
+            return false
+          }
 
           let websitePattern = localSiteConfig.websitePattern
           fpLogger.debug('websitePattern', websitePattern)
@@ -91,12 +98,16 @@ async function initialize () {
         let imgUrl = null
 
         if (siteConfig.uploadId) {
+          fpLogger.debug('Setting imgUrl to upload')
           const upload = await window.extensionStore.getUploadById(
             siteConfig.uploadId
           )
           fpLogger.debug('upload', upload)
 
           imgUrl = upload.dataUri
+        } else if (siteConfig.emojiUrl) {
+          console.log('Setting imgUrl to emoji')
+          imgUrl = siteConfig.emojiUrl
         } else {
           const darkThemeEnabled = await window.extensionStore.getPreference(
             'darkThemeEnabled'

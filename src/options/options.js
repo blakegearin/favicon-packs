@@ -58,6 +58,124 @@ function svgToPngBase64 (svgString) {
   })
 }
 
+// Note: This is not perfect, as it may be small, blurry, or not centered
+function emojiToPngDataUri (emoji, size = 512) {
+  fpLogger.debug('emojiToPngDataUri()')
+
+  return new Promise((resolve, reject) => {
+    try {
+      // const canvas = document.createElement('canvas')
+      // canvas.width = size
+      // canvas.height = size
+
+      // const ctx = canvas.getContext('2d')
+      // // Clear the canvas with a transparent background
+      // ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // // First draw the emoji on a temporary canvas to measure its actual size
+      // const tempCanvas = document.createElement('canvas')
+      // const tempSize = size * 2 // Much larger than needed to ensure we can measure properly
+      // tempCanvas.width = tempSize
+      // tempCanvas.height = tempSize
+
+      // const tempCtx = tempCanvas.getContext('2d')
+      // tempCtx.font = `${tempSize}px Arial`
+      // tempCtx.textAlign = 'center'
+      // tempCtx.textBaseline = 'middle'
+      // tempCtx.fillText(emoji, tempSize / 2, tempSize / 2)
+
+      // // Get the actual emoji dimensions by scanning the canvas
+      // const imageData = tempCtx.getImageData(0, 0, tempSize, tempSize).data
+      // let left = tempSize,
+      //   right = 0,
+      //   top = tempSize,
+      //   bottom = 0
+
+      // // Find the boundaries of the drawn emoji
+      // for (let y = 0; y < tempSize; y++) {
+      //   for (let x = 0; x < tempSize; x++) {
+      //     const alpha = imageData[(y * tempSize + x) * 4 + 3]
+      //     if (alpha > 0) {
+      //       if (x < left) left = x
+      //       if (x > right) right = x
+      //       if (y < top) top = y
+      //       if (y > bottom) bottom = y
+      //     }
+      //   }
+      // }
+
+      // // Calculate dimensions and scaling factor
+      // const emojiWidth = right - left
+      // const emojiHeight = bottom - top
+
+      // // Use 90% of the available space for better visual margins
+      // const scaleFactor = Math.min(
+      //   (size * 0.9) / emojiWidth,
+      //   (size * 0.9) / emojiHeight
+      // )
+      // // const finalFontSize = Math.floor(tempSize * scaleFactor)
+      // const finalFontSize = size
+
+      // // Now draw on the final canvas with optimal size
+      // ctx.font = `${finalFontSize}px Arial`
+      // ctx.textAlign = 'center'
+      // ctx.textBaseline = 'middle'
+      // ctx.fillText(emoji, size / 2, size / 2)
+
+      // Credit: https://stackoverflow.com/a/72559156
+      function setCanvas (canvas, w, h) {
+        canvas.style.width = w + 'px'
+        canvas.style.height = h + 'px'
+        const scale = window.devicePixelRatio
+        canvas.width = w * scale
+        canvas.height = h * scale
+        const ctx = canvas.getContext('2d')
+        ctx.scale(scale, scale)
+      }
+
+      const width = size
+      const height = size
+      const fontSize = size
+      const text = emoji
+
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      setCanvas(canvas, width, height)
+
+      ctx.fillStyle = 'transparent'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.fillStyle = 'white'
+      ctx.font = `${fontSize}px sans-serif`
+      ctx.textBaseline = 'middle'
+      ctx.textAlign = 'center'
+      let { actualBoundingBoxAscent, actualBoundingBoxDescent } =
+        ctx.measureText(text)
+      ctx.fillText(
+        text,
+        width / 2,
+        height / 2 + (actualBoundingBoxAscent - actualBoundingBoxDescent) / 2
+      )
+
+      // Convert to PNG data URI
+      canvas.toBlob(blob => {
+        if (!blob) {
+          reject(new Error('Failed to generate PNG blob from emoji'))
+          return
+        }
+
+        const reader = new window.FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      }, 'image/png')
+    } catch (error) {
+      reject(new Error(`Failed to convert emoji to PNG: ${error.message}`))
+    }
+  })
+}
+
 function buildUploadImg (upload) {
   fpLogger.debug('buildUploadImg()')
 
@@ -174,7 +292,6 @@ async function populateDrawerIcons () {
   fpLogger.debug('icons', icons)
 
   const iconListFragment = document.createDocumentFragment()
-  const iconSymbols = {}
 
   const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name))
   for (const icon of sortedIcons) {
@@ -640,6 +757,7 @@ async function updateSiteConfig ({
   iconId,
   uploadId,
   urlImportId,
+  emojiUrl,
   lightThemeColor,
   darkThemeColor,
   anyThemeColor,
@@ -668,6 +786,7 @@ async function updateSiteConfig ({
     lightThemeColor: lightThemeColor || existingSiteConfig.lightThemeColor,
     darkThemeColor: darkThemeColor || existingSiteConfig.darkThemeColor,
     anyThemeColor: anyThemeColor || existingSiteConfig.anyThemeColor,
+    emojiUrl: emojiUrl || existingSiteConfig.emojiUrl,
     lightPngUrl: existingSiteConfig.lightPngUrl,
     darkPngUrl: existingSiteConfig.darkPngUrl,
     anyPngUrl: existingSiteConfig.anyPngUrl,
@@ -704,10 +823,12 @@ async function updateSiteConfig ({
 
     delete newSiteConfig.uploadId
     delete newSiteConfig.urlImportId
-  } else if (uploadId || urlImportId) {
+    delete newSiteConfig.emojiUrl
+  } else if (uploadId || urlImportId || emojiUrl) {
     delete newSiteConfig.iconId
     delete newSiteConfig.lightPngUrl
     delete newSiteConfig.darkPngUrl
+    delete newSiteConfig.anyPngUrl
   }
 
   fpLogger.debug('newSiteConfig', newSiteConfig)
@@ -993,6 +1114,26 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
     newRow
       .querySelector('.favicon-value.image-display')
       .classList.add('display-none')
+  } else if (siteConfig.emojiUrl) {
+    const imageElement = document.createElement('img')
+    imageElement.src = siteConfig.emojiUrl
+
+    newRow.querySelectorAll('#icon-value').forEach(iconValueElement => {
+      iconValueElement.replaceChildren(imageElement.cloneNode(true))
+    })
+
+    newRow.querySelector('.icon-cell .add').classList.add('display-none')
+    newRow.querySelector('.icon-cell .edit').classList.remove('display-none')
+
+    newRow.querySelectorAll('.favicon-value.icon').forEach(iconElement => {
+      iconElement.classList.add('display-none')
+    })
+
+    const imageDisplayElement = newRow.querySelector(
+      '.favicon-value.image-display'
+    )
+    imageDisplayElement.replaceChildren(imageElement.cloneNode(true))
+    imageDisplayElement.classList.remove('display-none')
   } else if (siteConfig.uploadId || siteConfig.urlImportId) {
     let imageElement
 
@@ -1308,6 +1449,9 @@ function openTabPanels (tabPanelName) {
   const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="icon-packs"]'
   )
+  const emojiTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
+    'sl-tab-panel[name="emojis"]'
+  )
   const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="upload"]'
   )
@@ -1317,19 +1461,32 @@ function openTabPanels (tabPanelName) {
 
   switch (tabPanelName) {
     case 'icon-packs':
-      uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel =>
         tabPanel.setAttribute('active', '')
       )
+      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
+      break
+    case 'emojis':
+      // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.add('display-none')
+      iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
+      uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'upload':
+      // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'url':
+      // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel =>
         tabPanel.removeAttribute('active', '')
       )
@@ -1914,27 +2071,26 @@ async function applyPreferences () {
         })
       }
     },
-    logLevel: {
+    fpLogLevel: {
       initialize: () => {
         const storageKey = fpLogger.storageKey
         const inputId = '#log-level-select'
+        const defaultValue = fpLogger.defaultLogLevel
 
-        const apply = value => {
+        const apply = async value => {
           fpLogger.quiet(`Setting ${storageKey} to ${value}`)
-          fpLogger.setLogLevel(value)
+          await fpLogger.setLogLevel(value)
         }
 
         const existingValue = fpLogger.getLogLevelName()
+        const currentValue = existingValue || defaultValue
 
         const inputElement = document.querySelector(inputId)
-        if (!inputElement) return
-
-        inputElement.value = existingValue
+        inputElement.value = currentValue
 
         inputElement.addEventListener('sl-change', event => {
           event.target.updateComplete.then(async () => {
-            fpLogger.quiet('Updating log level', event.target.value)
-            apply(event.target.value)
+            await apply(event.target.value)
           })
         })
       }
@@ -2008,6 +2164,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     openTabPanels(event.detail.name)
   })
 
+  document
+    .querySelector('emoji-picker')
+    .addEventListener('emoji-click', async event => {
+      fpLogger.debug('Emoji picked')
+      fpLogger.verbose('event', event)
+
+      const emoji = event.detail.unicode
+      fpLogger.debug('emoji', emoji)
+
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+        'display-none'
+      )
+
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+        'hidden'
+      )
+
+      const emojiDiv = document.createElement('div')
+      emojiDiv.classList.add('emoji')
+      emojiDiv.innerText = emoji
+
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        emojiDiv
+      )
+    })
+
   await populateDrawerIcons()
   await populateDrawerUploads()
   await populateDrawerUrlImports()
@@ -2043,35 +2225,32 @@ document.addEventListener('DOMContentLoaded', async function () {
       const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon')
       const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id')
 
-      if (
-        ICON_SELECTOR_DRAWER.querySelector(
-          'sl-tab-panel[name="icon-packs"][active]'
-        )
-      ) {
-        const iconId = selectedCell
-          .querySelector('[icon-id]')
-          .getAttribute('icon-id')
+      const emojiDiv = selectedCell.querySelector('div.emoji')
+      const iconElement = selectedCell.querySelector('[icon-id]')
+      const uploadElement = selectedCell.querySelector('[upload-id]')
+      const urlImportElement = selectedCell.querySelector('[url-import-id]')
+
+      if (emojiDiv) {
+        const emoji = emojiDiv.innerText
+        fpLogger.debug('Found emoji:', emoji)
+
+        const emojiUrl = await emojiToPngDataUri(emoji)
+        fpLogger.verbose('emojiUrl', emojiUrl)
+
+        updateSiteConfig({ id, emojiUrl })
+      } else if (iconElement) {
+        const iconId = iconElement.getAttribute('icon-id')
         fpLogger.debug('iconId', iconId)
 
         updateSiteConfig({ id, iconId })
-      } else if (
-        ICON_SELECTOR_DRAWER.querySelector(
-          'sl-tab-panel[name="upload"][active]'
-        )
-      ) {
-        const uploadId = selectedCell
-          .querySelector('[upload-id]')
-          .getAttribute('upload-id')
+      } else if (uploadElement) {
+        const uploadId = uploadElement.getAttribute('upload-id')
         fpLogger.debug('uploadId', uploadId)
 
         updateSiteConfig({ id, uploadId })
-      } else if (
-        ICON_SELECTOR_DRAWER.querySelector('sl-tab-panel[name="url"][active]')
-      ) {
-        const urlImportId = selectedCell
-          .querySelector('[url-import-id]')
-          .getAttribute('url-import-id')
-        fpLogger.silent('urlImportId', urlImportId)
+      } else if (urlImportElement) {
+        const urlImportId = urlImportElement.getAttribute('url-import-id')
+        fpLogger.debug('urlImportId', urlImportId)
 
         updateSiteConfig({ id, urlImportId })
       }

@@ -940,6 +940,15 @@
               </div>
             </sl-tab-panel>
 
+            <!-- <sl-tab-panel
+              class="emojis"
+              name="emojis"
+            >
+              <div>
+                <emoji-picker></emoji-picker>
+              </div>
+            </sl-tab-panel> -->
+
             <sl-tab-panel
               class="icon-upload"
               name="upload"
@@ -1043,6 +1052,31 @@
               </div>
             </sl-tab-panel>
 
+            <sl-tab-panel name="emojis">
+            </sl-tab-panel>
+
+            <!-- <sl-tab-panel name="emojis">
+              <div class="">
+                <emoji-picker></emoji-picker>
+              </div>
+            </sl-tab-panel> -->
+
+            <!-- <sl-tab-panel
+              class="emojis"
+              name="emojis"
+            >
+              <div>
+                <emoji-picker></emoji-picker>
+              </div>
+            </sl-tab-panel> -->
+
+            <sl-tab-panel
+              class="emojis"
+              name="emojis"
+            >
+              <emoji-picker></emoji-picker>
+            </sl-tab-panel>
+
             <sl-tab-panel name="upload">
               <div class="icon-upload">
                 <div>
@@ -1060,6 +1094,13 @@
             </sl-tab-panel>
           </slot>
 
+          <!-- <sl-tab-panel
+            class="emojis"
+            name="emojis"
+          >
+            <emoji-picker></emoji-picker>
+          </sl-tab-panel> -->
+
           <footer
             class="drawer__footer"
             part="footer"
@@ -1074,21 +1115,28 @@
                     slot="nav"
                     panel="icon-packs"
                   >
-                    Icon Packs
+                    Icons
+                  </sl-tab>
+
+                  <sl-tab
+                    slot="nav"
+                    panel="emojis"
+                  >
+                    Emojis
                   </sl-tab>
 
                   <sl-tab
                     slot="nav"
                     panel="upload"
                   >
-                    File Upload
+                    Files
                   </sl-tab>
 
                   <sl-tab
                     slot="nav"
                     panel="url"
                   >
-                    URL Import
+                    URLs
                   </sl-tab>
                 </sl-tab-group>
 
