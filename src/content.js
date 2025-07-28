@@ -12,6 +12,48 @@ fpLogger.info('content.js loaded')
   let lastUrl = window.location.href
   let urlCheckInterval = null
 
+  let currentStrategy = {
+    removeExistingIcons: true,
+    addCssHiding: true,
+    addShortcutLink: true,
+    observeMutations: {
+      enabled: true,
+      attributeFilter: ['href', 'rel', 'src']
+    },
+    persistence: {
+      enabled: true,
+      checkIntervalTime: 400,
+      randomizationFactor: 0.2,
+      retryLimit: null
+    },
+    urlChangeDetection: {
+      enabled: true,
+      checkIntervalTime: 1000
+    }
+  }
+
+  async function sendMessageWithRetry (message, maxRetries = 3, delay = 100) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await browser.runtime.sendMessage(message)
+        return
+      } catch (error) {
+        if (attempt === maxRetries) {
+          fpLogger.error(
+            `Failed to send message to background script after ${maxRetries} attempts:`,
+            error
+          )
+        } else {
+          fpLogger.silent(
+            `Message send attempt ${attempt} failed, retrying in ${delay}ms...`
+          )
+          await new Promise(resolve => setTimeout(resolve, delay))
+          delay *= 2 // Exponential backoff
+        }
+      }
+    }
+  }
+
   function cleanupExistingIcons (strategy = {}) {
     fpLogger.debug('cleanupExistingIcons()')
 
@@ -217,6 +259,7 @@ fpLogger.info('content.js loaded')
       }
 
       currentStrategy = request.replaceStrategy || currentStrategy
+      fpLogger.trace('currentStrategy', currentStrategy)
 
       // Strategy 1: Basic favicon replacement (always happens)
       fpLogger.debug('Applying basic favicon replacement')
@@ -261,7 +304,7 @@ fpLogger.info('content.js loaded')
       : 'light'
 
     hasInitialized = true
-    browser.runtime.sendMessage({
+    sendMessageWithRetry({
       action: 'replaceFavicon',
       colorScheme,
       url: window.location.href
