@@ -1,8 +1,9 @@
 fpLogger.info('store.js loaded')
 
 const DB_NAME = 'faviconPacksData'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORES = {
+  emojis: 'emojis',
   icons: 'icons',
   preferences: 'preferences',
   siteConfigs: 'siteConfigs',
@@ -55,9 +56,16 @@ class ExtensionStore {
     if (this.db) return Promise.resolve()
 
     this.initializationPromise = new Promise((resolve, reject) => {
+      fpLogger.debug('Opening IndexedDB database', {
+        name: DB_NAME,
+        version: DB_VERSION
+      })
       const request = window.indexedDB.open(DB_NAME, DB_VERSION)
 
-      request.onerror = () => reject(request.error)
+      request.onerror = () => {
+        fpLogger.error('Database open error', request.error)
+        reject(request.error)
+      }
 
       request.onsuccess = event => {
         this.db = event.target.result
@@ -65,8 +73,23 @@ class ExtensionStore {
       }
 
       request.onupgradeneeded = async event => {
+        fpLogger.debug('onupgradeneeded triggered')
+
         const database = event.target.result
         const existingStoreNames = Array.from(database.objectStoreNames)
+        fpLogger.debug('Existing stores before upgrade', existingStoreNames)
+
+        if (!existingStoreNames.includes(STORES.emojis)) {
+          const emojisStore = database.createObjectStore(STORES.emojis, {
+            keyPath: 'id'
+          })
+
+          emojisStore.createIndex(
+            'emojiPackNameAndVersion',
+            ['emojiPackName', 'emojiPackVersion'],
+            { unique: false }
+          )
+        }
 
         if (!existingStoreNames.includes(STORES.icons)) {
           const iconsStore = database.createObjectStore(STORES.icons, {
@@ -138,8 +161,8 @@ class ExtensionStore {
     return this.db
   }
 
-  async fetchIconsMetadata (metadataUrl) {
-    fpLogger.verbose('fetchIconsMetadata()')
+  async fetchPackMetadata (metadataUrl) {
+    fpLogger.verbose('fetchPackMetadata()')
     await this.ensureInitialized()
 
     let responseText
@@ -158,8 +181,8 @@ class ExtensionStore {
     const parsedResponse = JSON.parse(responseText)
     fpLogger.verbose('parsedResponse', parsedResponse)
 
-    let iconsMetadata = parsedResponse
-    fpLogger.verbose('iconsMetadata', iconsMetadata)
+    let packMetadata = parsedResponse
+    fpLogger.verbose('packMetadata', packMetadata)
 
     if (parsedResponse?.icons) {
       const iconObjects = {}
@@ -182,14 +205,14 @@ class ExtensionStore {
         }
       }
 
-      iconsMetadata = iconObjects
+      packMetadata = iconObjects
     }
 
-    fpLogger.verbose('iconsMetadata', iconsMetadata)
-    return iconsMetadata || null
+    fpLogger.verbose('packMetadata', packMetadata)
+    return packMetadata || null
   }
 
-  async downloadSvgIconsFromUrl (iconPack, versionMetadata, url, iconsMetadata) {
+  async downloadSvgIconsFromUrl (iconPack, versionMetadata, url, packMetadata) {
     fpLogger.verbose('downloadSvgIconsFromUrl()')
     await this.ensureInitialized()
 
@@ -206,9 +229,6 @@ class ExtensionStore {
     const fileType = response.headers.get('content-type').split(';')[0]
     fpLogger.debug('fileType', fileType)
 
-    const buildIconId = (iconPack, iconName) =>
-      `${iconPack.name}-${versionMetadata.name}-${iconName}`
-
     let iconCount = 0
 
     if (fileType === 'text/plain' || fileType === 'image/svg+xml') {
@@ -216,11 +236,11 @@ class ExtensionStore {
         fpLogger.verbose('saveIconFromSymbol', saveIconFromSymbol)
 
         const iconName = symbol.id.replace('tabler-', '')
-        const iconId = buildIconId(iconPack, iconName)
+        const iconId = this._buildIconId(versionMetadata, iconPack, iconName)
 
         symbol.id = iconId
 
-        const iconTags = iconsMetadata[iconName]
+        const iconTags = packMetadata[iconName]
         // symbol.setAttribute("tags", iconTags.join(" "));
 
         const iconStyle = iconPack.styles.find(style => {
@@ -290,7 +310,7 @@ class ExtensionStore {
         const iconStylesEntries = Object.entries(iconStyles)
         for (const [iconStyle, iconStyleMetadata] of iconStylesEntries) {
           const iconName = `${originalIconName}-${iconStyle}`
-          const iconId = buildIconId(iconPack, iconName)
+          const iconId = this._buildIconId(versionMetadata, iconPack, iconName)
 
           // Convert svg to symbol; crude but simple & effective
           const symbolString = iconStyleMetadata.raw
@@ -318,39 +338,121 @@ class ExtensionStore {
     return iconCount
   }
 
-  async downloadIconPackVersion (iconPack, versionMetadata) {
-    fpLogger.debug('downloadIconPackVersion()')
+  async downloadPackVersion ({ pack, versionMetadata }) {
+    fpLogger.debug('downloadPackVersion()')
     await this.ensureInitialized()
 
-    const iconsMetadata = iconPack.metadataUrl
-      ? await this.fetchIconsMetadata(
-          iconPack.metadataUrl.replaceAll('{VERSION}', versionMetadata.name)
+    const packMetadata = pack.metadataUrl
+      ? await this.fetchPackMetadata(
+          pack.metadataUrl.replaceAll('{VERSION}', versionMetadata.name)
         )
       : null
 
-    fpLogger.verbose('iconsMetadata', iconsMetadata)
+    fpLogger.verbose('packMetadata', packMetadata)
 
-    let iconCount = 0
+    let packCount = 0
 
-    if (Array.isArray(iconPack.svgUrl)) {
-      for (const url of iconPack.svgUrl) {
-        iconCount += await this.downloadSvgIconsFromUrl(
-          iconPack,
+    if (Array.isArray(pack.svgUrl)) {
+      for (const url of pack.svgUrl) {
+        packCount += await this.downloadSvgIconsFromUrl(
+          pack,
           versionMetadata,
           url,
-          iconsMetadata
+          packMetadata
         )
       }
+    } else if (pack.spritesheetUrl) {
+      fpLogger.debug('pack.spritesheetUrl', pack.spritesheetUrl)
+
+      const spritesheetUrl = pack.spritesheetUrl
+        .replaceAll('{VERSION}', versionMetadata.name)
+        .replaceAll('{SIZE}', pack.spritesheetSize)
+
+      fpLogger.debug('spritesheetUrl', spritesheetUrl)
+
+      const dataUri = await new Promise(async (resolve, reject) => {
+        const response = await fetch(spritesheetUrl)
+
+        fpLogger.debug('response', response)
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const blob = await response.blob()
+        const reader = new FileReader()
+
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = () =>
+          reject(new Error('Failed to read blob as data URL'))
+        reader.readAsDataURL(blob)
+      })
+
+      fpLogger.debug('dataUri', dataUri)
+
+      if (!dataUri) return
+
+      const emojiCategories = await fetchEmojiCategories()
+
+      for (const spriteMetadata of packMetadata) {
+        fpLogger.verbose('spriteMetadata.name', spriteMetadata.name)
+
+        const iconName = spriteMetadata.unified
+        const iconId = this._buildIconId(versionMetadata, pack, iconName)
+        const iconTags = [
+          ...new Set(
+            [
+              spriteMetadata.name.toLowerCase().split(' '),
+              spriteMetadata.short_name.toLowerCase().split('_'),
+              spriteMetadata.subcategory.toLowerCase().split('-'),
+              spriteMetadata.texts
+            ]
+              .flat()
+              .filter(Boolean)
+          ) // Unique
+        ]
+
+        fpLogger.verbose('iconTags', iconTags)
+
+        // Compute sortOrder using the short_name (which should match category data)
+        const sortOrder = computeEmojiSortOrder(
+          spriteMetadata.short_name,
+          emojiCategories
+        )
+
+        const pngUrl = pack.pngUrl
+          .replaceAll('{VERSION}', versionMetadata.name)
+          .replaceAll('{CODEPOINT}', iconName.toLowerCase())
+
+        const emoji = {
+          id: iconId,
+          emojiPackName: pack.name,
+          emojiPackVersion: versionMetadata.name,
+          spritesheetX: spriteMetadata.sheet_x,
+          spritesheetY: spriteMetadata.sheet_y,
+          size: pack.spritesheetSize,
+          pngUrl,
+          name: iconName,
+          tags: iconTags,
+          sortOrder: sortOrder
+        }
+        fpLogger.verbose('emoji', emoji)
+
+        await window.extensionStore.addEmoji(emoji)
+        packCount++
+      }
     } else {
-      iconCount = await this.downloadSvgIconsFromUrl(
-        iconPack,
+      packCount = await this.downloadSvgIconsFromUrl(
+        pack,
         versionMetadata,
-        iconPack.svgUrl,
-        iconsMetadata
+        pack.svgUrl,
+        packMetadata
       )
     }
 
-    return iconCount
+    fpLogger.debug('packCount', packCount)
+
+    return packCount
   }
 
   async deleteIconsByIconPackVersion (iconPackName, iconPackVersion) {
@@ -396,8 +498,54 @@ class ExtensionStore {
     })
   }
 
+  async deleteEmojisByEmojiPackVersion (emojiPackName, emojiPackVersion) {
+    fpLogger.debug('deleteEmojisByEmojiPackVersion()')
+    await this.ensureInitialized()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORES.emojis], 'readwrite')
+      const store = transaction.objectStore(STORES.emojis)
+      let deletedCount = 0
+
+      // Use a cursor to iterate through all records and delete matching ones
+      const request = store.openCursor()
+
+      request.onsuccess = event => {
+        const cursor = event.target.result
+        if (cursor) {
+          const record = cursor.value
+          if (
+            record.emojiPackName === emojiPackName &&
+            record.emojiPackVersion === emojiPackVersion
+          ) {
+            // Delete this record
+            cursor.delete()
+            deletedCount++
+          }
+          cursor.continue()
+        } else {
+          resolve(deletedCount)
+        }
+      }
+
+      request.onerror = () => reject(request.error)
+
+      transaction.oncomplete = () => {
+        fpLogger.quiet(
+          `Deleted ${deletedCount} emojis from ${emojiPackName} ${emojiPackVersion}`
+        )
+        resolve(deletedCount)
+      }
+
+      transaction.onerror = () => reject(transaction.error)
+    })
+  }
+
   async getIconCountByIconPackVersion (iconPackName, iconPackVersion) {
-    fpLogger.debug('getIconCountByIconPackVersion()')
+    fpLogger.verbose('getIconCountByIconPackVersion()')
+    fpLogger.verbose('iconPackName', iconPackName)
+    fpLogger.verbose('iconPackVersion', iconPackVersion)
+
     await this.ensureInitialized()
 
     return new Promise((resolve, reject) => {
@@ -406,6 +554,34 @@ class ExtensionStore {
 
       const index = store.index('iconPackNameAndVersion')
       const keyRange = window.IDBKeyRange.only([iconPackName, iconPackVersion])
+
+      const countRequest = index.count(keyRange)
+
+      countRequest.onsuccess = () => {
+        fpLogger.verbose('countRequest', countRequest)
+        resolve(countRequest.result)
+      }
+
+      countRequest.onerror = () => reject(countRequest.error)
+    })
+  }
+
+  async getEmojiCountByEmojiPackVersion (emojiPackName, emojiPackVersion) {
+    fpLogger.verbose('getEmojiCountByEmojiPackVersion()')
+    fpLogger.verbose('emojiPackName', emojiPackName)
+    fpLogger.verbose('emojiPackVersion', emojiPackVersion)
+
+    await this.ensureInitialized()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([STORES.emojis], 'readonly')
+      const store = transaction.objectStore(STORES.emojis)
+
+      const index = store.index('emojiPackNameAndVersion')
+      const keyRange = window.IDBKeyRange.only([
+        emojiPackName,
+        emojiPackVersion
+      ])
 
       const countRequest = index.count(keyRange)
 
@@ -466,7 +642,7 @@ class ExtensionStore {
         ]
       },
       {
-        name: 'Font_Awesome',
+        name: 'Font Awesome',
         homepageUrl: 'https://fontawesome.com',
         changelogUrl: 'https://fontawesome.com/changelog',
         svgUrl:
@@ -530,6 +706,139 @@ class ExtensionStore {
           }
         ],
         versions: [{ name: '3.30.0' }]
+      }
+    ]
+  }
+
+  getEmojiPacks () {
+    fpLogger.verbose('getEmojiPacks()')
+
+    return [
+      // {
+      //   name: 'Noto/Google',
+      //   homepageUrl: 'https://github.com/googlefonts/noto-emoji',
+      //   changelogUrl: 'https://github.com/googlefonts/noto-emoji/releases',
+      //   pngUrl:
+      //     'https://raw.githubusercontent.com/googlefonts/noto-emoji/refs/tags/v{VERSION}/png/{SIZE}/emoji_u{CODEPOINT}.png',
+      //   sizes: [32, 72, 128, 512],
+      //   defaultSize: 72,
+      //   versions: [{ name: '2.051' }]
+      // },
+      // {
+      //   name: 'Apple (Source: emoji-data)',
+      //   homepageUrl:
+      //     'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+      //   changelogUrl: 'https://github.com/googlefonts/noto-emoji/releases',
+      //   pngUrl:
+      //     'https://raw.githubusercontent.com/iamcal/emoji-data/refs/tags/v{VERSION}/img-apple-{SIZE}/{CODEPOINT}.png',
+      //   sizes: [64, 160],
+      //   defaultSize: 64,
+      //   versions: [{ name: '16.0.0' }]
+      // },
+      // {
+      //   name: 'Apple',
+      //   homepageUrl: 'https://github.com/iamcal/emoji-data',
+      //   changelogUrl:
+      //     'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+      //   metadataUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource@{VERSION}/emoji.json',
+      //   spritesheetUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource@{VERSION}/img/apple/sheets/32.png',
+      //   spritesheetSize: 32,
+      //   styles: [],
+      //   versions: [{ name: '16.0.0' }]
+      // },
+      // {
+      //   name: 'Apple',
+      //   homepageUrl: 'https://github.com/iamcal/emoji-data',
+      //   changelogUrl:
+      //     'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+      //   metadataUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/emoji.json',
+      //   spritesheetUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/img/apple/sheets/16.png',
+      //   spritesheetSize: 16,
+      //   styles: [],
+      //   versions: [{ name: '16.0.0' }]
+      // },
+      // {
+      //   name: 'Apple',
+      //   homepageUrl: 'https://github.com/iamcal/emoji-data',
+      //   changelogUrl:
+      //     'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+      //   metadataUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/emoji.json',
+      //   spritesheetUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/img/apple/sheets/32.png',
+      //   spritesheetSize: 32,
+      //   pngUrl:
+      //     'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/img/apple/64/{CODEPOINT}.png',
+      //   styles: [],
+      //   versions: [{ name: '16.0.0' }]
+      // },
+      {
+        name: 'Twemoji',
+        homepageUrl: 'https://github.com/jdecked/twemoji#readme',
+        changelogUrl:
+          'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-twitter@{VERSION}/emoji.json',
+        categoriesUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-twitter@{VERSION}/categories.json',
+        spritesheetUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-twitter@{VERSION}/img/twitter/sheets/{SIZE}.png',
+        spritesheetSize: 64,
+        pngUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-twitter@{VERSION}/img/twitter/64/{CODEPOINT}.png',
+        versions: [{ name: '16.0.0' }]
+      },
+      {
+        name: 'Apple',
+        homepageUrl: 'https://emojipedia.org/apple',
+        changelogUrl:
+          'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/emoji.json',
+        categoriesUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/categories.json',
+        spritesheetUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/img/apple/sheets/{SIZE}.png',
+        spritesheetSize: 64,
+        pngUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-apple@{VERSION}/img/apple/64/{CODEPOINT}.png',
+        versions: [{ name: '16.0.0' }]
+      },
+      {
+        name: 'Google (Noto)',
+        homepageUrl: 'https://github.com/googlefonts/noto-emoji#readme',
+        changelogUrl:
+          'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-google@{VERSION}/emoji.json',
+        categoriesUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-google@{VERSION}/categories.json',
+        spritesheetUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-google@{VERSION}/img/google/sheets/{SIZE}.png',
+        spritesheetSize: 64,
+        pngUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-google@{VERSION}/img/google/64/{CODEPOINT}.png',
+        versions: [{ name: '16.0.0' }]
+      },
+      {
+        name: 'Facebook',
+        homepageUrl: 'https://emojipedia.org/facebook',
+        changelogUrl:
+          'https://github.com/iamcal/emoji-data/blob/master/CHANGES.md',
+        metadataUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@{VERSION}/emoji.json',
+        categoriesUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@{VERSION}/categories.json',
+        spritesheetUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@{VERSION}/img/facebook/sheets/{SIZE}.png',
+        spritesheetSize: 64,
+        pngUrl:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-facebook@{VERSION}/img/facebook/64/{CODEPOINT}.png',
+        versions: [{ name: '16.0.0' }]
       }
     ]
   }
@@ -665,6 +974,136 @@ class ExtensionStore {
     return this._deleteRecord(STORES.icons, id)
   }
 
+  async getPackSize ({ storeName, packName, versionName }) {
+    fpLogger.trace('getPackSize()')
+    await this.ensureInitialized()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readonly')
+      const store = transaction.objectStore(storeName)
+      const request = store.openCursor()
+      let size = 0
+
+      request.onsuccess = event => {
+        const cursor = event.target.result
+        if (cursor) {
+          const packNameProperty = {
+            emojis: 'emojiPackName',
+            icons: 'iconPackName'
+          }[storeName]
+          fpLogger.verbose('packNameProperty', packNameProperty)
+
+          const versionNameProperty = {
+            emojis: 'emojiPackVersion',
+            icons: 'iconPackVersion'
+          }[storeName]
+          fpLogger.verbose('versionNameProperty', versionNameProperty)
+
+          const storedObject = cursor.value
+
+          // Only include records that match the packName and versionName
+          if (
+            storedObject[packNameProperty] === packName &&
+            storedObject[versionNameProperty] === versionName
+          ) {
+            const json = JSON.stringify(storedObject)
+            size += json.length
+          }
+
+          cursor.continue()
+        } else {
+          resolve(size)
+        }
+      }
+
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  // Methods for emojis
+  async addEmoji (emoji) {
+    fpLogger.verbose('addEmoji()')
+    await this.ensureInitialized()
+
+    try {
+      const emojiRecord = emoji.id ? await this.getEmojiById(emoji.id) : null
+
+      if (!emojiRecord) {
+        return await this._addRecord(STORES.emojis, emoji)
+      } else {
+        return emojiRecord
+      }
+    } catch (error) {
+      if (
+        error.name === 'DOMException' &&
+        error.code === DOMException.CONSTRAINT_ERR
+      ) {
+        fpLogger.error('Error adding emoji', error)
+        return null
+      } else {
+        throw error
+      }
+    }
+  }
+
+  async getEmojiById (id) {
+    fpLogger.trace('getEmojiById()')
+    await this.ensureInitialized()
+    return await this._getRecord(STORES.emojis, id)
+  }
+
+  async getEmojis () {
+    fpLogger.verbose('getEmojis()')
+    await this.ensureInitialized()
+    return this._getAllRecords(STORES.emojis)
+  }
+
+  async updateEmoji (emoji) {
+    fpLogger.debug('updateEmoji()')
+    await this.ensureInitialized()
+    return this._updateRecord(STORES.emojis, emoji)
+  }
+
+  async deleteEmoji (id) {
+    fpLogger.debug('deleteEmoji()')
+    await this.ensureInitialized()
+    return this._deleteRecord(STORES.emojis, id)
+  }
+
+  async getEmojiPackSize (storeName, emojiPackName, emojiPackVersion) {
+    fpLogger.trace('getEmojiPackSize()')
+    await this.ensureInitialized()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readonly')
+      const store = transaction.objectStore(storeName)
+      const request = store.openCursor()
+      let size = 0
+
+      request.onsuccess = event => {
+        const cursor = event.target.result
+        if (cursor) {
+          const storedObject = cursor.value
+
+          // Only include records that match the emojiPackName and emojiPackVersion
+          if (
+            storedObject.emojiPackName === emojiPackName &&
+            storedObject.emojiPackVersion === emojiPackVersion
+          ) {
+            const json = JSON.stringify(storedObject)
+            size += json.length
+          }
+
+          cursor.continue()
+        } else {
+          resolve(size)
+        }
+      }
+
+      request.onerror = () => reject(request.error)
+    })
+  }
+
   // Methods for upload
   async addUpload (upload) {
     fpLogger.debug('addUpload()')
@@ -786,6 +1225,10 @@ class ExtensionStore {
     })
   }
 
+  _buildIconId (versionMetadata, pack, iconName) {
+    return `${pack.name}-${versionMetadata.name}-${iconName}`
+  }
+
   async _getAllRecords (storeName) {
     fpLogger.trace('_getAllRecords()')
     await this.ensureInitialized()
@@ -856,6 +1299,138 @@ class ExtensionStore {
       ids.forEach(id => store.delete(id))
     })
   }
+
+  async _extractEmojiFromSpritesheet ({ dataUri, size, sheetX, sheetY } = {}) {
+    fpLogger.verbose('_extractEmojiFromSpritesheet()')
+
+    const emojiPng = await new Promise(resolve => {
+      fpLogger.verbose('Creating new image for spritesheet extraction')
+      const img = new Image()
+
+      img.onload = () => {
+        fpLogger.verbose('Image loaded successfully', {
+          width: img.width,
+          height: img.height
+        })
+
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+
+        canvas.width = size
+        canvas.height = size
+
+        fpLogger.verbose('Canvas created', {
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height,
+          size
+        })
+
+        // Calculate position in spritesheet using the provided formula
+        // x = (sheet_x * (sheet_size + 2)) + 1;
+        // y = (sheet_y * (sheet_size + 2)) + 1;
+        const x = sheetX * (size + 2) + 1
+        const y = sheetY * (size + 2) + 1
+
+        fpLogger.verbose('Calculated position', {
+          x,
+          y,
+          sheetX,
+          sheetY,
+          size
+        })
+
+        ctx.drawImage(img, x, y, size, size, 0, 0, size, size)
+
+        fpLogger.verbose('Drew image on canvas')
+
+        // Convert canvas to base64 data URL
+        const emojiDataUri = canvas.toDataURL('image/png')
+
+        fpLogger.verbose('Generated emoji data URI', {
+          dataUriLength: emojiDataUri.length,
+          dataUriPreview: emojiDataUri.substring(0, 100) + '...'
+        })
+
+        resolve(emojiDataUri)
+      }
+
+      img.onerror = error => {
+        fpLogger.error('Image failed to load', error)
+        resolve(null)
+      }
+
+      fpLogger.verbose('Setting image src', {
+        srcLength: dataUri.length,
+        srcPreview: dataUri.substring(0, 100) + '...'
+      })
+      img.src = dataUri
+    })
+
+    fpLogger.verbose('Returning emoji PNG', {
+      emojiPngLength: emojiPng ? emojiPng.length : 0,
+      emojiPng: emojiPng ? emojiPng.substring(0, 100) + '...' : 'null'
+    })
+
+    return emojiPng
+  }
 }
 
 window.extensionStore = new ExtensionStore()
+
+async function fetchEmojiCategories () {
+  fpLogger.debug('fetchEmojiCategories()')
+
+  try {
+    const response = await fetch(
+      'https://cdn.jsdelivr.net/npm/emoji-datasource@16.0.0/categories.json'
+    )
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+    const categories = await response.json()
+    fpLogger.debug('Fetched emoji categories', categories)
+
+    return categories
+  } catch (error) {
+    fpLogger.error('Failed to fetch emoji categories', error)
+    return {}
+  }
+}
+
+function computeEmojiSortOrder (emojiName, categories) {
+  fpLogger.verbose('computeEmojiSortOrder()', { emojiName })
+
+  let categoryIndex = 999
+  let subcategoryIndex = 999
+  let emojiIndex = 999
+
+  let currentCategoryIndex = 0
+  for (const [categoryName, subcategories] of Object.entries(categories)) {
+    let currentSubcategoryIndex = 0
+    for (const [subcategoryName, emojiNames] of Object.entries(subcategories)) {
+      const emojiNameIndex = emojiNames.indexOf(emojiName)
+      if (emojiNameIndex !== -1) {
+        categoryIndex = currentCategoryIndex
+        subcategoryIndex = currentSubcategoryIndex
+        emojiIndex = emojiNameIndex
+        break
+      }
+      currentSubcategoryIndex++
+    }
+    if (emojiIndex !== 999) break
+    currentCategoryIndex++
+  }
+
+  // Use version-like format: category.subcategory.emojiIndex
+  const sortOrder = `${categoryIndex}.${subcategoryIndex}.${emojiIndex}`
+
+  fpLogger.verbose('Computed sortOrder', {
+    emojiName,
+    categoryIndex,
+    subcategoryIndex,
+    emojiIndex,
+    sortOrder
+  })
+
+  return sortOrder
+}

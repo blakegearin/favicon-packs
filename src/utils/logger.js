@@ -14,34 +14,63 @@ const getLogLevelKeyByValue = value => {
 class Logger {
   constructor () {
     this.extensionName = 'Favicon Packs'
-    this.storageKey = 'logLevel'
+    this.storageKey = 'fpLogLevel'
+    this.defaultLogLevel = 1 // Default to 'quiet'
+    this._cachedLogLevel = this.defaultLogLevel
+    this._initialized = false
 
-    if (window.localStorage.getItem(this.storageKey) === null) {
-      window.localStorage.setItem(this.storageKey, logLevels.quiet)
+    // Initialize log level from storage
+    this._initializeLogLevel()
+  }
+
+  async _initializeLogLevel () {
+    try {
+      const result = await browser.storage.local.get(this.storageKey)
+      if (result[this.storageKey] !== undefined) {
+        this._cachedLogLevel = result[this.storageKey]
+      }
+      this._initialized = true
+    } catch (error) {
+      console.error('Failed to initialize log level from storage:', error)
     }
   }
 
   getLogLevel () {
-    return parseInt(window.localStorage.getItem(this.storageKey), 10)
+    return this._cachedLogLevel || this.defaultLogLevel
   }
 
   getLogLevelName () {
     return getLogLevelKeyByValue(this.getLogLevel())
   }
 
-  setLogLevel (level) {
-    window.localStorage.setItem(this.storageKey, logLevels[level])
-    return this
+  async setLogLevel (level) {
+    try {
+      // Store numeric value for consistent storage
+      const numericLevel = typeof level === 'string' ? logLevels[level] : level
+
+      // Update cache immediately for synchronous access
+      this._cachedLogLevel = numericLevel
+
+      // Store in extension storage asynchronously
+      await browser.storage.local.set({ [this.storageKey]: numericLevel })
+      return this
+    } catch (error) {
+      console.error('Failed to set log level in storage:', error)
+      return this
+    }
   }
 
   version () {
-    return typeof browser !== 'undefined' ? browser?.runtime.getManifest().version : null
+    return typeof browser !== 'undefined'
+      ? browser?.runtime.getManifest().version
+      : null
   }
 
   log (level, message, variable = undefined) {
     if (this.getLogLevel() < level) return
 
-    const versionString = this.version() ? `[${this.version()}] ` : ''
+    const version = this.version()
+    const versionString = version ? `[${version}] ` : ''
     const levelName = getLogLevelKeyByValue(level)
     const log = `${versionString}[${levelName}] ${this.extensionName}: ${message}`
 

@@ -1,4 +1,5 @@
 fpLogger.info('content.js loaded')
+
 ;(function () {
   const CUSTOM_FAVICON_CLASS = 'favicon-packs-custom-favicon'
 

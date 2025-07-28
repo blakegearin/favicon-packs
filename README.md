@@ -90,3 +90,11 @@ This was built using Visual Studio Code and includes a `.vscode` directory with 
 - Web components: [Shoelace](https://shoelace.style)
 
 - Logo: inspired by [shapez](https://shapez.io)
+
+## Other Projects
+
+Miss the old design of YouTube's player? Check out my userstyle: [Old School YouTube Player](https://github.com/blakegearin/old-school-youtube-player#readme)
+
+Miss the old navigation of GitHub? Check out my userscript: [GitHub Custom Global Navigation](https://github.com/blakegearin/github-custom-global-navigation#readme)
+
+Miss the old design of Slack? Check out my userscript: [Old School Slack](https://github.com/blakegearin/old-school-slack#readme)

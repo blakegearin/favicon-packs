@@ -12,16 +12,22 @@ async function initialize () {
   })
 
   const iconPacks = window.extensionStore.getIconPacks()
-  for await (const iconPack of iconPacks) {
-    if (iconPack.name !== 'Ionicons') continue
+  const defaultIconPack = iconPacks.find(pack => pack.name === 'Ionicons')
+  fpLogger.debug('defaultIconPack', defaultIconPack)
 
-    // Download only the latest version of the icon pack
-    const versionMetadata = iconPack.versions[0]
-    await window.extensionStore.downloadIconPackVersion(
-      iconPack,
-      versionMetadata
-    )
-  }
+  await window.extensionStore.downloadPackVersion({
+    pack: defaultIconPack,
+    versionMetadata: defaultIconPack.versions[0]
+  })
+
+  const emojiPacks = window.extensionStore.getEmojiPacks()
+  const defaultEmojiPack = emojiPacks.find(pack => pack.name === 'Twemoji')
+  fpLogger.debug('defaultEmojiPack', defaultEmojiPack)
+
+  await window.extensionStore.downloadPackVersion({
+    pack: defaultEmojiPack,
+    versionMetadata: defaultEmojiPack.versions[0]
+  })
 
   browser.runtime.onMessage.addListener(
     async (request, sender, sendResponse) => {
@@ -48,7 +54,14 @@ async function initialize () {
 
         const siteConfig = sortedSiteConfigs.find(localSiteConfig => {
           if (!localSiteConfig.websitePattern) return false
-          if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
+          if (
+            !localSiteConfig.iconId &&
+            !localSiteConfig.uploadId &&
+            !localSiteConfig.urlImportId &&
+            !localSiteConfig.emojiUrl
+          ) {
+            return false
+          }
 
           let websitePattern = localSiteConfig.websitePattern
           fpLogger.debug('websitePattern', websitePattern)
@@ -91,12 +104,16 @@ async function initialize () {
         let imgUrl = null
 
         if (siteConfig.uploadId) {
+          fpLogger.debug('Setting imgUrl to upload')
           const upload = await window.extensionStore.getUploadById(
             siteConfig.uploadId
           )
           fpLogger.debug('upload', upload)
 
           imgUrl = upload.dataUri
+        } else if (siteConfig.emojiUrl) {
+          fpLogger.debug('Setting imgUrl to emoji')
+          imgUrl = siteConfig.emojiUrl
         } else {
           const darkThemeEnabled = await window.extensionStore.getPreference(
             'darkThemeEnabled'
