@@ -1982,6 +1982,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   fpLogger.trace('DOMContentLoaded')
   await window.extensionStore.initialize()
 
+  document.querySelector('#extension-version').textContent =
+    'v' + browser.runtime.getManifest().version
+
   await applyPreferences()
   void applyToolbarLogo()
 
