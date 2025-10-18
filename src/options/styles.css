@@ -545,7 +545,7 @@ sl-tab-panel.emojis
 }
 
 emoji-picker {
-  --background: transparent;
+  --background: var(--sl-panel-background-color);
   --border-size: '0px';
   --input-border-color: var(--sl-input-border-color);
   --input-border-radius: var(--sl-input-border-radius-medium);
