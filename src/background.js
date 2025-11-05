@@ -12,16 +12,22 @@ async function initialize () {
   })
 
   const iconPacks = window.extensionStore.getIconPacks()
-  for await (const iconPack of iconPacks) {
-    if (iconPack.name !== 'Ionicons') continue
+  const defaultIconPack = iconPacks.find(pack => pack.name === 'Ionicons')
+  fpLogger.debug('defaultIconPack', defaultIconPack)
 
-    // Download only the latest version of the icon pack
-    const versionMetadata = iconPack.versions[0]
-    await window.extensionStore.downloadIconPackVersion(
-      iconPack,
-      versionMetadata
-    )
-  }
+  await window.extensionStore.downloadPackVersion({
+    pack: defaultIconPack,
+    versionMetadata: defaultIconPack.versions[0]
+  })
+
+  const emojiPacks = window.extensionStore.getEmojiPacks()
+  const defaultEmojiPack = emojiPacks.find(pack => pack.name === 'Twemoji')
+  fpLogger.debug('defaultEmojiPack', defaultEmojiPack)
+
+  await window.extensionStore.downloadPackVersion({
+    pack: defaultEmojiPack,
+    versionMetadata: defaultEmojiPack.versions[0]
+  })
 
   browser.runtime.onMessage.addListener(
     async (request, sender, sendResponse) => {

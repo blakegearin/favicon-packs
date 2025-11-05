@@ -43,16 +43,6 @@
       type="module"
     ></script>
 
-    <!-- emoji-picker-element: https://nolanlawson.github.io/emoji-picker-element -->
-    <script
-      src="/emoji-picker/database.js"
-      type="module"
-    ></script>
-    <script
-      src="/emoji-picker/picker.js"
-      type="module"
-    ></script>
-
     <link
       href="styles.css"
       rel="stylesheet"
@@ -916,7 +906,8 @@
               <div class="icon-search-controls">
                 <div id="icon-search-row">
                   <sl-input
-                    id="search-input"
+                    id="icon-search-input"
+                    class="search-input"
                     placeholder="Search"
                     autofocus
                     clearable
@@ -940,14 +931,37 @@
               </div>
             </sl-tab-panel>
 
-            <!-- <sl-tab-panel
-              class="emojis"
-              name="emojis"
+            <sl-tab-panel
+              name="emoji-packs"
+              active
             >
-              <div>
-                <emoji-picker></emoji-picker>
+              <div class="icon-search-controls">
+                <div id="emoji-search-row">
+                  <sl-input
+                    id="emoji-search-input"
+                    class="search-input"
+                    placeholder="Search"
+                    autofocus
+                    clearable
+                  >
+                    <sl-icon
+                      name="search"
+                      slot="prefix"
+                    ></sl-icon>
+                  </sl-input>
+
+                  <div>
+                    <span id="current-emoji-count">0</span> emojis
+                  </div>
+                </div>
+
+                <sl-select
+                  id="emoji-packs-select"
+                  value="all"
+                >
+                </sl-select>
               </div>
-            </sl-tab-panel> -->
+            </sl-tab-panel>
 
             <sl-tab-panel
               class="icon-upload"
@@ -1048,33 +1062,23 @@
               active
             >
               <div class="icon-search">
-                <div class="icon-list"></div>
+                <div
+                  id="icon-tab-list"
+                  class="icon-list"
+                ></div>
               </div>
             </sl-tab-panel>
-
-            <sl-tab-panel name="emojis">
-            </sl-tab-panel>
-
-            <!-- <sl-tab-panel name="emojis">
-              <div class="">
-                <emoji-picker></emoji-picker>
-              </div>
-            </sl-tab-panel> -->
-
-            <!-- <sl-tab-panel
-              class="emojis"
-              name="emojis"
-            >
-              <div>
-                <emoji-picker></emoji-picker>
-              </div>
-            </sl-tab-panel> -->
 
             <sl-tab-panel
-              class="emojis"
-              name="emojis"
+              class="emoji-packs"
+              name="emoji-packs"
             >
-              <emoji-picker></emoji-picker>
+              <div class="emoji-search">
+                <div
+                  id="emoji-tab-list"
+                  class="icon-list"
+                ></div>
+              </div>
             </sl-tab-panel>
 
             <sl-tab-panel name="upload">
@@ -1093,13 +1097,6 @@
               </div>
             </sl-tab-panel>
           </slot>
-
-          <!-- <sl-tab-panel
-            class="emojis"
-            name="emojis"
-          >
-            <emoji-picker></emoji-picker>
-          </sl-tab-panel> -->
 
           <footer
             class="drawer__footer"
@@ -1286,6 +1283,13 @@
           panel="icon-packs"
         >
           Icon Packs
+        </sl-tab>
+
+        <sl-tab
+          slot="nav"
+          panel="emoji-packs"
+        >
+          Emoji Packs
         </sl-tab>
 
         <sl-tab-panel name="preferences">
@@ -1493,6 +1497,10 @@
 
         <sl-tab-panel name="icon-packs">
           <div id="icon-packs-tables"></div>
+        </sl-tab-panel>
+
+        <sl-tab-panel name="emoji-packs">
+          <div id="emoji-packs-tables"></div>
         </sl-tab-panel>
       </sl-tab-group>
     </sl-drawer>

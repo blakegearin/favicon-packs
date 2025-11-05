@@ -893,7 +893,8 @@
               <div class="icon-search-controls">
                 <div id="icon-search-row">
                   <sl-input
-                    id="search-input"
+                    id="icon-search-input"
+                    class="search-input"
                     placeholder="Search"
                     autofocus
                     clearable
@@ -911,6 +912,38 @@
 
                 <sl-select
                   id="icon-packs-select"
+                  value="all"
+                >
+                </sl-select>
+              </div>
+            </sl-tab-panel>
+
+            <sl-tab-panel
+              name="emoji-packs"
+              active
+            >
+              <div class="icon-search-controls">
+                <div id="emoji-search-row">
+                  <sl-input
+                    id="emoji-search-input"
+                    class="search-input"
+                    placeholder="Search"
+                    autofocus
+                    clearable
+                  >
+                    <sl-icon
+                      name="search"
+                      slot="prefix"
+                    ></sl-icon>
+                  </sl-input>
+
+                  <div>
+                    <span id="current-emoji-count">0</span> emojis
+                  </div>
+                </div>
+
+                <sl-select
+                  id="emoji-packs-select"
                   value="all"
                 >
                 </sl-select>
@@ -1016,7 +1049,22 @@
               active
             >
               <div class="icon-search">
-                <div class="icon-list"></div>
+                <div
+                  id="icon-tab-list"
+                  class="icon-list"
+                ></div>
+              </div>
+            </sl-tab-panel>
+
+            <sl-tab-panel
+              class="emoji-packs"
+              name="emoji-packs"
+            >
+              <div class="emoji-search">
+                <div
+                  id="emoji-tab-list"
+                  class="icon-list"
+                ></div>
               </div>
             </sl-tab-panel>
 
@@ -1051,21 +1099,28 @@
                     slot="nav"
                     panel="icon-packs"
                   >
-                    Icon Packs
+                    Icons
+                  </sl-tab>
+
+                  <sl-tab
+                    slot="nav"
+                    panel="emojis"
+                  >
+                    Emojis
                   </sl-tab>
 
                   <sl-tab
                     slot="nav"
                     panel="upload"
                   >
-                    File Upload
+                    Files
                   </sl-tab>
 
                   <sl-tab
                     slot="nav"
                     panel="url"
                   >
-                    URL Import
+                    URLs
                   </sl-tab>
                 </sl-tab-group>
 
@@ -1215,6 +1270,13 @@
           panel="icon-packs"
         >
           Icon Packs
+        </sl-tab>
+
+        <sl-tab
+          slot="nav"
+          panel="emoji-packs"
+        >
+          Emoji Packs
         </sl-tab>
 
         <sl-tab-panel name="preferences">
@@ -1422,6 +1484,10 @@
 
         <sl-tab-panel name="icon-packs">
           <div id="icon-packs-tables"></div>
+        </sl-tab-panel>
+
+        <sl-tab-panel name="emoji-packs">
+          <div id="emoji-packs-tables"></div>
         </sl-tab-panel>
       </sl-tab-group>
     </sl-drawer>

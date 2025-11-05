@@ -278,11 +278,19 @@ function createFaviconSprite (icon, siteConfig, theme = null) {
   return updatedSvgString
 }
 
-function buildIconPackVariant (iconStyle, iconPackName, iconPackVersion) {
-  fpLogger.trace('buildIconPackVariant()')
+function buildPackVariant ({ name, version, style } = {}) {
+  fpLogger.trace('buildPackVariant()')
 
-  const formattedIconPackVersion = iconPackVersion.replaceAll('.', '_')
-  return `icon-pack-variant-${iconStyle}-${iconPackName}-${formattedIconPackVersion}`
+  const formattedName = name
+    .replaceAll(' ', '_')
+    .replaceAll('(', '')
+    .replaceAll(')', '')
+  const formattedVersion = version.replaceAll('.', '_')
+
+  let variant = `pack-variant-${formattedName}-${formattedVersion}`
+  if (style) variant += `-${style}`
+
+  return variant
 }
 
 async function populateDrawerIcons () {
@@ -295,16 +303,24 @@ async function populateDrawerIcons () {
 
   const sortedIcons = icons.sort((a, b) => a.name.localeCompare(b.name))
   for (const icon of sortedIcons) {
+    fpLogger.verbose('icon', icon)
+
+    const formattedPackName = icon.iconPackName.replaceAll('_', ' ')
+    const packVersion = icon.iconPackVersion
+
     const tooltip = document.createElement('sl-tooltip')
-    const formattedIconPackName = icon.iconPackName.replaceAll('_', ' ')
-    const tooltipContent = `${icon.name} ${formattedIconPackName} ${icon.iconPackVersion}`
+    const tooltipContent = `${icon.name} ${formattedPackName} ${packVersion}`
     tooltip.setAttribute('content', tooltipContent)
 
     if (icon.tags) tooltip.setAttribute('tags', icon.tags.join(' '))
 
-    tooltip.classList.add(
-      buildIconPackVariant(icon.style, icon.iconPackName, icon.iconPackVersion)
-    )
+    const packVariant = buildPackVariant({
+      name: icon.iconPackName,
+      version: packVersion,
+      style: icon.style
+    })
+
+    tooltip.classList.add(packVariant)
 
     const iconDiv = document.createElement('div')
     iconDiv.classList.add('icon-list-item')
@@ -335,10 +351,145 @@ async function populateDrawerIcons () {
     document.querySelector(iconPackSvgSelector).appendChild(symbolNode)
   }
 
-  updateCurrentIconCount(sortedIcons.length)
+  updateCurrentCount(sortedIcons.length, 'icon')
 
-  const iconList = ICON_SELECTOR_DRAWER.querySelector('.icon-list')
-  iconList.replaceChildren(iconListFragment)
+  const iconTabList = ICON_SELECTOR_DRAWER.querySelector('#icon-tab-list')
+  iconTabList.replaceChildren(iconListFragment)
+}
+
+async function populateDrawerEmojis () {
+  fpLogger.debug('populateDrawerEmojis()')
+
+  const emojis = await window.extensionStore.getEmojis()
+  fpLogger.debug('emojis', emojis)
+
+  const emojiListFragment = document.createDocumentFragment()
+
+  // Simple sort by sortOrder if available, fallback to pack name + emoji name
+  const sortedEmojis = emojis.sort((a, b) => {
+    // If both have sortOrder, use version-style sorting
+    if (a.sortOrder && b.sortOrder) {
+      const aParts = a.sortOrder
+        .split('.')
+        .map(n => +n + 100000)
+        .join('.')
+      const bParts = b.sortOrder
+        .split('.')
+        .map(n => +n + 100000)
+        .join('.')
+      return aParts.localeCompare(bParts)
+    }
+
+    // If only one has sortOrder, prioritize it
+    if (a.sortOrder && !b.sortOrder) return -1
+    if (!a.sortOrder && b.sortOrder) return 1
+
+    // Fallback to pack name then emoji name
+    const packComparison = a.emojiPackName.localeCompare(b.emojiPackName)
+    if (packComparison !== 0) return packComparison
+    return a.name.localeCompare(b.name)
+  })
+
+  for (const emoji of sortedEmojis) {
+    fpLogger.verbose('emoji', emoji)
+
+    const formattedPackName = emoji.emojiPackName.replaceAll('_', ' ')
+    const packVersion = emoji.emojiPackVersion
+
+    const tooltip = document.createElement('sl-tooltip')
+    const tooltipContent = `${emoji.name} ${formattedPackName} ${packVersion}`
+    tooltip.setAttribute('content', tooltipContent)
+
+    if (emoji.tags) tooltip.setAttribute('tags', emoji.tags.join(' '))
+
+    const packVariant = buildPackVariant({
+      name: emoji.emojiPackName,
+      version: emoji.emojiPackVersion,
+      style: emoji.size
+    })
+
+    tooltip.classList.add(packVariant)
+
+    tooltip.onclick = async () => {
+      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
+        'display-none'
+      )
+
+      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
+        'hidden'
+      )
+
+      // Add loading indicator to #updated-icon
+      const smallSpinner = document.createElement('sl-spinner')
+      smallSpinner.classList.add('sl-spinner-small')
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        smallSpinner
+      )
+
+      const emojiImg = document.createElement('img')
+
+      if (emoji.png) {
+        emojiImg.src = emoji.png
+      } else {
+        const response = await fetch(emoji.pngUrl)
+        fpLogger.debug('response', response)
+
+        if (!response.ok) return
+
+        const blob = await response.blob()
+        const reader = new window.FileReader()
+
+        const png = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result)
+          reader.onerror = () => reject(reader.error)
+          reader.readAsDataURL(blob)
+        })
+
+        await window.extensionStore.updateEmoji({
+          ...emoji,
+          png
+        })
+
+        tooltip.querySelector('.emoji-sprite').classList.add('downloaded')
+
+        emojiImg.src = png
+      }
+
+      emojiImg.setAttribute('emoji-id', emoji.id)
+
+      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
+        emojiImg
+      )
+    }
+
+    const emojiDiv = document.createElement('div')
+    emojiDiv.classList.add('icon-list-item')
+
+    if (emoji.emojiPackName) {
+      const emojiSpan = document.createElement('span')
+      emojiSpan.classList.add(
+        'emoji-sprite',
+        `px-${emoji.size}`,
+        packVariant,
+        emoji.png ? 'downloaded' : 'not-downloaded'
+      )
+
+      const x = emoji.spritesheetX * (emoji.size + 2) + 1
+      const y = emoji.spritesheetY * (emoji.size + 2) + 1
+
+      emojiSpan.style.backgroundPosition = `-${x}px -${y}px`
+
+      emojiDiv.appendChild(emojiSpan)
+
+      tooltip.appendChild(emojiDiv)
+      emojiListFragment.appendChild(tooltip)
+    }
+  }
+
+  updateCurrentCount(sortedEmojis.length, 'emoji')
+
+  const emojiTabList = ICON_SELECTOR_DRAWER.querySelector('#emoji-tab-list')
+  emojiTabList.replaceChildren(emojiListFragment)
 }
 
 async function getSiteConfigsByUpload (uploadId) {
@@ -679,12 +830,13 @@ async function filterByIconPackVariant (filterIconPackVariant) {
   iconPacks.forEach(iconPack => {
     iconPack.versions.forEach(version => {
       iconPack.styles.forEach(style => {
-        const variant = buildIconPackVariant(
-          style.name,
-          iconPack.name,
-          version.name
-        )
-        iconPackVariants.push(variant)
+        const packVariant = buildPackVariant({
+          name: iconPack.name,
+          version: version.name,
+          style: style.name
+        })
+
+        iconPackVariants.push(packVariant)
       })
     })
   })
@@ -700,7 +852,7 @@ async function filterByIconPackVariant (filterIconPackVariant) {
     )
   }
 
-  let iconPackVariantSelector = '.icon-list sl-tooltip'
+  let iconPackVariantSelector = '#icon-tab-list.icon-list sl-tooltip'
 
   if (filterIconPackVariant !== 'All packs') {
     iconPackVariantSelector += `.${filterIconPackVariant}`
@@ -709,45 +861,99 @@ async function filterByIconPackVariant (filterIconPackVariant) {
   const currentIconCount = ICON_SELECTOR_DRAWER.querySelectorAll(
     iconPackVariantSelector
   ).length
-  updateCurrentIconCount(currentIconCount)
+  updateCurrentCount(currentIconCount, 'icon')
 }
 
-function updateCurrentIconCount (iconCount) {
-  fpLogger.debug('updateCurrentIconCount()')
-  document.querySelector('#current-icon-count').textContent =
-    iconCount.toLocaleString()
+async function filterByEmojiPackVariant (filterEmojiPackVariant) {
+  fpLogger.debug('filterByEmojiPackVariant()')
+  fpLogger.debug('filterEmojiPackVariant', filterEmojiPackVariant)
+
+  const emojiPackVariants = []
+
+  const emojiPacks = await window.extensionStore.getEmojiPacks()
+  emojiPacks.forEach(emojiPack => {
+    emojiPack.versions.forEach(version => {
+      const packVariant = buildPackVariant({
+        name: emojiPack.name,
+        version: version.name,
+        style: emojiPack.spritesheetSize
+      })
+
+      emojiPackVariants.push(packVariant)
+    })
+  })
+
+  for (const emojiPackVariant of emojiPackVariants) {
+    const variantActive = ['All packs', emojiPackVariant].includes(
+      filterEmojiPackVariant
+    )
+
+    document.documentElement.style.setProperty(
+      `--emoji-pack-variant-${emojiPackVariant}`,
+      variantActive ? 'block' : 'none'
+    )
+  }
+
+  let emojiPackVariantSelector = '#emoji-tab-list.icon-list sl-tooltip'
+
+  if (filterEmojiPackVariant !== 'All packs') {
+    emojiPackVariantSelector += `.${filterEmojiPackVariant}`
+  }
+  fpLogger.debug('emojiPackVariantSelector', emojiPackVariantSelector)
+
+  const currentEmojiCount = ICON_SELECTOR_DRAWER.querySelectorAll(
+    emojiPackVariantSelector
+  ).length
+  updateCurrentCount(currentEmojiCount, 'emoji')
 }
 
-function filterDrawerIcons (filter) {
+function updateCurrentCount (iconCount, type) {
+  fpLogger.debug('updateCurrentCount()')
+  fpLogger.debug('iconCount', iconCount)
+
+  const counterElementId = {
+    icon: 'current-icon-count',
+    emoji: 'current-emoji-count'
+  }[type]
+
+  const counterElement = document.querySelector(`#${counterElementId}`)
+  fpLogger.debug('counterElement', counterElement)
+
+  counterElement.textContent = iconCount.toLocaleString()
+}
+
+function filterDrawerIcons ({ query, type } = {}) {
   fpLogger.debug('filterDrawerIcons()')
 
   let currentIconCount = 0
 
-  ICON_SELECTOR_DRAWER.querySelectorAll('sl-tooltip').forEach(icon => {
-    let passes = false
+  ICON_SELECTOR_DRAWER.querySelectorAll(`#${type}-tab-list sl-tooltip`).forEach(
+    icon => {
+      let passes = false
 
-    if (filter) {
-      const name = icon.getAttribute('content')
-      const tags = icon.getAttribute('tags') || []
+      if (query) {
+        const name = icon.getAttribute('content')
+        const tags = icon.getAttribute('tags') || []
 
-      if (filter instanceof RegExp) {
-        if (filter.test(name)) passes = true
+        if (query instanceof RegExp) {
+          if (query.test(name)) passes = true
+        } else {
+          if (name.includes(query) || tags.includes(query)) passes = true
+        }
       } else {
-        if (name.includes(filter) || tags.includes(filter)) passes = true
+        passes = true
       }
-    } else {
-      passes = true
-    }
 
-    if (passes) {
-      currentIconCount++
-      icon.classList.remove('display-none')
-    } else {
-      icon.classList.add('display-none')
+      if (passes) {
+        currentIconCount++
+        icon.classList.remove('display-none')
+      } else {
+        icon.classList.add('display-none')
+      }
     }
-  })
+  )
 
-  updateCurrentIconCount(currentIconCount)
+  updateCurrentCount(currentIconCount, type)
 }
 
 async function updateSiteConfig ({
@@ -1450,7 +1656,7 @@ function openTabPanels (tabPanelName) {
     'sl-tab-panel[name="icon-packs"]'
   )
   const emojiTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
-    'sl-tab-panel[name="emojis"]'
+    'sl-tab-panel[name="emoji-packs"]'
   )
   const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="upload"]'
@@ -1524,8 +1730,9 @@ function showDeleteConfirmationDialog (deleteFunction, confirmationText) {
   deleteConfirmationDialog.show()
 }
 
-async function createVersionRow (iconPack, versionMetadata) {
+async function createVersionRow (pack, versionMetadata, packType) {
   fpLogger.verbose('createVersionRow()')
+  fpLogger.verbose('pack', pack)
 
   const versionRow = document.createElement('tr')
 
@@ -1542,11 +1749,26 @@ async function createVersionRow (iconPack, versionMetadata) {
   statusCell.classList.add('center')
 
   // Check if the version is downloaded
-  const iconCount = await window.extensionStore.getIconCountByIconPackVersion(
-    iconPack.name,
-    versionMetadata.name
-  )
+  let iconCount = 0
+
+  fpLogger.verbose('packType', packType)
+  switch (packType) {
+    case 'icon':
+      iconCount = await window.extensionStore.getIconCountByIconPackVersion(
+        pack.name,
+        versionMetadata.name
+      )
+      break
+    case 'emoji':
+      iconCount = await window.extensionStore.getEmojiCountByEmojiPackVersion(
+        pack.name,
+        versionMetadata.name
+      )
+      break
+  }
   const isDownloaded = iconCount > 0
+  fpLogger.verbose('iconCount', iconCount)
+  fpLogger.verbose('isDownloaded', isDownloaded)
 
   const downloadedTag = document.createElement('sl-tag')
   downloadedTag.setAttribute('variant', 'success')
@@ -1575,6 +1797,49 @@ async function createVersionRow (iconPack, versionMetadata) {
 
   versionRow.appendChild(countCell)
 
+  const sizeCell = document.createElement('td')
+  sizeCell.classList.add('center')
+
+  async function getFormattedSize () {
+    const bytes = await window.extensionStore.getPackSize({
+      storeName: `${packType}s`,
+      packName: pack.name,
+      versionName: versionMetadata.name
+    })
+
+    fpLogger.debug('bytes', bytes)
+
+    // Source: https://gist.github.com/zentala/1e6f72438796d74531803cc3833c039c
+    if (bytes == 0) return '-'
+
+    const decimals = 1
+    const k = 1024
+    const sizes = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return (
+      parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
+    )
+  }
+
+  if (isDownloaded) {
+    // Create calculate button to reduce initial page load
+    const calculateButton = document.createElement('sl-icon-button')
+    calculateButton.setAttribute('variant', 'default')
+    calculateButton.setAttribute('size', 'small')
+    calculateButton.setAttribute('name', 'calculator')
+    calculateButton.setAttribute('label', 'Calculate')
+    calculateButton.addEventListener('click', async () => {
+      sizeCell.textContent = await getFormattedSize()
+    })
+
+    sizeCell.appendChild(calculateButton)
+  } else {
+    sizeCell.textContent = '-'
+  }
+
+  versionRow.appendChild(sizeCell)
+
   const actionCell = document.createElement('td')
   actionCell.classList.add('center')
 
@@ -1597,75 +1862,146 @@ async function createVersionRow (iconPack, versionMetadata) {
   }
 
   downloadButton.addEventListener('click', async () => {
-    fpLogger.info('Downloading icon pack version')
-    toggleLoadingSpinner()
+    fpLogger.info('Downloading pack version')
 
-    const iconCount = await window.extensionStore.downloadIconPackVersion(
-      iconPack,
-      versionMetadata
-    )
-    downloadedCountBadge.textContent = iconCount
+    // Show loading spinner immediately
+    showLoadingSpinner()
 
-    downloadedCountBadge.setAttribute('variant', 'success')
-    downloadedTag.classList.remove('display-none')
+    // Use requestAnimationFrame to ensure the spinner renders before starting heavy operation
+    await new Promise(resolve => requestAnimationFrame(resolve))
 
-    notDownloadedTag.classList.add('display-none')
+    try {
+      const packCount = await window.extensionStore.downloadPackVersion({
+        pack,
+        versionMetadata
+      })
+      downloadedCountBadge.textContent = packCount
 
-    downloadButton.classList.add('display-none')
-    removeButton.classList.remove('display-none')
+      downloadedCountBadge.setAttribute('variant', 'success')
+      downloadedTag.classList.remove('display-none')
 
-    for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(
-        style.name,
-        iconPack.name,
-        versionMetadata.name
-      )
-      document.documentElement.style.setProperty(
-        `--icon-pack-variant-${iconPackVariant}`,
-        'block'
-      )
+      notDownloadedTag.classList.add('display-none')
+
+      sizeCell.textContent = await getFormattedSize()
+
+      downloadButton.classList.add('display-none')
+      removeButton.classList.remove('display-none')
+
+      for (const style of pack.styles || []) {
+        const packVariant = buildPackVariant({
+          name: pack.name,
+          version: versionMetadata.name,
+          style: style.name
+        })
+        document.documentElement.style.setProperty(
+          `--icon-pack-variant-${packVariant}`,
+          'block'
+        )
+      }
+
+      if (packType === 'emoji') {
+        await populateEmojiPackVariantSelector()
+        await populateDrawerEmojis()
+      } else if (packType === 'icon') {
+        await populateIconPackVariantSelector()
+        await populateDrawerIcons()
+      }
+    } finally {
+      hideLoadingSpinner()
     }
-
-    await populateIconPackVariantSelector()
-    await populateDrawerIcons()
-
-    toggleLoadingSpinner()
   })
 
   removeButton.addEventListener('click', async () => {
-    fpLogger.info('Removing icon pack version')
-    toggleLoadingSpinner()
+    fpLogger.info('Removing pack version')
 
-    await window.extensionStore.deleteIconsByIconPackVersion(
-      iconPack.name,
-      versionMetadata.name
-    )
-    downloadedCountBadge.textContent = 0
+    showLoadingSpinner()
+    await new Promise(resolve => requestAnimationFrame(resolve))
 
-    downloadedCountBadge.setAttribute('variant', 'neutral')
-    downloadedTag.classList.add('display-none')
+    try {
+      if (packType === 'icon') {
+        await window.extensionStore.deleteIconsByIconPackVersion(
+          pack.name,
+          versionMetadata.name
+        )
+      } else if (packType === 'emoji') {
+        await window.extensionStore.deleteEmojisByEmojiPackVersion(
+          pack.name,
+          versionMetadata.name
+        )
+      }
 
-    notDownloadedTag.classList.remove('display-none')
+      downloadedCountBadge.textContent = 0
+      downloadedCountBadge.setAttribute('variant', 'neutral')
 
-    downloadButton.classList.remove('display-none')
-    removeButton.classList.add('display-none')
+      sizeCell.textContent = '-'
 
-    for (const style of iconPack.styles) {
-      const iconPackVariant = buildIconPackVariant(
-        style.name,
-        iconPack.name,
-        versionMetadata.name
-      )
-      document.documentElement.style.setProperty(
-        `--icon-pack-variant-${iconPackVariant}`,
-        'none'
-      )
+      downloadedTag.classList.add('display-none')
+
+      notDownloadedTag.classList.remove('display-none')
+
+      downloadButton.classList.remove('display-none')
+      removeButton.classList.add('display-none')
+
+      if (packType === 'icon') {
+        for (const style of pack.styles || []) {
+          const packVariant = buildPackVariant({
+            name: pack.name,
+            version: versionMetadata.name,
+            style: style.name
+          })
+          document.documentElement.style.setProperty(
+            `--icon-pack-variant-${packVariant}`,
+            'none'
+          )
+
+          // Remove from variant selector if needed
+          const iconPacksSelect =
+            ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+          const optionToRemove = Array.from(
+            iconPacksSelect.querySelectorAll('sl-option')
+          ).find(option => option.value === packVariant)
+          if (optionToRemove) {
+            iconPacksSelect.removeChild(optionToRemove)
+          }
+        }
+
+        await populateIconPackVariantSelector()
+
+        // Only repopulate drawer icons if "All packs" is selected or if no filter is active
+        const iconPacksSelect =
+          ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+        if (!iconPacksSelect.value || iconPacksSelect.value === 'all') {
+          await populateDrawerIcons()
+        }
+      } else if (packType === 'emoji') {
+        const packVariant = buildPackVariant({
+          name: pack.name,
+          version: versionMetadata.name,
+          style: pack.spritesheetSize
+        })
+        document.documentElement.style.setProperty(
+          `--emoji-pack-variant-${packVariant}`,
+          'none'
+        )
+
+        // Remove from variant selector if needed
+        const emojiPacksSelect = ICON_SELECTOR_DRAWER.querySelector(
+          '#emoji-packs-select'
+        )
+        const optionToRemove = Array.from(
+          emojiPacksSelect.querySelectorAll('sl-option')
+        ).find(option => option.value === packVariant)
+        if (optionToRemove) {
+          emojiPacksSelect.removeChild(optionToRemove)
+        }
+
+        // Always repopulate drawer emojis to remove deleted emojis from DOM
+        await populateDrawerEmojis()
+        await populateEmojiPackVariantSelector()
+      }
+    } finally {
+      hideLoadingSpinner()
     }
-
-    await populateIconPackVariantSelector()
-    await populateDrawerIcons()
-
-    toggleLoadingSpinner()
   })
 
   actionCell.appendChild(downloadButton)
@@ -1675,22 +2011,22 @@ async function createVersionRow (iconPack, versionMetadata) {
   return versionRow
 }
 
-async function createIconPackTable (iconPack) {
-  fpLogger.verbose('createIconPackTable()')
+async function createPackTable (pack, packType) {
+  fpLogger.verbose('createPackTable()')
 
-  const iconPackDiv = document.createElement('div')
-  iconPackDiv.classList.add('center')
+  const packDiv = document.createElement('div')
+  packDiv.classList.add('center')
 
-  const iconPackLink = document.createElement('a')
-  iconPackLink.href = iconPack.homepageUrl
-  iconPackLink.target = '_blank'
-  iconPackLink.rel = 'noopener noreferrer'
+  const packLink = document.createElement('a')
+  packLink.href = pack.homepageUrl
+  packLink.target = '_blank'
+  packLink.rel = 'noopener noreferrer'
+  packLink.textContent = pack.name
 
-  const iconPackTitle = document.createElement('h3')
-  iconPackTitle.textContent = iconPack.name.replaceAll('_', ' ')
+  const packTitle = document.createElement('h3')
+  packTitle.appendChild(packLink)
 
-  iconPackLink.appendChild(iconPackTitle)
-  iconPackDiv.appendChild(iconPackLink)
+  packDiv.appendChild(packTitle)
 
   const headerRow = document.createElement('tr')
   headerRow.classList.add('icon-pack-header')
@@ -1706,7 +2042,7 @@ async function createIconPackTable (iconPack) {
   versionDiv.appendChild(versionSpan)
 
   const changelogLink = document.createElement('a')
-  changelogLink.href = iconPack.changelogUrl
+  changelogLink.href = pack.changelogUrl
   changelogLink.target = '_blank'
   changelogLink.rel = 'noopener noreferrer'
 
@@ -1729,6 +2065,11 @@ async function createIconPackTable (iconPack) {
   countHeader.textContent = 'Icon Count'
   headerRow.appendChild(countHeader)
 
+  const sizeHeader = document.createElement('th')
+  sizeHeader.classList.add('center', 'width-auto')
+  sizeHeader.textContent = 'File Size'
+  headerRow.appendChild(sizeHeader)
+
   const actionSubheader = document.createElement('th')
   actionSubheader.classList.add('center', 'width-auto')
   actionSubheader.textContent = 'Action'
@@ -1739,29 +2080,39 @@ async function createIconPackTable (iconPack) {
 
   const tableBody = document.createElement('tbody')
 
-  for await (const versionMetadata of iconPack.versions) {
-    const versionRow = await createVersionRow(iconPack, versionMetadata)
+  for await (const versionMetadata of pack.versions) {
+    const versionRow = await createVersionRow(pack, versionMetadata, packType)
     tableBody.appendChild(versionRow)
   }
 
-  const iconPackTable = document.createElement('table')
-  iconPackTable.classList.add('icon-pack-table')
-  iconPackTable.appendChild(tableHeader)
-  iconPackTable.appendChild(tableBody)
+  const packTable = document.createElement('table')
+  packTable.classList.add('icon-pack-table')
+  packTable.appendChild(tableHeader)
+  packTable.appendChild(tableBody)
 
-  iconPackDiv.appendChild(iconPackTable)
-  return iconPackDiv
+  packDiv.appendChild(packTable)
+  return packDiv
 }
 
 function toggleLoadingSpinner () {
   fpLogger.debug('toggleLoadingSpinner()')
 
-  // Add small delay to avoid race conditions
-  setTimeout(() => {
-    document
-      .querySelector('div > #loading-overlay')
-      .classList.toggle('display-none')
-  }, 100)
+  const loadingOverlay = document.querySelector('div > #loading-overlay')
+  loadingOverlay.classList.toggle('display-none')
+}
+
+function showLoadingSpinner () {
+  fpLogger.debug('showLoadingSpinner()')
+
+  const loadingOverlay = document.querySelector('div > #loading-overlay')
+  loadingOverlay.classList.remove('display-none')
+}
+
+function hideLoadingSpinner () {
+  fpLogger.debug('hideLoadingSpinner()')
+
+  const loadingOverlay = document.querySelector('div > #loading-overlay')
+  loadingOverlay.classList.add('display-none')
 }
 
 async function populateIconPackVariantSelector () {
@@ -1769,6 +2120,10 @@ async function populateIconPackVariantSelector () {
 
   const iconPacksSelect =
     ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
+
+  // Store current selection before clearing
+  const currentValue = iconPacksSelect.value
+
   iconPacksSelect.replaceChildren()
 
   const selectAllOption = document.createElement('sl-option')
@@ -1806,13 +2161,13 @@ async function populateIconPackVariantSelector () {
       if (iconCount === 0) continue
 
       // Add icon pack styles to the select element
-      for (const style of iconPack.styles) {
+      for (const style of iconPack.styles || []) {
         const selectOption = document.createElement('sl-option')
-        const iconPackVariant = buildIconPackVariant(
-          style.name,
-          iconPack.name,
-          versionMetadata.name
-        )
+        const iconPackVariant = buildPackVariant({
+          name: iconPack.name,
+          version: versionMetadata.name,
+          style: style.name
+        })
 
         const cssVariableName = `--icon-pack-variant-${iconPackVariant}`
         document.documentElement.style.setProperty(cssVariableName, 'block')
@@ -1843,6 +2198,124 @@ async function populateIconPackVariantSelector () {
         iconPacksSelect.appendChild(selectOption)
       }
     }
+  }
+
+  // Restore selection if it still exists
+  if (
+    currentValue &&
+    iconPacksSelect.querySelector(`[value="${currentValue}"]`)
+  ) {
+    iconPacksSelect.value = currentValue
+    await filterByIconPackVariant(
+      currentValue === 'all' ? 'All packs' : currentValue
+    )
+  } else if (currentValue === 'all') {
+    iconPacksSelect.value = 'all'
+    // Refresh the drawer content first, then apply the filter
+    await populateDrawerIcons()
+    await filterByIconPackVariant('All packs')
+  }
+}
+
+async function populateEmojiPackVariantSelector () {
+  fpLogger.debug('populateEmojiPackVariantSelector()')
+
+  const emojiPacksSelect = ICON_SELECTOR_DRAWER.querySelector(
+    '#emoji-packs-select'
+  )
+
+  // Store current selection before clearing
+  const currentValue = emojiPacksSelect.value
+
+  emojiPacksSelect.replaceChildren()
+
+  const selectAllOption = document.createElement('sl-option')
+  selectAllOption.setAttribute('value', 'all')
+  selectAllOption.textContent = 'All packs'
+  selectAllOption.addEventListener(
+    'click',
+    async () => await filterByEmojiPackVariant('All packs')
+  )
+
+  emojiPacksSelect.appendChild(selectAllOption)
+
+  let emojiPacksStyle = null
+  const emojiPackStyleId = 'emoji-pack-styles'
+  if (!document.getElementById(emojiPackStyleId)) {
+    emojiPacksStyle = document.createElement('style')
+    emojiPacksStyle.id = emojiPackStyleId
+  }
+
+  const emojiPacks = window.extensionStore.getEmojiPacks()
+  for (const emojiPack of emojiPacks) {
+    for await (const versionMetadata of emojiPack.versions) {
+      const emojiPackVariant = buildPackVariant({
+        name: emojiPack.name,
+        version: versionMetadata.name,
+        style: emojiPack.spritesheetSize
+      })
+
+      const emojiCount =
+        await window.extensionStore.getEmojiCountByEmojiPackVersion(
+          emojiPack.name,
+          versionMetadata.name
+        )
+
+      if (emojiCount !== 0) {
+        // Add emoji pack styles to the select element
+        const selectOption = document.createElement('sl-option')
+        selectOption.setAttribute('value', emojiPackVariant)
+        const formattedEmojiPackName = emojiPack.name.replaceAll('_', ' ')
+        const textBefore = document.createTextNode(
+          `${formattedEmojiPackName} (`
+        )
+        selectOption.appendChild(textBefore)
+
+        const codeElement = document.createElement('code')
+        codeElement.textContent = versionMetadata.name
+        selectOption.appendChild(codeElement)
+
+        const textAfter = document.createTextNode(')')
+        selectOption.appendChild(textAfter)
+
+        emojiPacksSelect.appendChild(selectOption)
+      }
+
+      if (!emojiPacksStyle) continue
+
+      const cssVariableName = `--emoji-pack-variant-${emojiPackVariant}`
+      document.documentElement.style.setProperty(cssVariableName, 'block')
+
+      const spritesheetUrl = emojiPack.spritesheetUrl
+        .replace('{VERSION}', versionMetadata.name)
+        .replace('{SIZE}', emojiPack.spritesheetSize)
+
+      emojiPacksStyle.textContent += `
+        .${emojiPackVariant} { display: var(${cssVariableName}); }
+        .emoji-sprite.${emojiPackVariant}
+        {
+          background-image: url('${spritesheetUrl}');
+        }
+      `
+    }
+  }
+
+  if (emojiPacksStyle) document.body.appendChild(emojiPacksStyle)
+
+  // Restore selection if it still exists
+  if (
+    currentValue &&
+    emojiPacksSelect.querySelector(`[value="${currentValue}"]`)
+  ) {
+    emojiPacksSelect.value = currentValue
+    await filterByEmojiPackVariant(
+      currentValue === 'all' ? 'All packs' : currentValue
+    )
+  } else if (currentValue === 'all') {
+    emojiPacksSelect.value = 'all'
+    // Refresh the drawer content first, then apply the filter
+    await populateDrawerEmojis()
+    await filterByEmojiPackVariant('All packs')
   }
 }
 
@@ -2134,6 +2607,110 @@ async function applyPreferences () {
   }
 }
 
+async function populateDrawer () {
+  fpLogger.debug('populateDrawer()')
+
+  await populateDrawerIcons()
+  await populateDrawerEmojis()
+  await populateDrawerUploads()
+  await populateDrawerUrlImports()
+}
+
+async function getSiteConfigsByIds (ids) {
+  fpLogger.debug('getSiteConfigsByIds()')
+
+  const siteConfigs = await window.extensionStore.getSiteConfigs()
+  return siteConfigs.filter(siteConfig => ids.includes(siteConfig.id))
+}
+
+async function importSiteConfigs (importedSiteConfigs) {
+  fpLogger.debug('importSiteConfigs()')
+
+  const siteConfigsOrder = await window.extensionStore.getPreference(
+    'siteConfigsOrder'
+  )
+  fpLogger.debug('siteConfigsOrder', siteConfigsOrder)
+
+  const importedIds = importedSiteConfigs.map(siteConfig => siteConfig.id)
+
+  const newSiteConfigsOrder = [...siteConfigsOrder, ...importedIds]
+  fpLogger.debug('newSiteConfigsOrder', newSiteConfigsOrder)
+  await window.extensionStore.updatePreference(
+    'siteConfigsOrder',
+    newSiteConfigsOrder
+  )
+
+  for (const siteConfig of importedSiteConfigs) {
+    await updateSiteConfig(siteConfig)
+  }
+}
+
+async function exportSiteConfigs (siteConfigs) {
+  fpLogger.debug('exportSiteConfigs()')
+
+  const exportData = {
+    siteConfigs: {
+      version: 1,
+      ids: siteConfigs.map(siteConfig => siteConfig.id)
+    }
+  }
+
+  const idbDatabase = window.extensionStore.getDatabase()
+  const jsonString = await window.exportToJson(idbDatabase, [
+    'icons',
+    'preferences'
+  ])
+
+  return { ...exportData, json: jsonString }
+}
+
+async function handleSiteConfigImport (file) {
+  fpLogger.debug('handleSiteConfigImport()')
+
+  const fileUrl = URL.createObjectURL(file)
+
+  const response = await fetch(fileUrl)
+  fpLogger.debug('response', response)
+
+  if (!response.ok) {
+    fpLogger.error('Failed to fetch file', response.statusText)
+    return
+  }
+
+  const responseString = await response.text()
+  fpLogger.verbose('responseString', responseString)
+
+  const idbDatabase = window.extensionStore.getDatabase()
+  fpLogger.verbose('idbDatabase', idbDatabase)
+
+  const imports = await window.importFromJson(idbDatabase, responseString)
+  fpLogger.debug('imports', imports)
+
+  await importSiteConfigs(imports.imported.siteConfigs)
+}
+
+async function handleSiteConfigExport (siteConfigs) {
+  fpLogger.debug('handleSiteConfigExport()')
+
+  const exportData = await exportSiteConfigs(siteConfigs)
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+    type: 'application/json'
+  })
+  const url = URL.createObjectURL(blob)
+
+  const downloadLink = document.createElement('a')
+  downloadLink.href = url
+  const formattedExtensionName = fpLogger.extensionName.replaceAll(' ', '-')
+  downloadLink.download = `${formattedExtensionName}-export-${Date.now()}.json`
+
+  document.body.appendChild(downloadLink)
+  downloadLink.click()
+  document.body.removeChild(downloadLink)
+
+  setTimeout(() => URL.revokeObjectURL(url), 100)
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
   fpLogger.trace('DOMContentLoaded')
   await window.extensionStore.initialize()
@@ -2148,6 +2725,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   ICON_SELECTOR_DRAWER = document.querySelector('sl-drawer#icon-selector')
 
   await populateIconPackVariantSelector()
+  await populateEmojiPackVariantSelector()
 
   const iconPacksSelect =
     ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
@@ -2158,41 +2736,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     })
   })
 
+  const emojiPacksSelect = ICON_SELECTOR_DRAWER.querySelector(
+    '#emoji-packs-select'
+  )
+  emojiPacksSelect.addEventListener('sl-change', event => {
+    event.target.updateComplete.then(async () => {
+      fpLogger.info('Filtering by emoji pack variant')
+      await filterByEmojiPackVariant(event.target.value)
+    })
+  })
+
   const iconDrawerTabGroup = document.querySelector('#icon-drawer-tab-group')
   iconDrawerTabGroup.addEventListener('sl-tab-show', event => {
     fpLogger.debug('Switching tab to icon selector drawer')
     openTabPanels(event.detail.name)
   })
 
-  document
-    .querySelector('emoji-picker')
-    .addEventListener('emoji-click', async event => {
-      fpLogger.debug('Emoji picked')
-      fpLogger.verbose('event', event)
-
-      const emoji = event.detail.unicode
-      fpLogger.debug('emoji', emoji)
-
-      ICON_SELECTOR_DRAWER.querySelector('#unsaved').classList.remove(
-        'display-none'
-      )
-
-      ICON_SELECTOR_DRAWER.querySelector('.drawer-footer').classList.remove(
-        'hidden'
-      )
-
-      const emojiDiv = document.createElement('div')
-      emojiDiv.classList.add('emoji')
-      emojiDiv.innerText = emoji
-
-      ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren(
-        emojiDiv
-      )
-    })
-
-  await populateDrawerIcons()
-  await populateDrawerUploads()
-  await populateDrawerUrlImports()
+  await populateDrawer()
 
   ICON_SELECTOR_DRAWER.querySelector('#clear-icon-button').addEventListener(
     'click',
@@ -2225,17 +2785,13 @@ document.addEventListener('DOMContentLoaded', async function () {
       const selectedCell = ICON_SELECTOR_DRAWER.querySelector('#updated-icon')
       const id = ICON_SELECTOR_DRAWER.getAttribute('data-siteConfig-id')
 
-      const emojiDiv = selectedCell.querySelector('div.emoji')
+      const emojiImg = selectedCell.querySelector('[emoji-id')
       const iconElement = selectedCell.querySelector('[icon-id]')
       const uploadElement = selectedCell.querySelector('[upload-id]')
       const urlImportElement = selectedCell.querySelector('[url-import-id]')
 
-      if (emojiDiv) {
-        const emoji = emojiDiv.innerText
-        fpLogger.debug('Found emoji:', emoji)
-
-        const emojiUrl = await emojiToPngDataUri(emoji)
-        fpLogger.verbose('emojiUrl', emojiUrl)
+      if (emojiImg) {
+        const emojiUrl = emojiImg.src
 
         updateSiteConfig({ id, emojiUrl })
       } else if (iconElement) {
@@ -2271,13 +2827,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   )
 
-  ICON_SELECTOR_DRAWER.querySelector('#search-input').addEventListener(
+  ICON_SELECTOR_DRAWER.querySelector('#icon-search-input').addEventListener(
     'sl-input',
     event => {
       event.target.updateComplete.then(() => {
-        fpLogger.debug('Search input event fired')
-        const searchQuery = event.target.input.value
-        filterDrawerIcons(searchQuery)
+        fpLogger.debug('Search icon input event fired')
+        const query = event.target.input.value
+        filterDrawerIcons({ query, type: 'icon' })
+      })
+    }
+  )
+
+  ICON_SELECTOR_DRAWER.querySelector('#emoji-search-input').addEventListener(
+    'sl-input',
+    event => {
+      event.target.updateComplete.then(() => {
+        fpLogger.debug('Search emoji input event fired')
+        const query = event.target.input.value
+        filterDrawerIcons({ query, type: 'emoji' })
       })
     }
   )
@@ -2808,8 +3375,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const iconPacks = window.extensionStore.getIconPacks()
   for await (const iconPack of iconPacks) {
-    const iconPackTable = await createIconPackTable(iconPack)
+    const iconPackTable = await createPackTable(iconPack, 'icon')
     iconPacksDiv.appendChild(iconPackTable)
+  }
+
+  const emojiPacksDiv = document.querySelector('#emoji-packs-tables')
+  fpLogger.debug('emojiPacksDiv', emojiPacksDiv)
+
+  const emojiPacks = window.extensionStore.getEmojiPacks()
+  for await (const iconPack of emojiPacks) {
+    const emojiPackTable = await createPackTable(iconPack, 'emoji')
+    emojiPacksDiv.appendChild(emojiPackTable)
   }
 
   document.documentElement.style.setProperty('--table-row-display', 'table-row')
@@ -2818,7 +3394,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   document
     .querySelectorAll('.skeleton-row')
     .forEach(row => row.classList.toggle('display-none'))
-  toggleLoadingSpinner()
+
+  hideLoadingSpinner()
 })
 
 // Theme selector
