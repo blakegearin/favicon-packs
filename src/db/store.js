@@ -568,8 +568,8 @@ class ExtensionStore {
 
   async getEmojiCountByEmojiPackVersion (emojiPackName, emojiPackVersion) {
     fpLogger.verbose('getEmojiCountByEmojiPackVersion()')
-    fpLogger.verbose('iconPackName', iconPackName)
-    fpLogger.verbose('iconPackVersion', iconPackVersion)
+    fpLogger.verbose('emojiPackName', emojiPackName)
+    fpLogger.verbose('emojiPackVersion', emojiPackVersion)
 
     await this.ensureInitialized()
 

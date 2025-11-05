@@ -1461,11 +1461,20 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
       ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
         buildUrlImportImg(urlImport)
       )
+    } else if (siteConfig.emojiUrl) {
+      ICON_SELECTOR_DRAWER.querySelector('[panel="emoji-packs"]').click()
 
-      // ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent =
-      //   upload.name
-      // ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
-      //   ''
+      const emojiImg = document.createElement('img')
+      emojiImg.src = siteConfig.emojiUrl
+
+      ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren(
+        emojiImg
+      )
+
+      ICON_SELECTOR_DRAWER.querySelector('#current-upload-name').textContent =
+        ''
+      ICON_SELECTOR_DRAWER.querySelector('#updated-upload-name').textContent =
+        ''
     } else {
       ICON_SELECTOR_DRAWER.querySelector('#current-icon').replaceChildren()
       ICON_SELECTOR_DRAWER.querySelector('#updated-icon').replaceChildren()
@@ -1655,7 +1664,7 @@ function openTabPanels (tabPanelName) {
   const iconPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="icon-packs"]'
   )
-  const emojiTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
+  const emojiPacksTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
     'sl-tab-panel[name="emoji-packs"]'
   )
   const uploadTabPanels = ICON_SELECTOR_DRAWER.querySelectorAll(
@@ -1671,28 +1680,28 @@ function openTabPanels (tabPanelName) {
       iconPacksTabPanels.forEach(tabPanel =>
         tabPanel.setAttribute('active', '')
       )
-      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
-    case 'emojis':
+    case 'emoji-packs':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.add('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
+      emojiPacksTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'upload':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'url':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       uploadTabPanels.forEach(tabPanel =>
         tabPanel.removeAttribute('active', '')
       )
