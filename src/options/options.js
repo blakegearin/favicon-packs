@@ -2614,9 +2614,13 @@ document.addEventListener('DOMContentLoaded', async function () {
   fpLogger.trace('DOMContentLoaded')
   await window.extensionStore.initialize()
 
-  if (browser?.runtime) {
-    document.querySelector('#extension-version').textContent =
-      'v' + browser.runtime.getManifest().version
+  const version = fpLogger.version()
+  if (version) {
+    document.querySelector(
+      '#extension-version'
+    ).textContent = `v${version}`
+  } else {
+    document.querySelector('#extension-version').classList.add('display-none')
   }
 
   await applyPreferences()
