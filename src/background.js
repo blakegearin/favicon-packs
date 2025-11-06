@@ -112,7 +112,7 @@ async function initialize () {
 
           imgUrl = upload.dataUri
         } else if (siteConfig.emojiUrl) {
-          console.log('Setting imgUrl to emoji')
+          fpLogger.debug('Setting imgUrl to emoji')
           imgUrl = siteConfig.emojiUrl
         } else {
           const darkThemeEnabled = await window.extensionStore.getPreference(

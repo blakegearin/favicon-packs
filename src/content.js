@@ -1,5 +1,5 @@
 fpLogger.info('content.js loaded')
-console.log('hi')
+
 ;(function () {
   const CUSTOM_FAVICON_CLASS = 'favicon-packs-custom-favicon'
 
@@ -147,7 +147,6 @@ console.log('hi')
         currentObserver.observe(document.documentElement, observerConfig)
       }
 
-      console.log('Replaced favicon')
       fpLogger.info('Replaced favicon')
       return iconLink
     } finally {
@@ -294,7 +293,6 @@ console.log('hi')
 
   function initialize (forceReset = false) {
     fpLogger.debug('initialize()')
-    console.log('initialize()')
 
     if (hasInitialized && !forceReset) {
       fpLogger.debug('Already initialized, skipping')
@@ -429,15 +427,12 @@ console.log('hi')
   }
 
   if (document.readyState === 'loading') {
-    console.log('Document is loading')
-
     document.addEventListener('DOMContentLoaded', () => {
       fpLogger.debug('DOMContentLoaded')
 
       initialize()
     })
   } else {
-    console.log('Already loaded')
     fpLogger.debug('Already loaded')
 
     initialize()
