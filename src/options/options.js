@@ -1680,28 +1680,36 @@ function openTabPanels (tabPanelName) {
       iconPacksTabPanels.forEach(tabPanel =>
         tabPanel.setAttribute('active', '')
       )
-      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel =>
+        tabPanel.removeAttribute('active')
+      )
       uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'emoji-packs':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.add('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiPacksTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
+      emojiPacksTabPanels.forEach(tabPanel =>
+        tabPanel.setAttribute('active', '')
+      )
       uploadTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'upload':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel =>
+        tabPanel.removeAttribute('active')
+      )
       uploadTabPanels.forEach(tabPanel => tabPanel.setAttribute('active', ''))
       urlTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active', ''))
       break
     case 'url':
       // ICON_SELECTOR_DRAWER.querySelector('.drawer__body').classList.remove('display-none')
       iconPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
-      emojiPacksTabPanels.forEach(tabPanel => tabPanel.removeAttribute('active'))
+      emojiPacksTabPanels.forEach(tabPanel =>
+        tabPanel.removeAttribute('active')
+      )
       uploadTabPanels.forEach(tabPanel =>
         tabPanel.removeAttribute('active', '')
       )
