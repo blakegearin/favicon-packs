@@ -15,7 +15,11 @@ class Logger {
   constructor () {
     this.extensionName = 'Favicon Packs'
     this.storageKey = 'fpLogLevel'
-    this.defaultLogLevel = 1 // Default to 'quiet'
+
+    const urlParams = new URLSearchParams(window.location.search)
+    const debugParam = urlParams.get('debug')
+    this.defaultLogLevel = debugParam ? logLevels[debugParam] : 1 // Default to 'quiet'
+
     this._cachedLogLevel = this.defaultLogLevel
     this._initialized = false
 
