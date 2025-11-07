@@ -1,6 +1,3 @@
-package:
-	web-ext build -s src -i demo --overwrite-dest
-
 demo:
 	cp src/options/index.html index.html
 	sed -i '' -e 's|href="../img/|href="src/img/|g' index.html
@@ -14,3 +11,15 @@ demo:
 	sed -i '' -e 's|src="../db/idb-backup-and-restore.js"|src="src/db/idb-backup-and-restore.js"|g' index.html
 	sed -i '' -e 's|src="../img/parts-of-a-url.png"|src="src/img/parts-of-a-url.png"|g' index.html
 	sed -i '' -e 's|<script src="options.js"></script>|<script src="src/demo/icons.js"></script>\n    <script src="src/demo/demo.js"></script>\n    <script src="src/options/options.js"></script>|g' index.html
+
+version:
+	bash helpers/update-version.sh "$(v)"
+
+package:
+	web-ext build -s src -i demo --overwrite-dest
+
+release:
+	make demo
+	$(eval NEW_VERSION := $(shell make version v="$(v)" | tail -n 1))
+	make package
+	bash helpers/release.sh "$(NEW_VERSION)"
