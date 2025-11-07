@@ -17,7 +17,7 @@
 
 🚧 Beta 🚧
 
-This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to customize tab [favicons](https://en.wikipedia.org/wiki/Favicon) with icons or images.
+This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) to customize tab [favicons](https://en.wikipedia.org/wiki/Favicon) with icons, emojis, or images.
 
 ## Features
 
@@ -71,7 +71,7 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 - What about Chromium browsers?
 
-  - I don't have plans to port this due to Google's manifest v3 rollout. It's harmful and anti-competitive. I recommend reading [this article from EFF](https://www.eff.org/deeplinks/2021/12/chrome-users-beware-manifest-v3-deceitful-and-threatening). I'm a big fan of [Zen Browser](https://zen-browser.app/) at the moment.
+  - I don't have plans to port this due to Google's manifest v3 rollout. It's harmful and anti-competitive. I recommend reading [this article from EFF](https://www.eff.org/deeplinks/2021/12/chrome-users-beware-manifest-v3-deceitful-and-threatening). I'm a fan of [Zen Browser](https://zen-browser.app/) at the moment.
 
 ## Contributing
 
