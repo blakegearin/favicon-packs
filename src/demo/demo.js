@@ -158,7 +158,13 @@ async function updateCurrentFavicon () {
     const siteConfig = sortedSiteConfigs.find(localSiteConfig => {
       fpLogger.verbose('localSiteConfig', localSiteConfig)
       if (!localSiteConfig.websitePattern) return false
-      if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
+
+      const iconPresent =
+        localSiteConfig.iconId ||
+        localSiteConfig.emojiUrl ||
+        localSiteConfig.uploadId ||
+        localSiteConfig.urlImportId
+      if (!iconPresent) return false
 
       let websitePattern = localSiteConfig.websitePattern
       fpLogger.debug('websitePattern', websitePattern)
