@@ -21,17 +21,18 @@ This is a [browser extension](https://en.wikipedia.org/wiki/Browser_extension) t
 
 ## Features
 
-- [x] Choose from over 10,000 icons (Ionicons, Font Awesome, Lucide, Tabler)
+- [x] +10,000 icons (Ionicons, Font Awesome, Lucide, Tabler)
+- [x] +7,000 emojis (Twemoji, Apple, Google/Noto, Facebook)
 - [x] Upload an image or import from a URL
-- [x] Easily add domains or patterns for more advanced matching
+- [x] Easily add domains, or a pattern for more advanced matching
 - [x] Custom colors for light & dark themes
-- [x] Convenient copy to clipboard buttons help keep track of values
 - [x] Selectable rows enable bulk updates
-- [x] Create catch-alls or categories using the priority ordering
+- [x] Convenient copy to clipboard buttons
+- [x] Create catch-alls or categories with priority ordering
 - [x] No tracking or analytics as all data is stored locally
-- [x] Simple JS + HTML + CSS implementation for easy auditing
-- [ ] Import and export for sharing between devices (beta)
+- [x] Plain JS, HTML, and CSS files for easy auditing
 - [ ] Custom update strategies to guard against hijacking (e.g. Notion, Google Calendar)
+- [ ] Import and export for sharing between devices (beta)
 
 ## Install
 
