@@ -13,6 +13,7 @@
 ![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Faddons.mozilla.org%2Fapi%2Fv5%2Faddons%2Faddon%2Ffavicon-packs%2F&query=%24.average_daily_users&suffix=%20users&label=firefox%20add-on&color=%23E66000&link=https%3A%2F%2Faddons.mozilla.org%2Fen-US%2Ffirefox%2Faddon%2Ffavicon-packs)
 [![Javascript Style Guide](https://img.shields.io/badge/code_style-standard-f3df49)](https://standardjs.com)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblakegearin%2Ffavicon-packs.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblakegearin%2Ffavicon-packs?ref=badge_shield)
 
 🚧 Beta 🚧
 
@@ -98,3 +99,7 @@ Miss the old design of YouTube's player? Check out my userstyle: [Old School You
 Miss the old navigation of GitHub? Check out my userscript: [GitHub Custom Global Navigation](https://github.com/blakegearin/github-custom-global-navigation#readme)
 
 Miss the old design of Slack? Check out my userscript: [Old School Slack](https://github.com/blakegearin/old-school-slack#readme)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblakegearin%2Ffavicon-packs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblakegearin%2Ffavicon-packs?ref=badge_large)
