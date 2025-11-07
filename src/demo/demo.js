@@ -1,3 +1,6 @@
+// Add this at the top of the file
+window.demoSetupComplete = false
+
 const FAVICON_ID = 'favicon-packs-favicon'
 
 async function setSiteConfigsOrder (siteConfigs) {
@@ -62,18 +65,63 @@ async function replaceFavicon (siteConfigId) {
   const colorScheme = getColorScheme()
   fpLogger.debug('colorScheme', colorScheme)
 
-  switch (colorScheme) {
-    case null:
-      break
-    case 'dark':
-      if (darkThemeEnabled) imgUrl = siteConfig.darkPngUrl
-      break
-    default:
-      if (lightThemeEnabled) imgUrl = siteConfig.lightPngUrl
-      break
+  // Handle emoji URLs directly
+  if (siteConfig.emojiUrl) {
+    imgUrl = siteConfig.emojiUrl
+  }
+  // Handle uploaded images
+  else if (siteConfig.uploadId) {
+    const upload = await window.extensionStore.getUploadById(
+      siteConfig.uploadId
+    )
+    if (upload) {
+      imgUrl = upload.dataUri
+    }
+  }
+  // Handle URL imports
+  else if (siteConfig.urlImportId) {
+    const urlImport = await window.extensionStore.getUrlImportById(
+      siteConfig.urlImportId
+    )
+    if (urlImport) {
+      imgUrl = urlImport.dataUri
+    }
+  }
+  // Handle icon-based favicons with theme support
+  else if (siteConfig.iconId) {
+    fpLogger.debug('siteConfig.iconId', siteConfig.iconId)
+
+    switch (colorScheme) {
+      case 'dark':
+        if (darkThemeEnabled && siteConfig.darkPngUrl) {
+          imgUrl = siteConfig.darkPngUrl
+        } else if (lightThemeEnabled && siteConfig.lightPngUrl) {
+          imgUrl = siteConfig.lightPngUrl
+        } else if (siteConfig.anyPngUrl) {
+          imgUrl = siteConfig.anyPngUrl
+        }
+        break
+
+      case 'light':
+      default:
+        if (lightThemeEnabled && siteConfig.lightPngUrl) {
+          imgUrl = siteConfig.lightPngUrl
+        } else if (darkThemeEnabled && siteConfig.darkPngUrl) {
+          imgUrl = siteConfig.darkPngUrl
+        } else if (siteConfig.anyPngUrl) {
+          imgUrl = siteConfig.anyPngUrl
+        }
+        break
+    }
   }
 
   fpLogger.debug('imgUrl', imgUrl)
+
+  // Only proceed if we have an image URL
+  if (!imgUrl) {
+    fpLogger.debug('No image URL found, skipping favicon replacement')
+    return
+  }
 
   // Remove existing favicon if present
   const existingFavicon = document.getElementById(FAVICON_ID)
@@ -105,10 +153,10 @@ async function updateCurrentFavicon () {
     const sortedSiteConfigs = siteConfigsOrder
       .map(id => siteConfigs.find(siteConfig => siteConfig.id === id))
       .filter(Boolean)
-
-    fpLogger.debug('sortedSiteConfigs', sortedSiteConfigs)
+    fpLogger.verbose('sortedSiteConfigs', sortedSiteConfigs)
 
     const siteConfig = sortedSiteConfigs.find(localSiteConfig => {
+      fpLogger.verbose('localSiteConfig', localSiteConfig)
       if (!localSiteConfig.websitePattern) return false
       if (!localSiteConfig.iconId && !localSiteConfig.uploadId) return false
 
@@ -137,6 +185,8 @@ async function updateCurrentFavicon () {
         return false
       }
     })
+
+    fpLogger.debug('siteConfig', siteConfig)
 
     if (siteConfig) replaceFavicon(siteConfig.id)
   } else {
@@ -239,7 +289,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     const idbDatabase = window.extensionStore.getDatabase()
     fpLogger.verbose('idbDatabase', idbDatabase)
 
-    await window.importFromJson(idbDatabase, JSON.stringify(window.fpIcons))
+    const iconPacks = window.extensionStore.getIconPacks()
+    const defaultIconPack = iconPacks.find(pack => pack.name === 'Ionicons')
+    fpLogger.debug('defaultIconPack', defaultIconPack)
+
+    await window.extensionStore.downloadPackVersion({
+      pack: defaultIconPack,
+      versionMetadata: defaultIconPack.versions[0]
+    })
+
+    const emojiPacks = window.extensionStore.getEmojiPacks()
+    const defaultEmojiPack = emojiPacks.find(pack => pack.name === 'Twemoji')
+    fpLogger.debug('defaultEmojiPack', defaultEmojiPack)
+
+    await window.extensionStore.downloadPackVersion({
+      pack: defaultEmojiPack,
+      versionMetadata: defaultEmojiPack.versions[0]
+    })
   }
 
   const disabledSelectors = [
@@ -253,9 +319,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.querySelector(selector).setAttribute('disabled', true)
   })
 
+  window.demoSetupComplete = true
+
+  // Dispatch event to notify options.js
+  const demoReadyEvent = new CustomEvent('demoReady')
+  document.dispatchEvent(demoReadyEvent)
+
   const siteConfigRowSelector = '.siteConfig-row'
   const callback = async () => {
     const rows = document.querySelectorAll(siteConfigRowSelector)
+    fpLogger.verbose('rows', rows)
+
     const siteConfigMetadata = []
 
     for await (row of rows) {
@@ -268,6 +342,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       })
     }
 
+    fpLogger.verbose('siteConfigMetadata', siteConfigMetadata)
     updateCurrentFavicon()
 
     siteConfigMetadata[0].row

@@ -25,11 +25,14 @@ class Logger {
 
   async _initializeLogLevel () {
     try {
-      const result = await browser.storage.local.get(this.storageKey)
-      if (result[this.storageKey] !== undefined) {
-        this._cachedLogLevel = result[this.storageKey]
+      if (typeof browser !== 'undefined') {
+        const result = await browser.storage.local.get(this.storageKey)
+        if (result[this.storageKey] !== undefined) {
+          this._cachedLogLevel = result[this.storageKey]
+        }
+
+        this._initialized = true
       }
-      this._initialized = true
     } catch (error) {
       console.error('Failed to initialize log level from storage:', error)
     }

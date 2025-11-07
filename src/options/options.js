@@ -160,6 +160,23 @@ function createFaviconSprite (icon, siteConfig, theme = null) {
   return updatedSvgString
 }
 
+async function waitForDemoSetup () {
+  const isDemoMode = !document
+    .querySelector('#demo-badge')
+    .classList.contains('display-none')
+  fpLogger.debug('isDemoMode', isDemoMode)
+
+  if (isDemoMode && !window.demoSetupComplete) {
+    fpLogger.info('Waiting for demo setup to complete...')
+    // Wait for demo ready event
+    await new Promise(resolve => {
+      document.addEventListener('demoReady', resolve, { once: true })
+    })
+  }
+
+  return true
+}
+
 function buildPackVariant ({ name, version, style } = {}) {
   fpLogger.trace('buildPackVariant()')
 
@@ -177,6 +194,8 @@ function buildPackVariant ({ name, version, style } = {}) {
 
 async function populateDrawerIcons () {
   fpLogger.debug('populateDrawerIcons()')
+
+  await waitForDemoSetup()
 
   const icons = await window.extensionStore.getIcons()
   fpLogger.debug('icons', icons)
@@ -1124,10 +1143,14 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
   let icon
 
   if (siteConfig.iconId) {
+    await waitForDemoSetup()
+
     icon = await window.extensionStore.getIconById(siteConfig.iconId)
+    fpLogger.verbose('icon', icon)
 
     if (icon) {
       const svgSprite = buildSvgSprite(icon)
+      fpLogger.verbose('svgSprite', svgSprite)
 
       newRow
         .querySelector('#icon-value')
@@ -2017,6 +2040,8 @@ function hideLoadingSpinner () {
 async function populateIconPackVariantSelector () {
   fpLogger.debug('populateIconPackVariantSelector()')
 
+  await waitForDemoSetup()
+
   const iconPacksSelect =
     ICON_SELECTOR_DRAWER.querySelector('#icon-packs-select')
 
@@ -2616,9 +2641,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const version = fpLogger.version()
   if (version) {
-    document.querySelector(
-      '#extension-version'
-    ).textContent = `v${version}`
+    document.querySelector('#extension-version').textContent = `v${version}`
   } else {
     document.querySelector('#extension-version').classList.add('display-none')
   }

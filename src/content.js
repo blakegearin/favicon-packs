@@ -303,8 +303,10 @@ fpLogger.info('content.js loaded')
       .matches
       ? 'dark'
       : 'light'
+    fpLogger.debug('colorScheme', colorScheme)
 
     hasInitialized = true
+
     sendMessageWithRetry({
       action: 'replaceFavicon',
       colorScheme,
