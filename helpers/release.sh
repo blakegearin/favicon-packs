@@ -39,4 +39,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Create GitHub release
+gh release create "$NEW_VERSION" --prerelease --generate-notes
+gh release upload "$NEW_VERSION" "web-ext-artifacts/favicon_packs-$NEW_VERSION.zip"
+
 echo "Release $NEW_VERSION completed successfully."
