@@ -173,6 +173,11 @@ sl-drawer table
   margin: 0 3px;
 }
 
+sl-color-picker
+{
+  height: 40px;
+}
+
 /* Header */
 .header
 {
