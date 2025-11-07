@@ -19,6 +19,14 @@
     "storage",
     "<all_urls>"
   ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "@Favicon-Packs",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
   "options_ui": {
     "page": "options/index.html",
     "open_in_tab": true
