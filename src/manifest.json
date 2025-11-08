@@ -3,9 +3,9 @@
   "name": "Favicon Packs",
   "short_name": "FaviconPacks",
   "version": "0.5.0",
-  "description": "Customize tab favicons with icons or images",
+  "description": "Customize tab favicons with icons, emojis, or images",
   "author": "Blake Gearin",
-  "homepage_url": "https://github.com/blakegearin/favicon-packs",
+  "homepage_url": "https://faviconpacks.com",
   "icons": {
     "16": "img/logo.svg",
     "32": "img/logo.svg",
