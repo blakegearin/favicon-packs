@@ -1119,6 +1119,14 @@ async function populateTableRow (siteConfig, insertion, tablePosition = 'last') 
     siteEdit.querySelector('sl-input').focus()
   }
 
+  const siteStrategiesDialog = document.querySelector('#site-strategies-dialog')
+  newRow
+    .querySelector('.site-cell .site-strategies')
+    .onclick = () => {
+      fpLogger.debug('Site strategies button clicked')
+      siteStrategiesDialog.show()
+    }
+
   const form = newRow.querySelector('.site-cell.edit')
 
   form.addEventListener('submit', event => {

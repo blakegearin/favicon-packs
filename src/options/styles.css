@@ -100,6 +100,11 @@ th.min-width
 }
 
 /* Helper Classes */
+.bold
+{
+  font-weight: bold;
+}
+
 .display-none
 {
   display: none !important;
@@ -350,7 +355,7 @@ sl-drawer [slot="label"]
 
 .site-cell.read
 {
-  padding: 0px 8px;
+  padding: 0px 2px;
   font-size: 16px;
 }
 
@@ -366,6 +371,16 @@ sl-drawer [slot="label"]
 .site-cell > sl-input
 {
   --sl-input-font-family: monospace;
+}
+
+.site-strategies
+{
+  margin-left: auto !important;
+}
+
+.site-strategies
+{
+  --sl-spacing-small: 0.5rem;
 }
 
 .type-cell,
@@ -1202,4 +1217,44 @@ sl-tab
 .downloaded
 {
   opacity: 1;
+}
+
+/* Site Strategies Dialog */
+#site-strategies-dialog > div
+{
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+#site-strategies-dialog > div > div
+{
+  width: 50%;
+}
+
+#site-strategies-dialog .site-configuration
+{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#site-strategies-dialog sl-tree-item
+{
+  margin: 0.5rem 0;
+}
+
+#site-strategies-dialog sl-tree-item > sl-tree-item sl-input
+{
+  width: 6rem;
+  margin-left: 1rem;
+}
+
+#site-strategies-dialog sl-tree sl-tree-item:has(> sl-tree)
+{
+  --sl-toggle-size-medium: 0 !important;
+  --sl-line-height-dense: 0 !important;
+  --sl-input-border-width: 0 !important;
+  --sl-spacing-large: 0 !important;
+  --sl-spacing-x-small: 0rem !important;
 }

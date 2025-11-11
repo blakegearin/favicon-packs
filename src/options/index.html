@@ -257,6 +257,10 @@
               Website Pattern
             </th>
 
+            <!-- <th class="center">
+              Strategy
+            </th> -->
+
             <th class="center">
               Icon
             </th>
@@ -623,6 +627,23 @@
                   name="pencil"
                   label="Edit"
                 ></sl-icon-button>
+
+                <!-- <sl-icon-button
+                  class="site-strategies"
+                  name="sliders"
+                  label="Strategies"
+                ></sl-icon-button> -->
+
+                <sl-button
+                  class="site-strategies"
+                  size="small"
+                  style="--sl-spacing-small: 0.5rem;"
+                >
+                  <sl-icon
+                    name="sliders"
+                    label="Strategies"
+                  ></sl-icon>
+                </sl-button>
               </div>
 
               <form class="site-cell edit">
@@ -639,6 +660,8 @@
                   Reset
                 </sl-button>
               </form>
+
+              <!-- <sl-icon-button class="" name="sliders" label="Strategies"></sl-icon-button> -->
             </td>
 
             <td class="center icon-cell">
@@ -1268,7 +1291,7 @@
     <sl-drawer
       id="settings-dialog"
       label="Settings"
-      placement="bottom"
+      placement="top"
     >
       <sl-tab-group>
         <sl-tab
@@ -1503,6 +1526,219 @@
           <div id="emoji-packs-tables"></div>
         </sl-tab-panel>
       </sl-tab-group>
+    </sl-drawer>
+
+    <!-- {
+      removeExistingIcons: true,
+      addCssHiding: true,
+      addShortcutLink: true,
+      mutationObserver: {
+        enabled: true,
+        attributeFilter: ['href', 'rel', 'src']
+      },
+      persistence: {
+        enabled: true,
+        checkIntervalTime: 400,
+        randomizationFactor: 0.2,
+        retryLimit: null
+      },
+      urlChangeDetection: {
+        enabled: true,
+        checkIntervalTime: 1000
+      }
+    } -->
+
+    <sl-drawer
+      id="site-strategies-dialog"
+      label="Favicon Replacement Strategies"
+      placement="bottom"
+      style="--size: 70vh;"
+    >
+      <div>
+        <div>
+          <sl-tree
+            class="tree-selectable"
+            selection="multiple"
+          >
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>Remove existing icons</span>
+
+                <sl-tooltip
+                  content="Removes specific link and meta tags associated with favicons"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+            </sl-tree-item>
+
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>Add CSS hiding</span>
+
+                <sl-tooltip
+                  content="Adds 'display: none' styling to specific link tags associated with favicons"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+            </sl-tree-item>
+
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>Add shortcut link</span>
+
+                <sl-tooltip
+                  content="Adds a link tag with rel='shortcut icon' to help browsers identify the replacement favicon"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+            </sl-tree-item>
+
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>Mutation observation</span>
+
+                <sl-tooltip
+                  content="Monitors DOM attributes for changes that affect favicons; immediately triggers a favicon replacement when changes are detected"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+
+              <sl-tree-item>
+                <span>Attribute filter</span>
+
+                <sl-tree-item>
+                  <code>href</code>
+                </sl-tree-item>
+
+                <sl-tree-item>
+                  <code>rel</code>
+                </sl-tree-item>
+
+                <sl-tree-item>
+                  <code>src</code>
+                </sl-tree-item>
+              </sl-tree-item>
+            </sl-tree-item>
+
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>Persistence checking</span>
+
+                <sl-tooltip
+                  content="Uses interval-based polling to periodically check if the replacement favicon is still correctly set"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+
+              <sl-tree-item>
+                <sl-tree>
+                  <sl-tree-item selection="single">
+                    <span>Check interval time:</span>
+
+                    <sl-input
+                      type="number"
+                      value="400"
+                      min="0"
+                    ></sl-input>
+                  </sl-tree-item>
+
+                  <sl-tree-item selection="single">
+                    <span>Randomization factor:</span>
+
+                    <sl-input
+                      type="number"
+                      value="0.2"
+                      min="0"
+                      step="0.1"
+                    ></sl-input>
+                  </sl-tree-item>
+
+                  <sl-tree-item selection="leaf">
+                    <span>Retry limit:</span>
+
+                    <sl-input
+                      type="number"
+                      value="0"
+                      min="0"
+                    ></sl-input>
+                  </sl-tree-item>
+                </sl-tree>
+              </sl-tree-item>
+            </sl-tree-item>
+
+            <sl-tree-item>
+              <div class="site-configuration">
+                <span>URL change detection</span>
+
+                <sl-tooltip
+                  content="Ensures that favicon changes are applied when the URL changes, even without a full page reload"
+                  placement="right"
+                >
+                  <sl-icon name="info-circle"></sl-icon>
+                </sl-tooltip>
+              </div>
+
+              <sl-tree-item>
+                <sl-tree>
+                  <sl-tree-item>
+                    <span>Check interval time:</span>
+
+                    <sl-input
+                      type="number"
+                      value="400"
+                      min="0"
+                    ></sl-input>
+                  </sl-tree-item>
+                </sl-tree></sl-tree-item>
+            </sl-tree-item>
+          </sl-tree>
+        </div>
+
+        <div>
+          <h3>Choosing the Right Strategy</h3>
+
+          <p>
+            Their are trade-offs between using the two main strategies.
+          </p>
+
+          <ul>
+            <li>
+              <span class="bold">Mutation observation</span> is more efficient but might miss some changes
+            </li>
+
+            <li>
+              <span class="bold">Persistence checking</span> is more thorough but uses more resources
+            </li>
+          </ul>
+
+          <p>Here are some recommendations.</p>
+
+          <ul>
+            <li>
+              For most sites: Either strategy alone is often sufficient
+            </li>
+
+            <li>
+              For performance: Disable persistence checking and rely only on mutation observation
+            </li>
+
+            <li>
+              For aggressive sites: Using both strategies together provides the best chance of maintaining the
+              replacement
+            </li>
+          </ul>
+        </div>
+      </div>
     </sl-drawer>
 
     <script src="../utils/logger.js"></script>

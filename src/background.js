@@ -147,7 +147,7 @@ async function initialize () {
           removeExistingIcons: true,
           addCssHiding: true,
           addShortcutLink: true,
-          observeMutations: {
+          mutationObserver: {
             enabled: true,
             attributeFilter: ['href', 'rel', 'src']
           },

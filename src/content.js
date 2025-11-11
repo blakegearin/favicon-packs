@@ -1,5 +1,4 @@
 fpLogger.info('content.js loaded')
-
 ;(function () {
   const CUSTOM_FAVICON_CLASS = 'favicon-packs-custom-favicon'
 
@@ -8,7 +7,7 @@ fpLogger.info('content.js loaded')
   let isInitializing = false
   let currentCheckInterval = null
   let currentObserver = null
-  let observerConfig = null
+  let observerOptions = null
 
   let lastUrl = window.location.href
   let urlCheckInterval = null
@@ -17,7 +16,7 @@ fpLogger.info('content.js loaded')
     removeExistingIcons: true,
     addCssHiding: true,
     addShortcutLink: true,
-    observeMutations: {
+    mutationObserver: {
       enabled: true,
       attributeFilter: ['href', 'rel', 'src']
     },
@@ -133,7 +132,10 @@ fpLogger.info('content.js loaded')
             link[rel*="icon"]:not(.${CUSTOM_FAVICON_CLASS}),
             link[rel*="shortcut"]:not(.${CUSTOM_FAVICON_CLASS}),
             link[rel*="apple-touch"]:not(.${CUSTOM_FAVICON_CLASS}),
-            link[rel*="mask-icon"]:not(.${CUSTOM_FAVICON_CLASS}) {
+            link[rel*="mask-icon"]:not(.${CUSTOM_FAVICON_CLASS}),
+            'link[rel*="fluid-icon"]:not(.${CUSTOM_FAVICON_CLASS})',
+            'link[rel="manifest"]:not(.${CUSTOM_FAVICON_CLASS})'
+            {
               display: none !important;
             }
           `
@@ -142,9 +144,9 @@ fpLogger.info('content.js loaded')
       }
 
       // Reconnect the observer after changes are complete
-      if (needToReconnect && observerConfig) {
+      if (needToReconnect && observerOptions) {
         fpLogger.debug('Reconnecting mutation observer')
-        currentObserver.observe(document.documentElement, observerConfig)
+        currentObserver.observe(document.documentElement, observerOptions)
       }
 
       fpLogger.info('Replaced favicon')
@@ -280,7 +282,7 @@ fpLogger.info('content.js loaded')
 
       if (
         hasInitialized &&
-        currentStrategy.observeMutations?.enabled === true
+        currentStrategy.mutationObserver?.enabled === true
       ) {
         fpLogger.debug('Setting up mutation observer')
         currentObserver = setupFaviconObserver(currentStrategy)
@@ -317,14 +319,14 @@ fpLogger.info('content.js loaded')
   function setupFaviconObserver (strategy = {}) {
     fpLogger.debug('setupFaviconObserver()')
 
-    if (!strategy.observeMutations?.enabled) {
+    if (!strategy.mutationObserver?.enabled) {
       fpLogger.debug('Mutation observation disabled by strategy')
       return null
     }
 
-    const attributeFilter = strategy.observeMutations?.attributeFilter
+    const attributeFilter = strategy.mutationObserver?.attributeFilter
 
-    observerConfig = {
+    observerOptions = {
       childList: true,
       subtree: true,
       attributes: true,
@@ -351,7 +353,7 @@ fpLogger.info('content.js loaded')
     // Determine which element to observe
     let targetElement = document.documentElement
 
-    const targetSelector = strategy.observeMutations?.targetSelector
+    const targetSelector = strategy.mutationObserver?.targetSelector
     fpLogger.debug('targetSelector', targetSelector)
 
     if (targetSelector) {
@@ -379,7 +381,7 @@ fpLogger.info('content.js loaded')
       fpLogger.debug('No target selector provided, observing entire document')
     }
 
-    observer.observe(targetElement, observerConfig)
+    observer.observe(targetElement, observerOptions)
     return observer
   }
 
